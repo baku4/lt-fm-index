@@ -1,49 +1,95 @@
-struct Meta {
+mod bwt_occ;
+mod bwt;
+
+use bwt::Bwt;
+
+struct Config {
     // burrow wheeler transformed string (BWT)
-    bwt_compression_size: BwtCompressionSize,
+    // bwt_segment_size: BwtSegSize,
     // kmer lookup table
-    lookup_kmer: usize,
+    lookup_kmer: Option<usize>,
     // occurrence array (OA)
     // base lookup table
     lookup_base: usize,
     // suffix array (SA)
-    sa_sampling_ratio: usize,
+    sa_sampling_ratio: u64,
 }
 
 struct FmIndex {
     bwt: Bwt,
-    oa: OccurrenceArray,
     ca: CountArray,
-    sa: SuffixArray,
+    suffix_array: SuffixArray,
+    sampling_ratio: u64,
 }
 
-type CountArray = [u64; 4];
-struct KmerLookupTable {
+impl FmIndex {
+    #[inline]
+    fn new(config: &Config, text: Vec<u8>) {
+        // let bwt = Bwt::new();
+        ()
+    }
+    #[inline]
+    fn count(&self, pattern: &[u8]) {
 
+    }
+    #[inline]
+    fn locate(&self, pattern: &[u8]) -> Vec<u64> {
+        let mut idx = pattern.len();
+        let c = pattern[idx-1];
+        let mut pos_range = self.pos_range_init(c);
+        // (1) LF mapping
+        while pos_range.0 < pos_range.1 && idx > 0 {
+            let c = pattern[idx-1];
+            pos_range = self.bwt.lf_map_with_range(pos_range, c);
+            idx -= 1;
+        }
+        // (2) Locate 
+        let pos_range_gap = pos_range.1 - pos_range.0;
+        let mut locations: Vec<u64> = Vec::with_capacity(pos_range_gap as usize);
+        for i in 0..pos_range_gap {
+            let mut position = pos_range.0 + i;
+            let mut offset: u64 = 0;
+            while position % self.sampling_ratio != 0 {
+                position = self.bwt.lf_map_with_pos(position);
+                offset += 1;
+            }
+            let location = self.suffix_array[(position / self.sampling_ratio) as usize] + offset;
+            locations.push(location);
+        }
+        locations
+    }
+    #[inline]
+    fn pos_range_init(&self, c: u8) -> (u64, u64) {
+        let idx = nc_to_idx(&c);
+        (self.ca[idx], self.ca[idx+1])
+    }
 }
 
-enum BwtCompressionSize {
-    _32,
-    _64,
-    _128,
-    _256,
+// using 5 space for lessconditional statements
+type CountArray = [u64; 5];
+
+const A_UTF8: u8 = 65;
+const C_UTF8: u8 = 67;
+const G_UTF8: u8 = 71;
+const T_UTF8: u8 = 84;
+
+#[inline]
+fn nc_to_idx(c: &u8) -> usize {
+    match *c {
+        A_UTF8 => 0,
+        C_UTF8 => 1,
+        G_UTF8 => 2,
+        _ => 3,
+    }
 }
 
-struct Bwt {
-    //
-}
-
-struct SuffixArray {
-    //
-}
+type KmerLookupTable = Vec<u64>;
 
 struct BaseLookupTable {
     
 }
 
-struct OccurrenceArray {
-    //
-}
+type SuffixArray = Vec<u64>;
 
 #[cfg(test)]
 mod tests {
@@ -129,9 +175,9 @@ mod tests {
         println!("sa:\n{:?}", suffix_array);
         println!("bwt:\n{:?}", String::from_utf8(bwt.clone()).unwrap());
         println!("pidx:\n{:?}", pidx);
-        // count array & kmer lookup_table
+        // count array & kmer lookup table
         let (count_array, kmer_lookup_table) = {
-            let mut count_array: CountArray = [0; 4];
+            let mut count_array = [0; 4];
             let kmer: usize = 8;
             let mut kmer_lookup_table: Vec<u64> = vec![0; 4usize.pow(kmer as u32)];
             let mut kmer_iter = input_string[..].windows(kmer);

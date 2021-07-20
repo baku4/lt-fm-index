@@ -1,0 +1,11 @@
+[package]
+name = "lt-fm-index"
+version = "0.1.0"
+authors = ["baku4 <bahkhun@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+libdivsufsort-rs = "0.1.0"
+
+[dev-dependencies]
+radix_fmt = "1.0.0"

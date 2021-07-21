@@ -7,21 +7,21 @@ struct Config {
     // burrow wheeler transformed string (BWT)
     // bwt_segment_size: usize,
     // kmer lookup table
-    lookup_kmer: Option<usize>,
+    // lookup_kmer: Option<usize>,
     // suffix array (SA)
     sa_sampling_ratio: u64,
 }
 
 struct FmIndex {
-    bwt: Bwt,
     count_array: CountArray,
-    suffix_array: SuffixArray,
     sampling_ratio: u64,
+    suffix_array: SuffixArray,
+    bwt: Bwt,
 }
 
 impl FmIndex {
     #[inline]
-    fn new(config: &Config, text: Vec<u8>) {
+    fn new(config: &Config, text: Vec<u8>) -> Self {
         // suffix_array
         let suffix_array = divsufsort64(&text).unwrap();
         // bwt & primary index
@@ -34,28 +34,48 @@ impl FmIndex {
         // compress suffix array
         let suffix_array = compress_suffix_array(suffix_array, config.sa_sampling_ratio);
         let bwt = Bwt::new(bwt_string, pidx);
-        ()
+        // count array
+        let (count_array, _) = {
+            let mut count_array: CountArray = [0; 5];
+            let kmer: usize = 8;
+            // let mut kmer_lookup_table: Vec<u64> = vec![0; 4usize.pow(kmer as u32)];
+            let mut kmer_iter = text[..].windows(kmer);
+            while let Some(v) = kmer_iter.next() {
+                match v[0] {
+                    A_UTF8 => count_array[1] += 1,
+                    C_UTF8 => count_array[2] += 1,
+                    G_UTF8 => count_array[3] += 1,
+                    _ => count_array[4] += 1,
+                }
+            };
+            for c in text[text.len()-kmer+1..].iter() {
+                match *c {
+                    A_UTF8 => count_array[1] += 1,
+                    C_UTF8 => count_array[2] += 1,
+                    G_UTF8 => count_array[3] += 1,
+                    _ => count_array[4] += 1,
+                }
+            }
+            accumulate_count_array(&mut count_array);
+            (count_array, 0)
+        };
+        Self {
+            count_array: count_array,
+            sampling_ratio: config.sa_sampling_ratio,
+            suffix_array: suffix_array,
+            bwt: bwt,
+        }
     }
     #[inline]
-    fn count(&self, pattern: &[u8]) {
-
+    fn count(&self, pattern: &[u8]) -> u64 {
+        let pos_range = self.lf_map(pattern);
+        pos_range.1 - pos_range.0
     }
     #[inline]
     fn locate(&self, pattern: &[u8]) -> Vec<u64> {
-        let mut idx = pattern.len();
-        let c = pattern[idx-1];
-        let mut pos_range = self.pos_range_init(c);
-        // (1) LF mapping
-        while pos_range.0 < pos_range.1 && idx > 0 {
-            let c = pattern[idx-1];
-            pos_range = self.bwt.lf_map_with_range(pos_range, c, &self.count_array);
-            idx -= 1;
-        }
-        // (2) Locate 
-        let pos_range_gap = pos_range.1 - pos_range.0;
-        let mut locations: Vec<u64> = Vec::with_capacity(pos_range_gap as usize);
-        for i in 0..pos_range_gap {
-            let mut position = pos_range.0 + i;
+        let pos_range = self.lf_map(pattern);
+        let mut locations: Vec<u64> = Vec::with_capacity((pos_range.1 - pos_range.0) as usize);
+        for mut position in pos_range.0..pos_range.1 {
             let mut offset: u64 = 0;
             while position % self.sampling_ratio != 0 {
                 position = self.bwt.lf_map_with_pos(position, &self.count_array);
@@ -67,6 +87,20 @@ impl FmIndex {
         locations
     }
     #[inline]
+    fn lf_map(&self, pattern: &[u8]) -> (u64, u64) {
+        let mut idx = pattern.len();
+        let c = pattern[idx-1];
+        let mut pos_range = self.pos_range_init(c);
+        idx -= 1;
+        // LF mapping
+        while pos_range.0 < pos_range.1 && idx > 0 {
+            let c = pattern[idx-1];
+            pos_range = self.bwt.lf_map_with_range(pos_range, c, &self.count_array);
+            idx -= 1;
+        }
+        pos_range
+    }
+    #[inline]
     fn pos_range_init(&self, c: u8) -> (u64, u64) {
         let idx = nc_to_idx(&c);
         (self.count_array[idx], self.count_array[idx+1])
@@ -75,6 +109,14 @@ impl FmIndex {
 
 // using 5 space for lessconditional statements
 type CountArray = [u64; 5];
+
+fn accumulate_count_array(count_array: &mut [u64]) {
+    let mut accumed_count: u64 = 0;
+    count_array.iter_mut().for_each(|count| {
+        accumed_count += *count;
+        *count = accumed_count;
+    });
+}
 
 const A_UTF8: u8 = 65;
 const C_UTF8: u8 = 67;
@@ -114,11 +156,24 @@ mod tests {
     use libdivsufsort_rs::*;
     use radix_fmt::*;
     use std::fmt::Write;
+    use std::vec;
+
+    use fm_index::converter::RangeConverter;
+    use fm_index::suffix_array::SuffixOrderSampler;
+    use fm_index::{BackwardSearchIndex, FMIndex};
 
     const A_UTF8: u8 = 65;
     const C_UTF8: u8 = 67;
     const G_UTF8: u8 = 71;
     const T_UTF8: u8 = 84;
+
+    fn get_locations_of_other_crate(text: &Vec<u8>, pattern: &Vec<u8>) -> Vec<u64> {
+        let converter = RangeConverter::new(b' ', b'~');
+        let sampler = SuffixOrderSampler::new().level(2);
+        let index = FMIndex::new(text.clone(), converter, sampler);
+        let search = index.search_backward(pattern);
+        search.locate()
+    }
 
     #[test]
     fn test_compress_suffix_array() {
@@ -126,6 +181,24 @@ mod tests {
         let sampling_ratio: u64 = 5;
         let sa = compress_suffix_array(raw_suffix_array, sampling_ratio);
         assert_eq!(sa, vec![0, 5, 10, 15, 20, 25]);
+    }
+
+    #[test]
+    fn test_fm_index() {
+        let text = "CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec();
+        let config = Config {
+            sa_sampling_ratio: 4,
+        };
+        let fm_index = FmIndex::new(&config, text.clone());
+        // test
+        for pattern in vec!["TA", "T", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
+            let pattern = pattern.as_bytes().to_vec();
+            let mut locations_res = fm_index.locate(&pattern);
+            locations_res.sort();
+            let mut locations_ans = get_locations_of_other_crate(&text, &pattern.to_vec());
+            locations_ans.sort();
+            assert_eq!(locations_res, locations_ans);
+        }
     }
 
     fn kmer_table_index(window: &[u8]) -> usize {
@@ -184,7 +257,7 @@ mod tests {
         }
     }
 
-    #[test]
+    // #[test]
     fn test() {
         let input_string = "CTCCGTACACCTGTTTCGTATCGGAACCGGTAAG".as_bytes().to_vec();
         // sa

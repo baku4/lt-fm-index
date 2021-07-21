@@ -9,3 +9,4 @@ libdivsufsort-rs = "0.1.0"
 
 [dev-dependencies]
 radix_fmt = "1.0.0"
+fm-index = "0.1"

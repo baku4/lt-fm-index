@@ -18,11 +18,13 @@ const BIT_COUNT_TABLE: [u64; 256] = [
     4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8,
 ];
 
-use super::{A_UTF8, C_UTF8, G_UTF8, T_UTF8, nc_to_idx};
-use super::{A_U8_IDX, C_U8_IDX, G_U8_IDX, T_U8_IDX};
+use super::{A_UTF8, C_UTF8, G_UTF8, T_UTF8, A_U8_IDX, C_U8_IDX, G_U8_IDX, T_U8_IDX};
 use super::CountArray;
+use super::nc_to_idx;
+
 use std::u64;
 
+#[derive(Debug)]
 #[repr(align(64))]
 struct BwtBlock {
     rank_checkpoint: [u64; 4],
@@ -31,23 +33,20 @@ struct BwtBlock {
 }
 
 impl BwtBlock {
-    fn new() {
-
+    #[inline]
+    fn get_rank_and_cidx(&self, rem: u64) -> (u8, u64) {
+        let cidx = self.get_cidx(&rem);
+        if rem == 0 {
+            (cidx, self.rank_checkpoint[cidx as usize])
+        } else {
+            let rank = self.get_rank_with_cidx(&rem, &cidx);
+            (cidx, rank)
+        }
     }
     #[inline]
-    fn get_first_rank_of_c(&self, rem: &u64, c: &u8) {
-
-    }
-    #[inline]
-    fn get_rank_and_c(&self, rem: u64) -> (u8, u64) {
-        let c = self.get_c(&rem);
-        let rank = self.get_rank(&rem, &c);
-        (c, rank)
-    }
-    #[inline]
-    fn get_c(&self, rem: &u64) -> u8 {
+    fn get_cidx(&self, rem: &u64) -> u8 {
         let mut pos_bit: u64 = 0b1000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;
-        pos_bit >>= rem-1;
+        pos_bit >>= rem;
         if self.first_bwt_vector & pos_bit == 0 {
             if self.second_bwt_vector & pos_bit == 0 {
                 // 00
@@ -67,27 +66,48 @@ impl BwtBlock {
         }
     }
     #[inline]
-    fn get_rank(&self, rem: &u64, c: &u8) -> u64 {
-        let count_bits = match *c {
-            A_UTF8 => {
-                (self.first_bwt_vector & u64::MIN) & (self.second_bwt_vector & u64::MIN) >> 64_u64-rem
+    fn get_rank_with_cidx(&self, rem: &u64, cidx: &u8) -> u64 {
+        let count_bits = match *cidx {
+            A_U8_IDX => {
+                (!self.first_bwt_vector & !self.second_bwt_vector) >> 64_u64-rem
             },
-            C_UTF8 => {
-                (self.first_bwt_vector & u64::MIN) & (self.second_bwt_vector & u64::MAX) >> 64_u64-rem
+            C_U8_IDX => {
+                (!self.first_bwt_vector & self.second_bwt_vector) >> 64_u64-rem
             },
-            G_UTF8 => {
-                (self.first_bwt_vector & u64::MAX) & (self.second_bwt_vector & u64::MIN) >> 64_u64-rem
+            G_U8_IDX => {
+                (self.first_bwt_vector & !self.second_bwt_vector) >> 64_u64-rem
             },
             _ => {
-                (self.first_bwt_vector & u64::MAX) & (self.second_bwt_vector & u64::MAX) >> 64_u64-rem
+                (self.first_bwt_vector & self.second_bwt_vector) >> 64_u64-rem
             }
         };
         let mut rank: u64 = 0;
         count_bits.to_ne_bytes().iter().for_each(|&byte| rank += BIT_COUNT_TABLE[byte as usize]);
-        rank
+        self.rank_checkpoint[*cidx as usize] + rank
+    }
+    #[inline]
+    fn get_rank_with_c(&self, rem: &u64, c: &u8) -> u64 {
+        let (count_bits, rank_chkp) = match *c {
+            A_UTF8 => {
+                ((!self.first_bwt_vector & !self.second_bwt_vector) >> 64_u64-rem, self.rank_checkpoint[0])
+            },
+            C_UTF8 => {
+                ((!self.first_bwt_vector & self.second_bwt_vector) >> 64_u64-rem, self.rank_checkpoint[1])
+            },
+            G_UTF8 => {
+                ((self.first_bwt_vector & !self.second_bwt_vector) >> 64_u64-rem, self.rank_checkpoint[2])
+            },
+            _ => {
+                ((self.first_bwt_vector & self.second_bwt_vector) >> 64_u64-rem, self.rank_checkpoint[3])
+            }
+        };
+        let mut rank: u64 = 0;
+        count_bits.to_ne_bytes().iter().for_each(|&byte| rank += BIT_COUNT_TABLE[byte as usize]);
+        rank_chkp + rank
     }
 }
 
+#[derive(Debug)]
 pub struct Bwt {
     primary_index: u64,
     blocks: Vec<BwtBlock>,
@@ -95,30 +115,90 @@ pub struct Bwt {
 
 impl Bwt {
     #[inline]
-    pub fn new(bwt_string: Vec<u8>, primary_index: i64) {
-        
+    pub fn new(bwt_string: Vec<u8>, primary_index: i64) -> Self {
+        let chunk_size = bwt_string.len()/64;
+        let last_offset = 64-bwt_string.len()%64;
+        let mut blocks: Vec<BwtBlock> = Vec::with_capacity(chunk_size);
+        // push bwt block
+        let mut rank_checkpoint: [u64; 4] = [0; 4];
+        bwt_string.chunks(64).for_each(|string_chunk| {
+            let block_checkpoint = rank_checkpoint.clone();
+            let mut first_bwt_vector: u64 = 0;
+            let mut second_bwt_vector: u64 = 0;
+            for c in string_chunk {
+                match *c {
+                    A_UTF8 => {
+                        rank_checkpoint[0] += 1;
+                        first_bwt_vector <<= 1;
+                        second_bwt_vector <<= 1;
+                    },
+                    C_UTF8 => {
+                        rank_checkpoint[1] += 1;
+                        first_bwt_vector <<= 1;
+                        second_bwt_vector <<= 1;
+                        second_bwt_vector += 1;
+                    },
+                    G_UTF8 => {
+                        rank_checkpoint[2] += 1;
+                        first_bwt_vector <<= 1;
+                        second_bwt_vector <<= 1;
+                        first_bwt_vector += 1;
+                    },
+                    _ => {
+                        rank_checkpoint[3] += 1;
+                        first_bwt_vector <<= 1;
+                        second_bwt_vector <<= 1;
+                        first_bwt_vector += 1;
+                        second_bwt_vector += 1;
+                    }
+                }
+            }
+            blocks.push(
+                BwtBlock {
+                    rank_checkpoint: block_checkpoint,
+                    first_bwt_vector: first_bwt_vector,
+                    second_bwt_vector: second_bwt_vector,
+                }
+            );
+        });
+        // add offset to last block
+        let last_block = blocks.last_mut().unwrap();
+        last_block.first_bwt_vector <<= last_offset;
+        last_block.second_bwt_vector <<= last_offset;
+        Self {
+            primary_index: primary_index as u64,
+            blocks: blocks,
+        }
     }
     #[inline]
     pub fn lf_map_with_range(&self, pos_range: (u64, u64), c: u8, count_array: &CountArray) -> (u64, u64) {
-        let sp = {
-            let quot = pos_range.0/SEG_LEN;
-            let rem = pos_range.0%SEG_LEN;
-            let rank = self.blocks[quot as usize].get_rank(&rem, &c);
-            count_array[nc_to_idx(&c)] + rank
-        };
-        let ep = {
-            let quot = pos_range.1/SEG_LEN;
-            let rem = pos_range.1%SEG_LEN;
-            let rank = self.blocks[quot as usize].get_rank(&rem, &c);
-            count_array[nc_to_idx(&c)] + rank
-        };
-        (sp, ep)
+        (
+            self.lf_map_with_c(pos_range.0, &c, count_array),
+            self.lf_map_with_c(pos_range.1, &c, count_array),
+        )
     }
     #[inline]
-    pub fn lf_map_with_pos(&self, pos: u64, count_array: &CountArray) -> u64 {
+    pub fn lf_map_with_c(&self, mut pos: u64, c: &u8, count_array: &CountArray) -> u64 {
+        if pos < self.primary_index {
+            pos += 1;
+        }
         let quot = pos/SEG_LEN;
         let rem = pos%SEG_LEN;
-        let (cidx, rank) = self.blocks[quot as usize].get_rank_and_c(rem);
+        if rem == 0 {
+            count_array[nc_to_idx(&c)] + self.blocks[quot as usize].rank_checkpoint[nc_to_idx(&c)]
+        } else {
+            let rank = self.blocks[quot as usize].get_rank_with_c(&rem, &c);
+            count_array[nc_to_idx(&c)] + rank
+        }
+    }
+    #[inline]
+    pub fn lf_map_with_pos(&self, mut pos: u64, count_array: &CountArray) -> u64 {
+        if pos < self.primary_index {
+            pos += 1;
+        }
+        let quot = pos/SEG_LEN;
+        let rem = pos%SEG_LEN;
+        let (cidx, rank) = self.blocks[quot as usize].get_rank_and_cidx(rem);
         count_array[cidx as usize] + rank
     }
 }

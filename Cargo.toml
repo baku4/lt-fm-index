@@ -8,7 +8,7 @@ readme = "README.md"
 repository = "https://github.com/baku4/lt-fm-index/"
 license = "MIT"
 keywords = ["fm-index", "bwt", "pattern_matching", "bio"]
-categories = ["Science", "Algorithms"]
+categories = ["science", "algorithms"]
 
 [dependencies]
 libdivsufsort-rs = "0.1.0"

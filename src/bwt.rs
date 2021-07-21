@@ -89,14 +89,14 @@ impl BwtBlock {
 }
 
 pub struct Bwt {
+    primary_index: u64,
     blocks: Vec<BwtBlock>,
-    base_lookup_table: Vec<u32>,
 }
 
 impl Bwt {
     #[inline]
-    pub fn new() {
-
+    pub fn new(bwt_string: Vec<u8>, primary_index: i64) {
+        
     }
     #[inline]
     pub fn lf_map_with_range(&self, pos_range: (u64, u64), c: u8, count_array: &CountArray) -> (u64, u64) {

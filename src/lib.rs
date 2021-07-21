@@ -1,13 +1,13 @@
 mod bwt;
 
 use bwt::Bwt;
+use libdivsufsort_rs::{divsufsort64, bw_transform64};
 
 struct Config {
     // burrow wheeler transformed string (BWT)
     // bwt_segment_size: usize,
     // kmer lookup table
     lookup_kmer: Option<usize>,
-    // occurrence array (OA)
     // suffix array (SA)
     sa_sampling_ratio: u64,
 }
@@ -22,7 +22,18 @@ struct FmIndex {
 impl FmIndex {
     #[inline]
     fn new(config: &Config, text: Vec<u8>) {
-        // let bwt = Bwt::new();
+        // suffix_array
+        let suffix_array = divsufsort64(&text).unwrap();
+        // bwt & primary index
+        let (bwt_string, pidx) = {
+            let mut bwt = text.clone();
+            let mut sa = suffix_array.clone();
+            let pidx = bw_transform64(&mut bwt, &mut sa).unwrap();
+            (bwt, pidx)
+        };
+        // compress suffix array
+        let suffix_array = compress_suffix_array(suffix_array, config.sa_sampling_ratio);
+        let bwt = Bwt::new(bwt_string, pidx);
         ()
     }
     #[inline]
@@ -93,6 +104,10 @@ struct BaseLookupTable {
 
 type SuffixArray = Vec<u64>;
 
+fn compress_suffix_array(suffix_array: Vec<i64>, sampling_ratio: u64) -> SuffixArray {
+    suffix_array.into_iter().step_by(sampling_ratio as usize).map(|x| x as u64).collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -104,6 +119,14 @@ mod tests {
     const C_UTF8: u8 = 67;
     const G_UTF8: u8 = 71;
     const T_UTF8: u8 = 84;
+
+    #[test]
+    fn test_compress_suffix_array() {
+        let raw_suffix_array: Vec<i64> = (0..30).collect();
+        let sampling_ratio: u64 = 5;
+        let sa = compress_suffix_array(raw_suffix_array, sampling_ratio);
+        assert_eq!(sa, vec![0, 5, 10, 15, 20, 25]);
+    }
 
     fn kmer_table_index(window: &[u8]) -> usize {
         window.iter().rev().enumerate().map(|(idx, c)| 

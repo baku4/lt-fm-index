@@ -278,9 +278,6 @@ fn compress_suffix_array(suffix_array: Vec<i64>, sampling_ratio: u64) -> SuffixA
 mod tests {
     use super::*;
     use libdivsufsort_rs::*;
-    use radix_fmt::*;
-    use std::fmt::Write;
-    use std::vec;
 
     // For cross check
     use fm_index::converter::RangeConverter;

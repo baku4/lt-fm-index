@@ -1,18 +1,115 @@
+//! # LT FM-Index
+//!
+//! `lt-fm-index` is library for locate and count nucleotide sequence (ATGC) string.  
+//! `lt-fm-index` using k-mer lookup table (As you noticed, LT stands for lookup table).
+//! ## Description
+//! - Fm-index is a data structure used for pattern matching.
+//! - K-mer lookup table(KLT) is precalculated count table containing all kmer occurrences.
+//! - With KLT, you can find the first k-mer pattern at once.
+//! - Currently, only the genetic sequence (ATGC) can be used.
+//! ## Features
+//! - Fm-index using KLT with specified k-mer size.
+//! - Suffix array compression with sampling ratio.
+//! - BWT and suffix array are generated using `libdivsufsort` library.
+//! - BWT(burrow wheeler transformed) string and occurrence array (OA) are aligned in one block of 64 strings.
+//! - Aligned BWT&OA block encodes 1-byte character in 6-bits.
+//! - There are two main functions.
+//!     - count: Count the number of patterns in the text
+//!     - locate: Locate pattern index in text (KLT can be specified to enable or disable)
+//! ## Future work
+//! - IO
+//! - Input text can be `slice`
+//! ## Example
+//! ```rust
+//! use lt_fm_index::{Config, FmIndex};
+//!
+//! let text = b"CTCCGTACACCTGTTTCGTATCGGA".to_vec();
+//! let config = Config::new()
+//!     .set_kmer_lookup_table(8)
+//!     .set_suffix_array_sampling_ratio(4);
+//! let fm_index = FmIndex::new(&config, text);
+//! let pattern = b"TA".to_vec();
+//! 
+//! // count
+//! let count = fm_index.count(&pattern);
+//! assert_eq!(count, 2);
+//! 
+//! // locate without k-mer lookup table
+//! let locations = fm_index.locate(&pattern);
+//! assert_eq!(locations, vec![5,18]);
+//! 
+//! // locate with k-mer lookup table
+//! let locations = fm_index.locate_with_klt(&pattern);
+//! assert_eq!(locations, vec![5,18]);
+//! ```
+//! ## Repository
+//! [https://github.com/baku4/lt-fm-index](https://github.com/baku4/lt-fm-index)
+//! ## Reference
+//! - Ferragina, P., et al. (2004). An Alphabet-Friendly FM-Index, Springer Berlin Heidelberg: 150-160.
+//! - Anderson, T. and T. J. Wheeler (2021). An optimized FM-index library for nucleotide and amino acid search, Cold Spring Harbor Laboratory.
+//! - Wang, Y., X. Li, D. Zang, G. Tan and N. Sun (2018). Accelerating FM-index Search for Genomic Data Processing, ACM.
+//! - Yuta Mori. [`libdivsufsort`](https://github.com/y-256/libdivsufsort)
+
 mod bwt;
 
 use bwt::Bwt;
 use libdivsufsort_rs::{divsufsort64, bw_transform64};
 
-struct Config {
-    // burrow wheeler transformed string (BWT)
-    // bwt_segment_size: usize,
-    // kmer lookup table
+/// Configurations for Fm-index
+pub struct Config {
+    /// kmer lookup table
     kmer_size: Option<usize>,
-    // suffix array (SA)
+    /// Sampling ratio of suffix array
     sa_sampling_ratio: u64,
 }
+impl Config {
+    pub fn new() -> Self {
+        Self {
+            kmer_size: None,
+            sa_sampling_ratio: 1,
+        }
+    }
+    /// Set kmer lookup table  
+    /// Allowed k-mer size: [2, (pointer width/2)]
+    #[inline]
+    pub fn set_kmer_lookup_table(mut self, kmer_size: usize) -> Self {
+        #[cfg(target_pointer_width = "32")]
+        let pointer_width: usize = 32;
+        #[cfg(target_pointer_width = "64")]
+        let pointer_width: usize = 64;
+        let max_kmer = pointer_width/2;
+        // check valid kmer
+        if kmer_size < 2 {
+            panic!("The size of the kmer cannot be less than 2");
+        } else if kmer_size > max_kmer {
+            panic!("The size of the kmer cannot be greater than {} which is limited to half of pointer width({} bits) of target system", max_kmer, pointer_width);
+        } else {
+            self.kmer_size = Some(kmer_size);
+            self
+        }
+    }
+    /// Disable kmer lookup table
+    #[inline]
+    pub fn disable_kmer_lookup_table(mut self) -> Self {
+        self.kmer_size = None;
+        self
+    }
+    /// Set sampling ratio of suffix array  
+    /// Allowed sampling ratio: positive integer(Z-+)
+    #[inline]
+    pub fn set_suffix_array_sampling_ratio(mut self, sa_sampling_ratio: u64) -> Self {
+        // check valid sa_sampling_ratio
+        if sa_sampling_ratio < 1 {
+            panic!("The sampling ratio allows only positive integer");
+        } else {
+            self.sa_sampling_ratio = sa_sampling_ratio;
+            self
+        }
+    }
+}
 
-struct FmIndex {
+/// Fm-index data structure
+pub struct FmIndex {
     count_array: CountArray,
     sampling_ratio: u64,
     text_len: u64,
@@ -271,7 +368,11 @@ type SuffixArray = Vec<u64>;
 
 #[inline]
 fn compress_suffix_array(suffix_array: Vec<i64>, sampling_ratio: u64) -> SuffixArray {
-    suffix_array.into_iter().step_by(sampling_ratio as usize).map(|x| x as u64).collect()
+    if sampling_ratio == 1 {
+        suffix_array.into_iter().map(|x| x as u64).collect()
+    } else {
+        suffix_array.into_iter().step_by(sampling_ratio as usize).map(|x| x as u64).collect()
+    }
 }
 
 #[cfg(test)]
@@ -336,5 +437,27 @@ mod tests {
             locations_ans.sort();
             assert_eq!(locations_res, locations_ans);
         }
+    }
+
+    #[test]
+    fn test_fmindex_with_config() {
+        let text = b"CTCCGTACACCTGTTTCGTATCGGA".to_vec();
+        let config = Config::new()
+            .set_kmer_lookup_table(8)
+            .set_suffix_array_sampling_ratio(4);
+        let fm_index = FmIndex::new(&config, text);
+        let pattern = b"TA".to_vec();
+
+        // count
+        let count = fm_index.count(&pattern);
+        assert_eq!(count, 2);
+
+        // locate without k-mer lookup table
+        let locations = fm_index.locate(&pattern);
+        assert_eq!(locations, vec![5,18]);
+
+        // locate with k-mer lookup table
+        let locations = fm_index.locate_with_klt(&pattern);
+        assert_eq!(locations, vec![5,18]);
     }
 }

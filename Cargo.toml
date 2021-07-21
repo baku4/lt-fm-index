@@ -9,7 +9,6 @@ repository = "https://github.com/baku4/lt-fm-index/"
 license = "MIT License"
 keywords = ["fm-index", "bwt", "pattern_matching", "bio"]
 categories = ["Science", "Algorithms"]
-build = "build.rs"
 
 [dependencies]
 libdivsufsort-rs = "0.1.0"

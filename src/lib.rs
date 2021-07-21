@@ -1,23 +1,20 @@
-mod bwt_occ;
 mod bwt;
 
 use bwt::Bwt;
 
 struct Config {
     // burrow wheeler transformed string (BWT)
-    // bwt_segment_size: BwtSegSize,
+    // bwt_segment_size: usize,
     // kmer lookup table
     lookup_kmer: Option<usize>,
     // occurrence array (OA)
-    // base lookup table
-    lookup_base: usize,
     // suffix array (SA)
     sa_sampling_ratio: u64,
 }
 
 struct FmIndex {
     bwt: Bwt,
-    ca: CountArray,
+    count_array: CountArray,
     suffix_array: SuffixArray,
     sampling_ratio: u64,
 }
@@ -40,7 +37,7 @@ impl FmIndex {
         // (1) LF mapping
         while pos_range.0 < pos_range.1 && idx > 0 {
             let c = pattern[idx-1];
-            pos_range = self.bwt.lf_map_with_range(pos_range, c);
+            pos_range = self.bwt.lf_map_with_range(pos_range, c, &self.count_array);
             idx -= 1;
         }
         // (2) Locate 
@@ -50,7 +47,7 @@ impl FmIndex {
             let mut position = pos_range.0 + i;
             let mut offset: u64 = 0;
             while position % self.sampling_ratio != 0 {
-                position = self.bwt.lf_map_with_pos(position);
+                position = self.bwt.lf_map_with_pos(position, &self.count_array);
                 offset += 1;
             }
             let location = self.suffix_array[(position / self.sampling_ratio) as usize] + offset;
@@ -61,7 +58,7 @@ impl FmIndex {
     #[inline]
     fn pos_range_init(&self, c: u8) -> (u64, u64) {
         let idx = nc_to_idx(&c);
-        (self.ca[idx], self.ca[idx+1])
+        (self.count_array[idx], self.count_array[idx+1])
     }
 }
 
@@ -72,6 +69,11 @@ const A_UTF8: u8 = 65;
 const C_UTF8: u8 = 67;
 const G_UTF8: u8 = 71;
 const T_UTF8: u8 = 84;
+
+const A_U8_IDX: u8 = 0b00;
+const C_U8_IDX: u8 = 0b01;
+const G_U8_IDX: u8 = 0b10;
+const T_U8_IDX: u8 = 0b11;
 
 #[inline]
 fn nc_to_idx(c: &u8) -> usize {

@@ -460,4 +460,14 @@ mod tests {
         let locations = fm_index.locate_with_klt(&pattern);
         assert_eq!(locations, vec![5,18]);
     }
+    
+    #[test]
+    fn mem_size_check() {
+        println!("size of FmIndex: {}", std::mem::size_of::<FmIndex>());
+        println!("size of CountArray: {}", std::mem::size_of::<CountArray>());
+        println!("size of SuffixArray: {}", std::mem::size_of::<SuffixArray>());
+        println!("size of KmerLookupTable: {}", std::mem::size_of::<KmerLookupTable>());
+        println!("size of klt option: {}", std::mem::size_of::<Option<KmerLookupTable>>());
+        println!("size of Bwt: {}", std::mem::size_of::<Bwt>());
+    }
 }

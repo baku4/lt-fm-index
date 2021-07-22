@@ -51,6 +51,7 @@
 //! - Yuta Mori. [`libdivsufsort`](https://github.com/y-256/libdivsufsort)
 
 mod bwt;
+// TODO: IO module
 
 use bwt::Bwt;
 use libdivsufsort_rs::{divsufsort64, bw_transform64};
@@ -125,6 +126,7 @@ impl FmIndex {
         let text_len = text.len() as u64;
         // suffix_array
         let suffix_array = divsufsort64(&text).unwrap();
+        // TODO: To save mem space, not use cloned text
         // bwt & primary index
         let (bwt_string, pidx) = {
             let mut bwt = text.clone();

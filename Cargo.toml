@@ -15,3 +15,8 @@ libdivsufsort-rs = "0.1.0"
 
 [dev-dependencies]
 fm-index = "0.1"
+criterion = "0.3.4"
+
+[[bench]]
+name = "benchmark"
+harness = false

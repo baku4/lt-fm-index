@@ -16,7 +16,7 @@
 //! - There are two main functions.
 //!     - count: Count the number of patterns in the text
 //!     - locate: Locate pattern index in text (KLT can be specified to enable or disable)
-//! ## Future work
+//! ## Future works
 //! - IO
 //! - Input text can be `slice`
 //! ## Example
@@ -119,6 +119,7 @@ pub struct FmIndex {
 }
 
 impl FmIndex {
+    /// Create new fm-index with configuration
     #[inline]
     pub fn new(config: &Config, text: Vec<u8>) -> Self {
         let text_len = text.len() as u64;
@@ -206,11 +207,13 @@ impl FmIndex {
             bwt: bwt,
         }
     }
+    /// Count the number of pattern in the text
     #[inline]
     pub fn count(&self, pattern: &[u8]) -> u64 {
         let pos_range = self.lf_map(pattern);
         pos_range.1 - pos_range.0
     }
+    /// Locate index of the pattern in the text (not use k-mer lookup table)
     #[inline]
     pub fn locate(&self, pattern: &[u8]) -> Vec<u64> {
         let pos_range = self.lf_map(pattern);
@@ -245,6 +248,7 @@ impl FmIndex {
         let idx = nc_to_idx(&c);
         (self.count_array[idx], self.count_array[idx+1])
     }
+    /// Locate index of the pattern in the text with k-mer lookup table
     #[inline]
     pub fn locate_with_klt(&self, pattern: &[u8]) -> Vec<u64> {
         let (kmer_size, klt) = self.kmer_lookup_table.as_ref().unwrap();

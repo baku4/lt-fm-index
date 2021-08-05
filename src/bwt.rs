@@ -117,7 +117,14 @@ impl Bwt {
     #[inline]
     pub fn new(bwt_string: Vec<u8>, primary_index: i64) -> Self {
         let chunk_size = bwt_string.len()/64;
-        let last_offset = 64-bwt_string.len()%64;
+        let last_offset = {
+            let rem = bwt_string.len()%64;
+            if rem == 0 {
+                rem
+            } else {
+                64-rem
+            }
+        };
         let mut blocks: Vec<BwtBlock> = Vec::with_capacity(chunk_size);
         // push bwt block
         let mut rank_checkpoint: [u64; 4] = [0; 4];
@@ -126,28 +133,22 @@ impl Bwt {
             let mut first_bwt_vector: u64 = 0;
             let mut second_bwt_vector: u64 = 0;
             for c in string_chunk {
+                first_bwt_vector <<= 1;
+                second_bwt_vector <<= 1;
                 match *c {
                     A_UTF8 => {
                         rank_checkpoint[0] += 1;
-                        first_bwt_vector <<= 1;
-                        second_bwt_vector <<= 1;
                     },
                     C_UTF8 => {
                         rank_checkpoint[1] += 1;
-                        first_bwt_vector <<= 1;
-                        second_bwt_vector <<= 1;
                         second_bwt_vector += 1;
                     },
                     G_UTF8 => {
                         rank_checkpoint[2] += 1;
-                        first_bwt_vector <<= 1;
-                        second_bwt_vector <<= 1;
                         first_bwt_vector += 1;
                     },
                     _ => {
                         rank_checkpoint[3] += 1;
-                        first_bwt_vector <<= 1;
-                        second_bwt_vector <<= 1;
                         first_bwt_vector += 1;
                         second_bwt_vector += 1;
                     }

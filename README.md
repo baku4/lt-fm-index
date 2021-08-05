@@ -42,7 +42,8 @@ assert_eq!(locations, vec![5,18]);
 let locations = fm_index.locate_with_klt(&pattern);
 assert_eq!(locations, vec![5,18]);
 ```
-## Crate docs
+## Docs
+[`lt-fm-index`](https://docs.rs/lt-fm-index/)
 ## Reference
 - Ferragina, P., et al. (2004). An Alphabet-Friendly FM-Index, Springer Berlin Heidelberg: 150-160.
 - Anderson, T. and T. J. Wheeler (2021). An optimized FM-index library for nucleotide and amino acid search, Cold Spring Harbor Laboratory.

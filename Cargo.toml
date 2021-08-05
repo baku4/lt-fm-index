@@ -11,7 +11,7 @@ keywords = ["fm-index", "bwt", "pattern_matching", "bio"]
 categories = ["science", "algorithms"]
 
 [dependencies]
-libdivsufsort-rs = "0.1.0"
+libdivsufsort-rs = "0.1.1"
 
 [dev-dependencies]
 fm-index = "0.1"

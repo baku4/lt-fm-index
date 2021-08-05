@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 //! # LT FM-Index
 //!
 //! `lt-fm-index` is library for locate and count nucleotide sequence (ATGC) string.  
@@ -384,7 +385,6 @@ fn compress_suffix_array(suffix_array: Vec<i64>, sampling_ratio: u64) -> SuffixA
 #[cfg(test)]
 mod tests {
     use super::*;
-    use libdivsufsort_rs::*;
 
     // For cross check
     use fm_index::converter::RangeConverter;

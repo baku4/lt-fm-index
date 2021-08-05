@@ -18,6 +18,7 @@ const BIT_COUNT_TABLE: [u64; 256] = [
     4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8,
 ];
 
+#[allow(unused_imports)]
 use super::{A_UTF8, C_UTF8, G_UTF8, T_UTF8, A_U8_IDX, C_U8_IDX, G_U8_IDX, T_U8_IDX};
 use super::CountArray;
 use super::nc_to_idx;

@@ -52,12 +52,15 @@
 //! - Yuta Mori. [`libdivsufsort`](https://github.com/y-256/libdivsufsort)
 
 mod bwt;
-// TODO: IO module
+mod io;
 
 use bwt::Bwt;
 use libdivsufsort_rs::{divsufsort64, bw_transform64};
+use serde::{Serialize, Deserialize};
 
-/// Configurations for Fm-index
+pub use io::*;
+
+/// Configurations for [FmIndex]
 pub struct Config {
     /// kmer lookup table
     kmer_size: Option<usize>,
@@ -110,7 +113,8 @@ impl Config {
     }
 }
 
-/// Fm-index data structure
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+/// Lt-Fm-index data structure
 pub struct FmIndex {
     count_array: CountArray,
     sampling_ratio: u64,

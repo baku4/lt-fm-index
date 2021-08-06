@@ -22,10 +22,11 @@ const BIT_COUNT_TABLE: [u64; 256] = [
 use super::{A_UTF8, C_UTF8, G_UTF8, T_UTF8, A_U8_IDX, C_U8_IDX, G_U8_IDX, T_U8_IDX};
 use super::CountArray;
 use super::nc_to_idx;
+use serde::{Serialize, Deserialize};
 
 use std::u64;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 #[repr(align(64))]
 struct BwtBlock {
     rank_checkpoint: [u64; 4],
@@ -108,7 +109,8 @@ impl BwtBlock {
     }
 }
 
-#[derive(Debug)]
+
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct Bwt {
     primary_index: u64,
     blocks: Vec<BwtBlock>,

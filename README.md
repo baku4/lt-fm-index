@@ -12,13 +12,11 @@
 - Suffix array compression with sampling ratio.
 - BWT and suffix array are generated using `libdivsufsort` library.
 - BWT(burrow wheeler transformed) string and occurrence array (OA) are aligned in one block of 64 strings.
-- Aligned BWT&OA block encodes 1-byte character in 6-bits.
 - There are two main functions.
     - count: Count the number of patterns in the text
     - locate: Locate pattern index in text (KLT can be specified to enable or disable)
 ## Future work
-- IO
-- Input text can be `slice`
+- Support *SIMD* for more compressed BWT block.
 ## Example
 ```rust
 use lt_fm_index::{Config, FmIndex};

@@ -1,6 +1,6 @@
 [package]
 name = "lt-fm-index"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["baku4 <bahkhun@gmail.com>"]
 edition = "2018"
 description = "Fm-index using k-mer lookup table for exact pattern matching"
@@ -17,3 +17,8 @@ bincode = "1.3.3"
 
 [dev-dependencies]
 fm-index = "0.1"
+criterion = "0.3.5"
+
+[[bench]]
+name = "benchmark"
+harness = false

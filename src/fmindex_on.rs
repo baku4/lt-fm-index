@@ -1,145 +1,13 @@
-#![allow(dead_code)]
-//! # LT FM-Index
-//!
-//! `lt-fm-index` is library for locate and count nucleotide sequence (ATGC) string.  
-//! `lt-fm-index` using k-mer lookup table (As you noticed, LT stands for lookup table).
-//! ## Description
-//! - Fm-index is a data structure used for pattern matching.
-//! - K-mer lookup table(KLT) is precalculated count table containing all kmer occurrences.
-//! - With KLT, you can find the first k-mer pattern at once.
-//! - Currently, only the genetic sequence (ATGC) can be used.
-//! ## Features
-//! - Fm-index using KLT with specified k-mer size.
-//! - Suffix array compression with sampling ratio.
-//! - BWT and suffix array are generated using `libdivsufsort` library.
-//! - BWT(burrow wheeler transformed) string and occurrence array (OA) are aligned in one block of 64 strings.
-//! - Aligned BWT&OA block encodes 1-byte character in 6-bits.
-//! - There are two main functions.
-//!     - count: Count the number of patterns in the text
-//!     - locate: Locate pattern index in text (KLT can be specified to enable or disable)
-//! ## Future works
-//! - Input text can be `slice`
-//! ## Example
-//! ```rust
-//! use lt_fm_index::{Config, FmIndex};
-//!
-//! let text = b"CTCCGTACACCTGTTTCGTATCGGA".to_vec();
-//! let config = Config::new()
-//!     .set_kmer_lookup_table(8)
-//!     .set_suffix_array_sampling_ratio(4);
-//! let fm_index = FmIndex::new(&config, text);
-//! let pattern = b"TA".to_vec();
-//! 
-//! // count
-//! let count = fm_index.count(&pattern);
-//! assert_eq!(count, 2);
-//! 
-//! // locate without k-mer lookup table
-//! let locations = fm_index.locate(&pattern);
-//! assert_eq!(locations, vec![5,18]);
-//! 
-//! // locate with k-mer lookup table
-//! let locations = fm_index.locate_with_klt(&pattern);
-//! assert_eq!(locations, vec![5,18]);
-//! ```
-//! ## Repository
-//! [https://github.com/baku4/lt-fm-index](https://github.com/baku4/lt-fm-index)
-//! ## Reference
-//! - Ferragina, P., et al. (2004). An Alphabet-Friendly FM-Index, Springer Berlin Heidelberg: 150-160.
-//! - Anderson, T. and T. J. Wheeler (2021). An optimized FM-index library for nucleotide and amino acid search, Cold Spring Harbor Laboratory.
-//! - Wang, Y., X. Li, D. Zang, G. Tan and N. Sun (2018). Accelerating FM-index Search for Genomic Data Processing, ACM.
-//! - Yuta Mori. [`libdivsufsort`](https://github.com/y-256/libdivsufsort)
+mod bwt_on;
 
-mod bwt;
-mod io;
-
-pub mod fmindex_on;
-pub mod fmindex_nn;
-
-use bwt::Bwt;
+use super::{Config, FmIndexTrait};
+use bwt_on::Bwt;
 use libdivsufsort_rs::{divsufsort64, bw_transform64};
 use serde::{Serialize, Deserialize};
 
-pub use io::*;
-
-/// Configurations for [FmIndex]
-pub struct Config {
-    /// kmer lookup table
-    kmer_size: Option<usize>,
-    /// Sampling ratio of suffix array
-    sa_sampling_ratio: u64,
-    only_nucleotide: bool,
-}
-impl Config {
-    pub fn new() -> Self {
-        Self {
-            kmer_size: None,
-            sa_sampling_ratio: 2,
-            only_nucleotide: true,
-        }
-    }
-    /// Set kmer lookup table  
-    /// Allowed k-mer size: [2, (pointer width/2)]
-    #[inline]
-    pub fn set_kmer_lookup_table(mut self, kmer_size: usize) -> Self {
-        #[cfg(target_pointer_width = "32")]
-        let pointer_width: usize = 32;
-        #[cfg(target_pointer_width = "64")]
-        let pointer_width: usize = 64;
-        let max_kmer = pointer_width/2;
-        // check valid kmer
-        if kmer_size < 2 {
-            panic!("The size of the kmer cannot be less than 2");
-        } else if kmer_size > max_kmer {
-            panic!("The size of the kmer cannot be greater than {} which is limited to half of pointer width({} bits) of target system", max_kmer, pointer_width);
-        } else {
-            self.kmer_size = Some(kmer_size);
-            self
-        }
-    }
-    /// Disable kmer lookup table
-    #[inline]
-    pub fn disable_kmer_lookup_table(mut self) -> Self {
-        self.kmer_size = None;
-        self
-    }
-    /// Set sampling ratio of suffix array  
-    /// Allowed sampling ratio: positive integer(Z-+)
-    #[inline]
-    pub fn set_suffix_array_sampling_ratio(mut self, sa_sampling_ratio: u64) -> Self {
-        // check valid sa_sampling_ratio
-        if sa_sampling_ratio < 1 {
-            panic!("The sampling ratio allows only positive integer");
-        } else {
-            self.sa_sampling_ratio = sa_sampling_ratio;
-            self
-        }
-    }
-    /// Text contains only nucleotide sequences.
-    #[inline]
-    pub fn contain_only_nucleotide(mut self) -> Self {
-        self.only_nucleotide = true;
-        self
-    }
-    /// Text contains non-nucleotide sequences.
-    #[inline]
-    pub fn contain_non_nucleotide(mut self) -> Self {
-        self.only_nucleotide = false;
-        self
-    }
-}
-
-// TODO: naming
-trait FmIndexTrait {
-    fn count(&self, pattern: &[u8]) -> u64;
-    fn locate(&self, pattern: &[u8]) -> Vec<u64>;
-}
-
-
-// TODO: TO DEP
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 /// Lt-Fm-index data structure
-pub struct FmIndex {
+pub struct FmIndexOn {
     count_array: CountArray,
     sampling_ratio: u64,
     text_len: u64,
@@ -148,13 +16,62 @@ pub struct FmIndex {
     bwt: Bwt,
 }
 
-impl FmIndex {
+impl FmIndexTrait for FmIndexOn {
+    /// Count the number of pattern in the text
+    #[inline]
+    fn count(&self, pattern: &[u8]) -> u64 {
+        let pos_range = self.lf_map(pattern);
+        pos_range.1 - pos_range.0
+    }
+    /// Locate index of the pattern in the text (not use k-mer lookup table)
+    #[inline]
+    fn locate(&self, pattern: &[u8]) -> Vec<u64> {
+        let pos_range = self.lf_map(pattern);
+        let mut locations: Vec<u64> = Vec::with_capacity((pos_range.1 - pos_range.0) as usize);
+        for mut position in pos_range.0..pos_range.1 {
+            let mut offset: u64 = 0;
+            while position % self.sampling_ratio != 0 {
+                position = self.bwt.lf_map_with_pos(position, &self.count_array);
+                offset += 1;
+            }
+            let location = self.suffix_array[(position / self.sampling_ratio) as usize] + offset;
+            locations.push(location);
+        }
+        locations
+    }
+}
+
+impl FmIndexOn {
     /// Create new fm-index with configuration
     #[inline]
     pub fn new(config: &Config, mut text: Vec<u8>) -> Self {
         let text_len = text.len() as u64;
         // count array
-        let (count_array, kmer_lookup_table): (CountArray, Option<KmerLookupTable>) = match config.kmer_size {
+        let (count_array, kmer_lookup_table): (CountArray, Option<KmerLookupTable>) = Self::get_ca_and_klt(&config, &mut text);
+        // suffix_array
+        let suffix_array = divsufsort64(&text).unwrap();
+        // bwt & primary index
+        // original text is trasformed to bwt string
+        let pidx = {
+            let mut sa = suffix_array.clone();
+            let pidx = bw_transform64(&mut text, &mut sa).unwrap();
+            pidx
+        };
+        // compress suffix array
+        let suffix_array = compress_suffix_array(suffix_array, config.sa_sampling_ratio);
+        let bwt = Bwt::new(text, pidx);
+        Self {
+            count_array: count_array,
+            sampling_ratio: config.sa_sampling_ratio,
+            suffix_array: suffix_array,
+            text_len: text_len,
+            kmer_lookup_table: kmer_lookup_table,
+            bwt: bwt,
+        }
+    }
+    #[inline]
+    pub fn get_ca_and_klt(config: &Config, text: &mut Vec<u8>) -> (CountArray, Option<KmerLookupTable>) {
+        match config.kmer_size {
             Some(kmer) => {
                 let mut count_array: CountArray = [0; 5];
                 let mut kmer_lookup_table: Vec<u64> = vec![0; 4usize.pow(kmer as u32)];
@@ -174,7 +91,7 @@ impl FmIndex {
                 // dealing with last k-1 string
                 let mut table_index: usize = 0;
                 let pow = 4_usize.pow(kmer as u32 - 1);
-                for c in text[text_len as usize-kmer+1..].iter().rev() {
+                for c in text[text.len() as usize-kmer+1..].iter().rev() {
                     match *c {
                         A_UTF8 => {
                             table_index /= 4;
@@ -204,7 +121,7 @@ impl FmIndex {
             },
             None => {
                 let mut count_array: CountArray = [0; 5];
-                for c in &text {
+                for c in text {
                     match *c {
                         A_UTF8 => count_array[1] += 1,
                         C_UTF8 => count_array[2] += 1,
@@ -215,49 +132,7 @@ impl FmIndex {
                 accumulate_count_array(&mut count_array);
                 (count_array, None)
             }
-        };
-        // suffix_array
-        let suffix_array = divsufsort64(&text).unwrap();
-        // bwt & primary index
-        // original text is trasformed to bwt string
-        let pidx = {
-            let mut sa = suffix_array.clone();
-            let pidx = bw_transform64(&mut text, &mut sa).unwrap();
-            pidx
-        };
-        // compress suffix array
-        let suffix_array = compress_suffix_array(suffix_array, config.sa_sampling_ratio);
-        let bwt = Bwt::new(text, pidx);
-        Self {
-            count_array: count_array,
-            sampling_ratio: config.sa_sampling_ratio,
-            suffix_array: suffix_array,
-            text_len: text_len,
-            kmer_lookup_table: kmer_lookup_table,
-            bwt: bwt,
         }
-    }
-    /// Count the number of pattern in the text
-    #[inline]
-    pub fn count(&self, pattern: &[u8]) -> u64 {
-        let pos_range = self.lf_map(pattern);
-        pos_range.1 - pos_range.0
-    }
-    /// Locate index of the pattern in the text (not use k-mer lookup table)
-    #[inline]
-    pub fn locate(&self, pattern: &[u8]) -> Vec<u64> {
-        let pos_range = self.lf_map(pattern);
-        let mut locations: Vec<u64> = Vec::with_capacity((pos_range.1 - pos_range.0) as usize);
-        for mut position in pos_range.0..pos_range.1 {
-            let mut offset: u64 = 0;
-            while position % self.sampling_ratio != 0 {
-                position = self.bwt.lf_map_with_pos(position, &self.count_array);
-                offset += 1;
-            }
-            let location = self.suffix_array[(position / self.sampling_ratio) as usize] + offset;
-            locations.push(location);
-        }
-        locations
     }
     #[inline]
     fn lf_map(&self, pattern: &[u8]) -> (u64, u64) {
@@ -439,7 +314,7 @@ mod tests {
         let text = "CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec();
         let config = Config::new()
             .set_suffix_array_sampling_ratio(4);
-        let fm_index = FmIndex::new(&config, text.clone());
+        let fm_index = FmIndexOn::new(&config, text.clone());
         // test
         for pattern in vec!["TA", "T", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
             let pattern = pattern.as_bytes().to_vec();
@@ -457,7 +332,7 @@ mod tests {
         let config = Config::new()
             .set_suffix_array_sampling_ratio(4)
             .set_kmer_lookup_table(7);
-        let fm_index = FmIndex::new(&config, text.clone());
+        let fm_index = FmIndexOn::new(&config, text.clone());
         // test
         for pattern in vec!["TA", "T", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
             let pattern = pattern.as_bytes().to_vec();
@@ -475,7 +350,7 @@ mod tests {
         let config = Config::new()
             .set_kmer_lookup_table(8)
             .set_suffix_array_sampling_ratio(4);
-        let fm_index = FmIndex::new(&config, text);
+        let fm_index = FmIndexOn::new(&config, text);
         let pattern = b"TA".to_vec();
 
         // count
@@ -489,15 +364,5 @@ mod tests {
         // locate with k-mer lookup table
         let locations = fm_index.locate_with_klt(&pattern);
         assert_eq!(locations, vec![5,18]);
-    }
-    
-    #[test]
-    fn mem_size_check() {
-        println!("size of FmIndex: {}", std::mem::size_of::<FmIndex>());
-        println!("size of CountArray: {}", std::mem::size_of::<CountArray>());
-        println!("size of SuffixArray: {}", std::mem::size_of::<SuffixArray>());
-        println!("size of KmerLookupTable: {}", std::mem::size_of::<KmerLookupTable>());
-        println!("size of klt option: {}", std::mem::size_of::<Option<KmerLookupTable>>());
-        println!("size of Bwt: {}", std::mem::size_of::<Bwt>());
     }
 }

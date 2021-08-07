@@ -58,10 +58,9 @@ mod tests {
     
     fn get_fmindex_toy() -> FmIndex {
         let text = "CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec();
-        let config = Config {
-            sa_sampling_ratio: 4,
-            kmer_size: Some(7),
-        };
+        let config = Config::new()
+            .set_kmer_lookup_table(7)
+            .set_suffix_array_sampling_ratio(4);
         let fm_index = FmIndex::new(&config, text.clone());
         fm_index
     }

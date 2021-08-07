@@ -39,6 +39,52 @@ impl FmIndexTrait for FmIndexOn {
         }
         locations
     }
+    /// Locate index of the pattern in the text with k-mer lookup table
+    #[inline]
+    fn locate_with_klt(&self, pattern: &[u8]) -> Vec<u64> {
+        let (kmer_size, klt) = self.kmer_lookup_table.as_ref().unwrap();
+        let mut idx = pattern.len();
+        let pattern_len = idx.clone() as u64;
+        let mut pos_range: (u64, u64) = {
+            if *kmer_size >= idx {
+                let (start_klt_idx, end_kit_idx) = kmer_table_index_from_smaller_string(pattern, kmer_size);
+                idx -= idx;
+                if start_klt_idx == 0 {
+                    (0, klt[end_kit_idx])
+                } else {
+                    (klt[start_klt_idx-1], klt[end_kit_idx])
+                }
+            } else {
+                let kmer_window = &pattern[idx-kmer_size..];
+                let klt_idx = kmer_table_index(kmer_window);
+                idx -= kmer_size;
+                if klt_idx == 0 {
+                    (0, klt[klt_idx])
+                } else {
+                    (klt[klt_idx-1], klt[klt_idx])
+                }
+            }
+        };
+        while pos_range.0 < pos_range.1 && idx > 0 {
+            let c = pattern[idx-1];
+            pos_range = self.bwt.lf_map_with_range(pos_range, c, &self.count_array);
+            idx -= 1;
+        }
+        let mut locations: Vec<u64> = Vec::with_capacity((pos_range.1 - pos_range.0) as usize);
+        for mut position in pos_range.0..pos_range.1 {
+            let mut offset: u64 = 0;
+            while position % self.sampling_ratio != 0 {
+                position = self.bwt.lf_map_with_pos(position, &self.count_array);
+                offset += 1;
+            }
+            let location = self.suffix_array[(position / self.sampling_ratio) as usize] + offset;
+            // check if valid location
+            if location + pattern_len <= self.text_len {
+                locations.push(location);
+            }
+        }
+        locations
+    }
 }
 
 impl FmIndexOn {
@@ -153,52 +199,6 @@ impl FmIndexOn {
         let idx = nc_to_idx(&c);
         (self.count_array[idx], self.count_array[idx+1])
     }
-    /// Locate index of the pattern in the text with k-mer lookup table
-    #[inline]
-    pub fn locate_with_klt(&self, pattern: &[u8]) -> Vec<u64> {
-        let (kmer_size, klt) = self.kmer_lookup_table.as_ref().unwrap();
-        let mut idx = pattern.len();
-        let pattern_len = idx.clone() as u64;
-        let mut pos_range: (u64, u64) = {
-            if *kmer_size >= idx {
-                let (start_klt_idx, end_kit_idx) = kmer_table_index_from_smaller_string(pattern, kmer_size);
-                idx -= idx;
-                if start_klt_idx == 0 {
-                    (0, klt[end_kit_idx])
-                } else {
-                    (klt[start_klt_idx-1], klt[end_kit_idx])
-                }
-            } else {
-                let kmer_window = &pattern[idx-kmer_size..];
-                let klt_idx = kmer_table_index(kmer_window);
-                idx -= kmer_size;
-                if klt_idx == 0 {
-                    (0, klt[klt_idx])
-                } else {
-                    (klt[klt_idx-1], klt[klt_idx])
-                }
-            }
-        };
-        while pos_range.0 < pos_range.1 && idx > 0 {
-            let c = pattern[idx-1];
-            pos_range = self.bwt.lf_map_with_range(pos_range, c, &self.count_array);
-            idx -= 1;
-        }
-        let mut locations: Vec<u64> = Vec::with_capacity((pos_range.1 - pos_range.0) as usize);
-        for mut position in pos_range.0..pos_range.1 {
-            let mut offset: u64 = 0;
-            while position % self.sampling_ratio != 0 {
-                position = self.bwt.lf_map_with_pos(position, &self.count_array);
-                offset += 1;
-            }
-            let location = self.suffix_array[(position / self.sampling_ratio) as usize] + offset;
-            // check if valid location
-            if location + pattern_len <= self.text_len {
-                locations.push(location);
-            }
-        }
-        locations
-    }
 }
 
 // using 5 space for lessconditional statements
@@ -281,88 +281,5 @@ fn compress_suffix_array(suffix_array: Vec<i64>, sampling_ratio: u64) -> SuffixA
         suffix_array.into_iter().map(|x| x as u64).collect()
     } else {
         suffix_array.into_iter().step_by(sampling_ratio as usize).map(|x| x as u64).collect()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    // For cross check
-    use fm_index::converter::RangeConverter;
-    use fm_index::suffix_array::SuffixOrderSampler;
-    use fm_index::{BackwardSearchIndex, FMIndex};
-
-    fn get_locations_using_other_crate(text: &Vec<u8>, pattern: &Vec<u8>) -> Vec<u64> {
-        let converter = RangeConverter::new(b' ', b'~');
-        let sampler = SuffixOrderSampler::new().level(2);
-        let index = FMIndex::new(text.clone(), converter, sampler);
-        let search = index.search_backward(pattern);
-        search.locate()
-    }
-
-    #[test]
-    fn test_compress_suffix_array() {
-        let raw_suffix_array: Vec<i64> = (0..30).collect();
-        let sampling_ratio: u64 = 5;
-        let sa = compress_suffix_array(raw_suffix_array, sampling_ratio);
-        assert_eq!(sa, vec![0, 5, 10, 15, 20, 25]);
-    }
-
-    #[test]
-    fn test_fm_index_locate() {
-        let text = "CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec();
-        let config = Config::new()
-            .set_suffix_array_sampling_ratio(4);
-        let fm_index = FmIndexOn::new(&config, text.clone());
-        // test
-        for pattern in vec!["TA", "T", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
-            let pattern = pattern.as_bytes().to_vec();
-            let mut locations_res = fm_index.locate(&pattern);
-            locations_res.sort();
-            let mut locations_ans = get_locations_using_other_crate(&text, &pattern.to_vec());
-            locations_ans.sort();
-            assert_eq!(locations_res, locations_ans);
-        }
-    }
-
-    #[test]
-    fn test_fm_index_locate_with_klt() {
-        let text = "CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec();
-        let config = Config::new()
-            .set_suffix_array_sampling_ratio(4)
-            .set_kmer_lookup_table(7);
-        let fm_index = FmIndexOn::new(&config, text.clone());
-        // test
-        for pattern in vec!["TA", "T", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
-            let pattern = pattern.as_bytes().to_vec();
-            let mut locations_res = fm_index.locate_with_klt(&pattern);
-            locations_res.sort();
-            let mut locations_ans = get_locations_using_other_crate(&text, &pattern.to_vec());
-            locations_ans.sort();
-            assert_eq!(locations_res, locations_ans);
-        }
-    }
-
-    #[test]
-    fn test_fmindex_with_config() {
-        let text = b"CTCCGTACACCTGTTTCGTATCGGA".to_vec();
-        let config = Config::new()
-            .set_kmer_lookup_table(8)
-            .set_suffix_array_sampling_ratio(4);
-        let fm_index = FmIndexOn::new(&config, text);
-        let pattern = b"TA".to_vec();
-
-        // count
-        let count = fm_index.count(&pattern);
-        assert_eq!(count, 2);
-
-        // locate without k-mer lookup table
-        let locations = fm_index.locate(&pattern);
-        assert_eq!(locations, vec![5,18]);
-
-        // locate with k-mer lookup table
-        let locations = fm_index.locate_with_klt(&pattern);
-        assert_eq!(locations, vec![5,18]);
     }
 }

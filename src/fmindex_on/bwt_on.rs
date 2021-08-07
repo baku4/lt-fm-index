@@ -119,12 +119,13 @@ pub struct Bwt {
 impl Bwt {
     #[inline]
     pub fn new(bwt_string: Vec<u8>, primary_index: i64) -> Self {
-        let chunk_size = bwt_string.len()/64;
+        let mut chunk_size = bwt_string.len()/64;
         let last_offset = {
             let rem = bwt_string.len()%64;
             if rem == 0 {
                 rem
             } else {
+                chunk_size += 1;
                 64-rem
             }
         };

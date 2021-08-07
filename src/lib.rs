@@ -133,6 +133,7 @@ impl Config {
 trait FmIndexTrait {
     fn count(&self, pattern: &[u8]) -> u64;
     fn locate(&self, pattern: &[u8]) -> Vec<u64>;
+    fn locate_with_klt(&self, pattern: &[u8]) -> Vec<u64>;
 }
 
 
@@ -435,7 +436,7 @@ mod tests {
     }
 
     #[test]
-    fn test_fm_index_locate() {
+    fn test_fmindex_locate() {
         let text = "CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec();
         let config = Config::new()
             .set_suffix_array_sampling_ratio(4);
@@ -452,7 +453,7 @@ mod tests {
     }
 
     #[test]
-    fn test_fm_index_locate_with_klt() {
+    fn test_fmindex_locate_with_klt() {
         let text = "CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec();
         let config = Config::new()
             .set_suffix_array_sampling_ratio(4)
@@ -499,5 +500,64 @@ mod tests {
         println!("size of KmerLookupTable: {}", std::mem::size_of::<KmerLookupTable>());
         println!("size of klt option: {}", std::mem::size_of::<Option<KmerLookupTable>>());
         println!("size of Bwt: {}", std::mem::size_of::<Bwt>());
+    }
+
+    // for NN
+
+    #[test]
+    fn test_fmindex_nn_locate() {
+        let text = "CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec();
+        let config = Config::new()
+            .set_suffix_array_sampling_ratio(4);
+        let fm_index = fmindex_nn::FmIndexNn::new(&config, text.clone());
+        // test
+        for pattern in vec!["TA", "T", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
+            let pattern = pattern.as_bytes().to_vec();
+            let mut locations_res = fm_index.locate(&pattern);
+            locations_res.sort();
+            let mut locations_ans = get_locations_using_other_crate(&text, &pattern.to_vec());
+            locations_ans.sort();
+            assert_eq!(locations_res, locations_ans);
+        }
+    }
+
+    #[test]
+    fn test_fmindex_nn_locate_with_klt() {
+        let text = "CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec();
+        let config = Config::new()
+            .set_suffix_array_sampling_ratio(4)
+            .set_kmer_lookup_table(7);
+        let fm_index = fmindex_nn::FmIndexNn::new(&config, text.clone());
+        // test
+        for pattern in vec!["TA", "T", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
+            let pattern = pattern.as_bytes().to_vec();
+            let mut locations_res = fm_index.locate_with_klt(&pattern);
+            locations_res.sort();
+            let mut locations_ans = get_locations_using_other_crate(&text, &pattern.to_vec());
+            locations_ans.sort();
+            assert_eq!(locations_res, locations_ans);
+        }
+    }
+
+    #[test]
+    fn test_fmindex_nn_with_config() {
+        let text = b"CTCCGTACACCTGTTTCGTATCGGA".to_vec();
+        let config = Config::new()
+            .set_kmer_lookup_table(8)
+            .set_suffix_array_sampling_ratio(4);
+        let fm_index = fmindex_nn::FmIndexNn::new(&config, text);
+        let pattern = b"TA".to_vec();
+
+        // count
+        let count = fm_index.count(&pattern);
+        assert_eq!(count, 2);
+
+        // locate without k-mer lookup table
+        let locations = fm_index.locate(&pattern);
+        assert_eq!(locations, vec![5,18]);
+
+        // locate with k-mer lookup table
+        let locations = fm_index.locate_with_klt(&pattern);
+        assert_eq!(locations, vec![5,18]);
     }
 }

@@ -16,7 +16,8 @@
     - count: Count the number of patterns in the text
     - locate: Locate pattern index in text (KLT can be specified to enable or disable)
 ## Future work
-- Support *SIMD* for more compressed BWT block.
+- Support *SIMD* for BWT block compression.
+- Length of texts can be `32bit` integer
 ## Example
 ```rust
 use lt_fm_index::{Config, FmIndex};

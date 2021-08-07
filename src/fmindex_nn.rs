@@ -1,7 +1,7 @@
 mod bwt_nn;
 
 use super::{Config, FmIndexTrait};
-use bwt_nn::Bwt;
+use bwt_nn::BwtNn;
 use libdivsufsort_rs::{divsufsort64, bw_transform64};
 use serde::{Serialize, Deserialize};
 
@@ -13,7 +13,7 @@ pub struct FmIndexNn {
     text_len: u64,
     suffix_array: SuffixArray,
     kmer_lookup_table: Option<KmerLookupTable>,
-    bwt: Bwt,
+    bwt: BwtNn,
 }
 
 impl FmIndexTrait for FmIndexNn {
@@ -31,11 +31,57 @@ impl FmIndexTrait for FmIndexNn {
         for mut position in pos_range.0..pos_range.1 {
             let mut offset: u64 = 0;
             while position % self.sampling_ratio != 0 {
-                position = self.bwt.lf_map_with_pos(position, &self.count_array);
+                position = self.bwt.get_pre_pos(position, &self.count_array);
                 offset += 1;
             }
             let location = self.suffix_array[(position / self.sampling_ratio) as usize] + offset;
             locations.push(location);
+        }
+        locations
+    }
+    /// Locate index of the pattern in the text with k-mer lookup table
+    #[inline]
+    fn locate_with_klt(&self, pattern: &[u8]) -> Vec<u64> {
+        let (kmer_size, klt) = self.kmer_lookup_table.as_ref().unwrap();
+        let mut idx = pattern.len();
+        let pattern_len = idx.clone() as u64;
+        let mut pos_range: (u64, u64) = {
+            if *kmer_size >= idx {
+                let (start_klt_idx, end_kit_idx) = kmer_table_index_from_smaller_string(pattern, kmer_size);
+                idx -= idx;
+                if start_klt_idx == 0 {
+                    (0, klt[end_kit_idx])
+                } else {
+                    (klt[start_klt_idx-1], klt[end_kit_idx])
+                }
+            } else {
+                let kmer_window = &pattern[idx-kmer_size..];
+                let klt_idx = kmer_table_index_dep(kmer_window);
+                idx -= kmer_size;
+                if klt_idx == 0 {
+                    (0, klt[klt_idx])
+                } else {
+                    (klt[klt_idx-1], klt[klt_idx])
+                }
+            }
+        };
+        while pos_range.0 < pos_range.1 && idx > 0 {
+            let c = pattern[idx-1];
+            pos_range = self.bwt.next_pos_range_from_range(pos_range, c, &self.count_array);
+            idx -= 1;
+        }
+        let mut locations: Vec<u64> = Vec::with_capacity((pos_range.1 - pos_range.0) as usize);
+        for mut position in pos_range.0..pos_range.1 {
+            let mut offset: u64 = 0;
+            while position % self.sampling_ratio != 0 {
+                position = self.bwt.get_pre_pos(position, &self.count_array);
+                offset += 1;
+            }
+            let location = self.suffix_array[(position / self.sampling_ratio) as usize] + offset;
+            // check if valid location
+            if location + pattern_len <= self.text_len {
+                locations.push(location);
+            }
         }
         locations
     }
@@ -46,20 +92,20 @@ impl FmIndexNn {
     #[inline]
     pub fn new(config: &Config, mut text: Vec<u8>) -> Self {
         let text_len = text.len() as u64;
-        // count array
+        // (1) count array & klt
         let (count_array, kmer_lookup_table): (CountArray, Option<KmerLookupTable>) = Self::get_ca_and_klt(config, &mut text);
-        // suffix_array
+        // (2) suffix_array
         let suffix_array = divsufsort64(&text).unwrap();
-        // bwt & primary index
+        // (3) bwt & primary index
         // original text is trasformed to bwt string
         let pidx = {
             let mut sa = suffix_array.clone();
             let pidx = bw_transform64(&mut text, &mut sa).unwrap();
             pidx
         };
-        // compress suffix array
+        // (4) compression
         let suffix_array = compress_suffix_array(suffix_array, config.sa_sampling_ratio);
-        let bwt = Bwt::new(text, pidx);
+        let bwt = BwtNn::new(text, pidx);
         Self {
             count_array: count_array,
             sampling_ratio: config.sa_sampling_ratio,
@@ -176,13 +222,13 @@ impl FmIndexNn {
     #[inline]
     fn lf_map(&self, pattern: &[u8]) -> (u64, u64) {
         let mut idx = pattern.len();
-        let c = pattern[idx-1];
-        let mut pos_range = self.pos_range_init(c);
+        let chr = pattern[idx-1];
+        let mut pos_range = self.pos_range_init(chr);
         idx -= 1;
         // LF mapping
         while pos_range.0 < pos_range.1 && idx > 0 {
             let c = pattern[idx-1];
-            pos_range = self.bwt.lf_map_with_range(pos_range, c, &self.count_array);
+            pos_range = self.bwt.next_pos_range_from_range(pos_range, c, &self.count_array);
             idx -= 1;
         }
         pos_range
@@ -191,52 +237,6 @@ impl FmIndexNn {
     fn pos_range_init(&self, c: u8) -> (u64, u64) {
         let idx = nc_to_idx(&c);
         (self.count_array[idx], self.count_array[idx+1])
-    }
-    /// Locate index of the pattern in the text with k-mer lookup table
-    #[inline]
-    pub fn locate_with_klt(&self, pattern: &[u8]) -> Vec<u64> {
-        let (kmer_size, klt) = self.kmer_lookup_table.as_ref().unwrap();
-        let mut idx = pattern.len();
-        let pattern_len = idx.clone() as u64;
-        let mut pos_range: (u64, u64) = {
-            if *kmer_size >= idx {
-                let (start_klt_idx, end_kit_idx) = kmer_table_index_from_smaller_string(pattern, kmer_size);
-                idx -= idx;
-                if start_klt_idx == 0 {
-                    (0, klt[end_kit_idx])
-                } else {
-                    (klt[start_klt_idx-1], klt[end_kit_idx])
-                }
-            } else {
-                let kmer_window = &pattern[idx-kmer_size..];
-                let klt_idx = kmer_table_index(kmer_window);
-                idx -= kmer_size;
-                if klt_idx == 0 {
-                    (0, klt[klt_idx])
-                } else {
-                    (klt[klt_idx-1], klt[klt_idx])
-                }
-            }
-        };
-        while pos_range.0 < pos_range.1 && idx > 0 {
-            let c = pattern[idx-1];
-            pos_range = self.bwt.lf_map_with_range(pos_range, c, &self.count_array);
-            idx -= 1;
-        }
-        let mut locations: Vec<u64> = Vec::with_capacity((pos_range.1 - pos_range.0) as usize);
-        for mut position in pos_range.0..pos_range.1 {
-            let mut offset: u64 = 0;
-            while position % self.sampling_ratio != 0 {
-                position = self.bwt.lf_map_with_pos(position, &self.count_array);
-                offset += 1;
-            }
-            let location = self.suffix_array[(position / self.sampling_ratio) as usize] + offset;
-            // check if valid location
-            if location + pattern_len <= self.text_len {
-                locations.push(location);
-            }
-        }
-        locations
     }
 }
 
@@ -264,20 +264,60 @@ const G_U8_IDX: u8 = 0b010;
 const T_U8_IDX: u8 = 0b011;
 const X_U8_IDX: u8 = 0b100;
 
+const A_IDX: usize = 0b000;
+const C_IDX: usize = 0b001;
+const G_IDX: usize = 0b010;
+const T_IDX: usize = 0b011;
+const X_IDX: usize = 0b100;
+
 #[inline]
 fn nc_to_idx(c: &u8) -> usize {
     match *c {
-        A_UTF8 => 0,
-        C_UTF8 => 1,
-        G_UTF8 => 2,
-        _ => 3,
+        A_UTF8 => A_IDX,
+        C_UTF8 => C_IDX,
+        G_UTF8 => G_IDX,
+        T_UTF8 => T_IDX,
+        _ => X_IDX,
     }
 }
 
 type KmerLookupTable = (usize, Vec<u64>); // kmer_size, table vector
 
 #[inline]
-fn kmer_table_index(window: &[u8]) -> usize {
+fn kmer_table_index(pattern: &[u8], kmer: &usize) -> usize {
+    let mut klt_index: usize = 0;
+    let mut offset = kmer.clone();
+    for word in pattern.iter() {
+        match *word {
+            A_UTF8 => {
+                klt_index <<= 2;
+                offset -= 1;
+            },
+            C_UTF8 => {
+                klt_index <<= 2;
+                klt_index += 1;
+                offset -= 1;
+            },
+            G_UTF8 => {
+                klt_index <<= 2;
+                klt_index += 2;
+                offset -= 1;
+            },
+            T_UTF8 => {
+                klt_index <<= 2;
+                klt_index += 3;
+                offset -= 1;
+            },
+            _ => {
+                break;
+            },
+        }
+    };
+    klt_index <<= 2*offset;
+    klt_index
+}
+#[inline]
+fn kmer_table_index_dep(window: &[u8]) -> usize {
     window.iter().rev().enumerate().map(|(idx, c)| 
         4usize.pow(idx as u32) * match *c {
             A_UTF8 => 0,

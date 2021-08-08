@@ -27,8 +27,8 @@ const BIT_COUNT_TABLE: [u64; 256] = [
 #[allow(unused_imports)]
 use super::{
     A_UTF8, C_UTF8, G_UTF8, T_UTF8,
-    A_U8_IDX, C_U8_IDX, G_U8_IDX, T_U8_IDX, X_U8_IDX,
-    A_IDX, C_IDX, G_IDX, T_IDX, X_IDX,
+    A_U8_IDX, C_U8_IDX, G_U8_IDX, T_U8_IDX, N_U8_IDX,
+    A_IDX, C_IDX, G_IDX, T_IDX, N_IDX,
 };
 use super::CountArray;
 use super::nc_to_idx;
@@ -90,7 +90,7 @@ impl BwtBlock {
         if self.first_bwt_vector & pos_bit == 0 {
             if self.second_bwt_vector & pos_bit == 0 {
                 if self.third_bwt_vector & pos_bit == 0 {
-                    X_IDX
+                    N_IDX
                 } else {
                     A_IDX
                 }

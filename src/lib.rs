@@ -52,6 +52,7 @@
 
 mod bwt;
 mod io;
+mod utils;
 
 pub mod fmindex_on;
 pub mod fmindex_nn;

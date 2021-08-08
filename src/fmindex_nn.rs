@@ -86,8 +86,8 @@ impl FmIndexNn {
                     [1*i, 2*i, 3*i, 4*i]
                 };
                 // each char to index
-                text.iter_mut().rev().for_each(|word| {
-                    match *word {
+                text.iter_mut().rev().for_each(|chr| {
+                    match *chr {
                         A_UTF8 => {
                             count_array[1] += 1;
                             klt_index /= 5;
@@ -111,7 +111,7 @@ impl FmIndexNn {
                             count_array[5] += 1;
                             klt_index /= 5;
                             klt_index += index_for_each_char[3];
-                            *word = N_UTF8;
+                            *chr = N_UTF8;
                         },
                     }
                 });
@@ -295,67 +295,21 @@ impl FmIndexTrait for FmIndexNn {
         let pattern_len = idx.clone() as u64;
         // init pos range using KLT
         let mut pos_range: (u64, u64) = {
-            // get klt
-            let (klt_idx_first, klt_idx_last) = {
-                let mut offset = kmer_size.clone();
-                let mut klt_index: usize = 0;
-                let last_bit = 4_usize.pow((offset-1) as u32);
-                for chr in pattern[pattern.len()-offset..].iter().rev() {
-                    match *chr {
-                        A_UTF8 => {
-                            klt_index >>= 2;
-                            idx -= 1;
-                            offset -= 1;
-                        },
-                        C_UTF8 => {
-                            klt_index >>= 2;
-                            klt_index += last_bit;
-                            idx -= 1;
-                            offset -= 1;
-                        },
-                        G_UTF8 => {
-                            klt_index >>= 2;
-                            klt_index += last_bit*2;
-                            idx -= 1;
-                            offset -= 1;
-                        },
-                        T_UTF8 => {
-                            klt_index >>= 2;
-                            klt_index += last_bit*3;
-                            idx -= 1;
-                            offset -= 1;
-                        },
-                        _ => {
-                            break;
-                        },
-                    }
-                };
-                (klt_index, (klt_index+1) << 2*offset)
-            };
-            
-            
-            
-
-            if *kmer_size >= idx {
-                let (start_klt_idx, end_kit_idx) = kmer_table_index_from_smaller_string(pattern, kmer_size);
-                idx -= idx;
-                if start_klt_idx == 0 {
-                    (0, klt[end_kit_idx])
-                } else {
-                    (klt[start_klt_idx-1], klt[end_kit_idx])
-                }
+            // get index of klt
+            let klt_index = if *kmer_size > pattern.len() {
+                idx = 0;
+                klt_index_of_pattern(pattern, kmer_size)
             } else {
-                let kmer_window = &pattern[idx-kmer_size..];
-                let klt_idx = kmer_table_index_dep(kmer_window);
-                idx -= kmer_size;
-                if klt_idx == 0 {
-                    (0, klt[klt_idx])
-                } else {
-                    (klt[klt_idx-1], klt[klt_idx])
-                }
+                idx -= *kmer_size;
+                klt_index_of_pattern(&pattern[pattern.len()-*kmer_size..], kmer_size)
+            };
+            if klt_index == 0 {
+                (0, klt[klt_index])
+            } else {
+                (klt[klt_index-1], klt[klt_index])
             }
         };
-        while pos_range.0 < pos_range.1 && idx > 0 {
+        while idx > 0 && pos_range.0 < pos_range.1 {
             let c = pattern[idx-1];
             pos_range = self.bwt.next_pos_range_from_range(pos_range, c, &self.count_array);
             idx -= 1;
@@ -391,6 +345,36 @@ fn nc_to_idx(c: &u8) -> usize {
 
 /* KMER INDEX TABLE */
 #[inline]
+fn klt_index_of_pattern(pattern: &[u8], kmer_size: &usize) -> usize {
+    let mut klt_index: usize = 0;
+    let i = 5_usize.pow(*kmer_size as u32 - 1);
+    let index_for_each_char: [usize; 4] = [1*i, 2*i, 3*i, 4*i];
+    pattern.iter().rev().for_each(|chr| {
+        match *chr {
+            A_UTF8 => {
+                klt_index /= 5;
+            },
+            C_UTF8 => {
+                klt_index /= 5;
+                klt_index += index_for_each_char[0];
+            },
+            G_UTF8 => {
+                klt_index /= 5;
+                klt_index += index_for_each_char[1];
+            },
+            T_UTF8 => {
+                klt_index /= 5;
+                klt_index += index_for_each_char[2];
+            },
+            _ => {
+                klt_index /= 5;
+                klt_index += index_for_each_char[3];
+            },
+        }
+    });
+    klt_index
+}
+#[inline]
 fn kmer_table_index(pattern: &[u8], kmer: &usize) -> usize {
     let mut klt_index: usize = 0;
     let mut offset = kmer.clone();
@@ -422,43 +406,6 @@ fn kmer_table_index(pattern: &[u8], kmer: &usize) -> usize {
     };
     klt_index <<= 2*offset;
     klt_index
-}
-#[inline]
-fn kmer_table_index_dep(window: &[u8]) -> usize {
-    window.iter().rev().enumerate().map(|(idx, c)| 
-        4usize.pow(idx as u32) * match *c {
-            A_UTF8 => 0,
-            C_UTF8 => 1,
-            G_UTF8 => 2,
-            _ => 3, // do not check if there is only ACGT
-        }
-    ).sum()
-}
-#[inline]
-fn kmer_table_index_from_smaller_string(window: &[u8], kmer: &usize) -> (usize, usize) {
-    let mut table_index: usize = 0;
-    let pow = 4_usize.pow(*kmer as u32 - 1);
-    window.iter().rev().for_each(|c| {
-        match *c {
-            A_UTF8 => {
-                table_index /= 4;
-            },
-            C_UTF8 => {
-                table_index /= 4;
-                table_index += pow;
-            },
-            G_UTF8 => {
-                table_index /= 4;
-                table_index += 2*pow;
-            },
-            _ => {
-                table_index /= 4;
-                table_index += 3*pow;
-            },
-        }
-    });
-    let offset = 4_usize.pow((*kmer - window.len()) as u32);
-    (table_index, table_index + offset - 1)
 }
 
 #[cfg(test)]

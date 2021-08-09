@@ -19,7 +19,7 @@ const BIT_COUNT_TABLE: [u64; 256] = [
 ];
 
 // * VECTOR TABLE
-// | A | C | G | T | X |
+// | A | C | G | T | N |
 // | 0 | 0 | 1 | 1 | 0 | first
 // | 0 | 1 | 0 | 1 | 0 | second
 // | 1 | 0 | 1 | 0 | 0 | third

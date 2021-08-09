@@ -437,13 +437,13 @@ mod tests {
     }
 
     #[test]
-    fn test_fmindex_locate() {
+    fn test_fmindex_locate_without_klt() {
         let text = "CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec();
         let config = Config::new()
             .set_suffix_array_sampling_ratio(4);
         let fm_index = FmIndex::new(&config, text.clone());
         // test
-        for pattern in vec!["TA", "T", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
+        for pattern in vec!["A", "C", "G", "T", "TA", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
             let pattern = pattern.as_bytes().to_vec();
             let mut locations_res = fm_index.locate(&pattern);
             locations_res.sort();
@@ -461,7 +461,7 @@ mod tests {
             .set_kmer_lookup_table(7);
         let fm_index = FmIndex::new(&config, text.clone());
         // test
-        for pattern in vec!["TA", "T", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
+        for pattern in vec!["A", "C", "G", "T", "TA", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
             let pattern = pattern.as_bytes().to_vec();
             let mut locations_res = fm_index.locate_with_klt(&pattern);
             locations_res.sort();
@@ -506,13 +506,13 @@ mod tests {
     // for NN
 
     #[test]
-    fn test_fmindex_nn_locate() {
-        let text = "CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec();
+    fn test_fmindex_nn_locate_without_klt() {
+        let text = "CTCCGTACACCTGTTTCGTATCGGNNNAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCNNNCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACNNNCGGATGNNNCATAGATTTCCCCATTTTGCGTANNNNNNNNNNNNNNNNNNCCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec();
         let config = Config::new()
             .set_suffix_array_sampling_ratio(4);
         let fm_index = fmindex_nn::FmIndexNn::new(&config, text.clone());
         // test
-        for pattern in vec!["TA", "T", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
+        for pattern in vec!["A", "C", "G", "T", "TA", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
             let pattern = pattern.as_bytes().to_vec();
             let mut locations_res = fm_index.locate(&pattern);
             locations_res.sort();
@@ -524,19 +524,41 @@ mod tests {
 
     #[test]
     fn test_fmindex_nn_locate_with_klt() {
-        let text = "CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec();
+        let text = "CTCCGTACACCTGTTTCGTATCGGNNNAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCNNNCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACNNNCGGATGNNNCATAGATTTCCCCATTTTGCGTANNNNNNNNNNNNNNNNNNCCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec();
         let config = Config::new()
             .set_suffix_array_sampling_ratio(4)
             .set_kmer_lookup_table(7);
         let fm_index = fmindex_nn::FmIndexNn::new(&config, text.clone());
         // test
-        for pattern in vec!["TA", "T", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
+        // for pattern in vec!["AAGTGAAATTTCCACATCGCCGGAAAC", "CCGCTGCCGGTGG", "AAACCAGTCATCCTGA"] {
+        for pattern in vec!["A", "C", "G", "T", "TCCG", "TA", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
             let pattern = pattern.as_bytes().to_vec();
             let mut locations_res = fm_index.locate_with_klt(&pattern);
             locations_res.sort();
             let mut locations_ans = get_locations_using_other_crate(&text, &pattern.to_vec());
             locations_ans.sort();
             assert_eq!(locations_res, locations_ans);
+        }
+    }
+
+    #[test]
+    fn test_fmindex_nn_locate_w_vs_wo_klt() {
+        let text = "CTCCGTACACCTGTTTCGTATCGGNNNAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCNNNCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACNNNCGGATGNNNCATAGATTTCCCCATTTTGCGTANNNNNNNNNNNNNNNNNNCCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec();
+        let config = Config::new()
+            .set_suffix_array_sampling_ratio(4)
+            .set_kmer_lookup_table(7);
+        let fm_index = fmindex_nn::FmIndexNn::new(&config, text.clone());
+        // test
+        for pattern in vec!["A", "C", "G", "T", "CCGT", "TCCG", "TA", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
+            let pattern = pattern.as_bytes().to_vec();
+            let mut locations_res_w = fm_index.locate_with_klt(&pattern);
+            locations_res_w.sort();
+            let mut locations_res_wo = fm_index.locate(&pattern);
+            locations_res_wo.sort();
+            println!("{:?}\n{:?}", locations_res_w,locations_res_wo)
+            // let mut locations_ans = get_locations_using_other_crate(&text, &pattern.to_vec());
+            // locations_ans.sort();
+            // assert_eq!(locations_res, locations_ans);
         }
     }
 
@@ -560,5 +582,34 @@ mod tests {
         // locate with k-mer lookup table
         let locations = fm_index.locate_with_klt(&pattern);
         assert_eq!(locations, vec![5,18]);
+    }
+
+    #[test]
+    fn test_new_nn_klt_is_right() {
+        let kmer: usize = 8;
+        let text = b"CTCCGTACACCTGTTTCGTATCGGA".to_vec();
+        let config = Config::new()
+            .set_kmer_lookup_table(kmer)
+            .set_suffix_array_sampling_ratio(4);
+
+        let klt_old = FmIndex::new(&config, text.clone()).kmer_lookup_table.unwrap().1;
+        let klt_new = fmindex_nn::FmIndexNn::new(&config, text.clone()).kmer_lookup_table.unwrap().1;
+        // truncate
+        let mut klt_new_truncated: Vec<u64> = Vec::new();
+        for (idx, v) in klt_new.iter().enumerate() {
+            let mut have_n = false;
+            for k in 0..kmer {
+                let pow = 5_usize.pow(k as u32);
+                let idx_at_position = idx/pow;
+                if idx_at_position % 5 == 4 {
+                    have_n = true;
+                }
+            }
+            if !have_n {
+                klt_new_truncated.push(*v)
+            }
+        }
+
+        assert_eq!(klt_new_truncated, klt_old);
     }
 }

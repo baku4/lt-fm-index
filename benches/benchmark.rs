@@ -4,6 +4,8 @@ use lt_fm_index::*;
 /*
 Bench Use Enum vs Trait vs Struct
 */
+
+/*
 enum FmiEnums {
     OnlyNc(FmIndexOn),
     NonNc(FmIndexNn),
@@ -18,7 +20,7 @@ impl FmiEnums {
         }
     }
 }
-impl FmIndex for FmiEnums {
+impl FmIndexTrait for FmiEnums {
     fn count(&self, pattern: &[u8]) -> u64 {
         match self {
             Self::OnlyNc(fm_index) => {
@@ -52,8 +54,8 @@ impl FmIndex for FmiEnums {
 }
 
 // Genrating bench
-fn fmi_generate_from_config(config: &FmIndexConfig, text: Vec<u8>) -> Box<dyn FmIndex> {
-    config.generate_fmindex(text)
+fn fmi_generate_from_config(config: &FmIndexConfig, text: Vec<u8>) -> Box<dyn FmIndexTrait> {
+    config.generate_fmindex_dep(text)
 }
 fn fmi_generate_from_enum(config: &FmIndexConfig, text: Vec<u8>) -> FmiEnums {
     FmiEnums::new(config, text)
@@ -161,57 +163,7 @@ fn bench_locate(c: &mut Criterion) {
     group.finish();
 }
 
-
-/*
-Bench generating Fmindex using Box<dyn trait> or directly
 */
-fn get_fmindex_direct_on(config: &FmIndexConfig, text: Vec<u8>) {
-    let _ = fmindex_on::FmIndexOn::new(config, text);
-}
-fn get_fmindex_use_box_on(config: &FmIndexConfig, text: Vec<u8>) {
-    let _ = config.generate_fmindex(text);
-}
-fn get_fmindex_direct_nn(config: &FmIndexConfig, text: Vec<u8>) {
-    let _ = fmindex_nn::FmIndexNn::new(config, text);
-}
-fn get_fmindex_use_box_nn(config: &FmIndexConfig, text: Vec<u8>) {
-    let _ = config.generate_fmindex(text);
-}
-fn bench_get_fmindex_use_box_or_not(c: &mut Criterion) {
-    let ssr = 4;
-    let kmer = 8;
-
-    let text = "CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACCCTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACCCTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCG".as_bytes().to_vec(); // length 500
-    let config_on = FmIndexConfig::new()
-        .set_suffix_array_sampling_ratio(ssr)
-        .set_kmer_lookup_table(kmer);
-    let config_nn = FmIndexConfig::new()
-        .set_suffix_array_sampling_ratio(ssr)
-        .set_kmer_lookup_table(kmer)
-        .contain_non_nucleotide();
-
-    let mut group = c.benchmark_group("generate_fmi_box");
-    
-    // use new
-    group.bench_function(
-        "OnlyNc-Dir",
-        |b| b.iter(|| get_fmindex_direct_on(black_box(&config_on), black_box(text.clone())))
-    );
-    group.bench_function(
-        "OnlyNc-Box",
-        |b| b.iter(|| get_fmindex_use_box_on(black_box(&config_on), black_box(text.clone())))
-    );
-    group.bench_function(
-        "NonNc-Dir",
-        |b| b.iter(|| get_fmindex_direct_nn(black_box(&config_nn), black_box(text.clone())))
-    );
-    group.bench_function(
-        "NonNc-Box",
-        |b| b.iter(|| get_fmindex_use_box_nn(black_box(&config_nn), black_box(text.clone())))
-    );
-    
-    group.finish();
-}
 
 /*
 Bench generating CA and KLT
@@ -242,5 +194,5 @@ fn bench_get_ca_klt(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, bench_generate_fmindex, bench_locate, bench_get_fmindex_use_box_or_not, bench_get_ca_klt);
+criterion_group!(benches, bench_get_ca_klt);
 criterion_main!(benches);

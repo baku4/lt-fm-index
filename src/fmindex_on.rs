@@ -1,6 +1,6 @@
 mod bwt_on;
 
-use super::{FmIndexConfig, FmIndex};
+use super::{FmIndexConfig, LtFmIndex};
 use super::utils::{
     SuffixArray,
     accumulate_count_array, compress_suffix_array,
@@ -183,7 +183,7 @@ impl FmIndexOn {
     }
 }
 
-impl FmIndex for FmIndexOn {
+impl LtFmIndex for FmIndexOn {
     /// Count the number of pattern in the text
     #[inline]
     fn count(&self, pattern: &[u8]) -> u64 {

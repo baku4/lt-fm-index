@@ -22,7 +22,7 @@
 //!     - locate: Locate pattern index in text (KLT can be specified to enable or not)
 //! 
 //! ## Examples
-//! ### Use [FmIndexConfig] to generate [FmIndex]
+//! ### 1. Use `FmIndex` to locate pattern.
 //! ```rust
 //! use lt_fm_index::FmIndexConfig;
 //! 
@@ -48,58 +48,23 @@
 //! let locations = fm_index.locate_w_klt(&pattern);
 //! assert_eq!(locations, vec![5,18]);
 //! ```
-//! ### Use [FmIndexOn] and [FmIndexNn] struct to generate [FmIndex]
+//! ### 2. Write and read `FmIndex`
 //! ```rust
-//! use lt_fm_index::{FmIndexConfig, FmIndex, FmIndexOn, FmIndexNn};
-//! 
-//! // (1) Define configuration for fm-index
-//! let fmi_config = FmIndexConfig::new()
-//! 	.set_kmer_lookup_table(8)
-//! 	.set_suffix_array_sampling_ratio(4)
-//! 	.contain_non_nucleotide();
-//! 
-//! // (2) Generate fm-index with text
-//! //   - Use `FmIndexOn` struct directly
-//! let text_only_nc = b"CTCCGTACACCTGTTTCGTATCGGA".to_vec();
-//! let fm_index_on = FmIndexOn::new(&fmi_config, text_only_nc); // `only_nucleotide` field of config is ignored
-//! //   - Use `FmIndexNn` struct directly
-//! let text_non_nc = b"CTCCGTACACCTGTTTCGTATCGGANNN".to_vec();
-//! let fm_index_nn = FmIndexNn::new(&fmi_config, text_non_nc);
-//! 
-//! // (3) match with pattern
-//! let pattern = b"TA".to_vec();
-//! //   - count
-//! let count_on = fm_index_on.count(&pattern);
-//! let count_nn = fm_index_nn.count(&pattern);
-//! assert_eq!(count_on, count_nn);
-//! //   - locate without k-mer lookup table
-//! let locations_on = fm_index_on.locate_wo_klt(&pattern);
-//! let locations_nn = fm_index_nn.locate_wo_klt(&pattern);
-//! assert_eq!(locations_on, locations_nn);
-//! //   - locate with k-mer lookup table
-//! let locations_on = fm_index_on.locate_w_klt(&pattern);
-//! let locations_nn = fm_index_nn.locate_w_klt(&pattern);
-//! assert_eq!(locations_on, locations_nn);
-//! ```
-//! - What's the difference?
-//!   - The `FmIndexConfig::generate_fmindex()` generates `Box<dyn FmIndex>` type, while the `new()` function of structs generate struct that are not surrounded by `Box`.
-//! ### Write and read `FmIndex`
-//! ```rust
-//! use lt_fm_index::{FmIndexConfig, FmIndex, FmIndexOn, FmIndexNn};
+//! use lt_fm_index::{FmIndexConfig, FmIndex};
 //!
 //! // (1) Generate `FmIndex`
 //! let fmi_config = FmIndexConfig::new()
-//! 	.set_kmer_lookup_table(8)
-//! 	.set_suffix_array_sampling_ratio(4);
+//!     .set_kmer_lookup_table(8)
+//!     .set_suffix_array_sampling_ratio(4);
 //! let text = b"CTCCGTACACCTGTTTCGTATCGGA".to_vec();
-//! let fm_index_pre = FmIndexOn::new(&fmi_config, text); // text is consumed
+//! let fm_index_pre = fmi_config.generate_fmindex(text); // text is consumed
 //! 
 //! // (2) Write fm-index to buffer (or file path)
 //! let mut buffer = Vec::new();
 //! fm_index_pre.write_index_to(&mut buffer).unwrap();
 //! 
 //! // (3) Read fm-index from buffer (or file path)
-//! let fm_index_pro = FmIndexOn::read_index_from(&buffer[..]).unwrap();
+//! let fm_index_pro = FmIndex::read_index_from(&buffer[..]).unwrap();
 //! 
 //! assert_eq!(fm_index_pre, fm_index_pro);
 //! ```
@@ -122,12 +87,14 @@ mod utils;
 pub mod fmindex_on;
 pub mod fmindex_nn;
 
-pub use fmindex_on::FmIndexOn;
-pub use fmindex_nn::FmIndexNn;
-
+use fmindex_on::FmIndexOn;
+use fmindex_nn::FmIndexNn;
 pub use io::*;
 
+use serde::{Serialize, Deserialize};
+
 /// Configurations for [FmIndex]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct FmIndexConfig {
     /// Kmer size of kmer lookup table
     kmer_size: Option<usize>,
@@ -193,20 +160,75 @@ impl FmIndexConfig {
         self.only_nucleotide = false;
         self
     }
-    /// Text contains non-nucleotide sequences.
+    /// Generate [FmIndex]
     #[inline]
-    pub fn generate_fmindex(&self, text: Vec<u8>) -> Box<dyn FmIndex> {
+    pub fn generate_fmindex(&self, text: Vec<u8>) -> FmIndex {
         if self.only_nucleotide {
-            Box::new(fmindex_on::FmIndexOn::new(self, text))
+            FmIndex::OnlyNc(FmIndexOn::new(self, text))
         } else {
-            Box::new(fmindex_nn::FmIndexNn::new(self, text))
+            FmIndex::NonNc(FmIndexNn::new(self, text))
         }
     }
 }
 
-pub trait FmIndex {
+/// FmIndex
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+pub enum FmIndex {
+    OnlyNc(FmIndexOn),
+    NonNc(FmIndexNn),
+}
+
+impl FmIndex {
+    /// Generate [FmIndex]
+    fn new(config: &FmIndexConfig, text: Vec<u8>) -> Self {
+        if config.only_nucleotide {
+            Self::OnlyNc(FmIndexOn::new(config, text))
+        } else {
+            Self::NonNc(FmIndexNn::new(config, text))
+        }
+    }
+    /// Count of occurrences of pattern
+    pub fn count(&self, pattern: &[u8]) -> u64 {
+        match self {
+            Self::OnlyNc(fm_index) => {
+                fm_index.count(pattern)
+            },
+            Self::NonNc(fm_index) => {
+                fm_index.count(pattern)
+            },
+        }
+    }
+    /// Locate the pattern without k-mer lookup table
+    pub fn locate_wo_klt(&self, pattern: &[u8]) -> Vec<u64> {
+        match self {
+            Self::OnlyNc(fm_index) => {
+                fm_index.locate_wo_klt(pattern)
+            },
+            Self::NonNc(fm_index) => {
+                fm_index.locate_wo_klt(pattern)
+            },
+        }
+    }
+    /// Locate the pattern with k-mer lookup table
+    pub fn locate_w_klt(&self, pattern: &[u8]) -> Vec<u64> {
+        match self {
+            Self::OnlyNc(fm_index) => {
+                fm_index.locate_w_klt(pattern)
+            },
+            Self::NonNc(fm_index) => {
+                fm_index.locate_w_klt(pattern)
+            },
+        }
+    }
+}
+
+/// LtFmIndex Trait
+pub trait LtFmIndex {
+    /// Count of occurrences of pattern
     fn count(&self, pattern: &[u8]) -> u64;
+    /// Locate the pattern without k-mer lookup table
     fn locate_wo_klt(&self, pattern: &[u8]) -> Vec<u64>;
+    /// Locate the pattern with k-mer lookup table
     fn locate_w_klt(&self, pattern: &[u8]) -> Vec<u64>;
 }
 
@@ -236,27 +258,27 @@ mod tests {
         "CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec()
     }
     fn pattern_on() -> Vec<Vec<u8>> {
-        vec!["A", "C", "G", "T", "TA", "AA", "GGC", "TTAC", "TACCAC", "AAGTGAAA"].into_iter().map(|x| x.as_bytes().to_vec()).collect()
+        vec!["A", "C", "G", "T", "TA", "AA", "GGC", "TTAC", "TACCAC", "AAGTGAAA"].iter().map(|x| x.as_bytes().to_vec()).collect()
     }
     fn text_nn() -> Vec<u8> {
         "CTCCGTACACCTGTTTCGTATCGGNNNAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCNNNCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACNNNCGGATGNNNCATAGATTTCCCCATTTTGCGTANNNNNNNNNNNNNNNNNNCCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec()
     }
     fn pattern_nn() -> Vec<Vec<u8>> {
-        ["A", "C", "G", "T", "N", "GA", "AA", "GN", "GGC", "TTAC", "TACCAC", "AAGTGAAA"].into_iter().map(|x| x.as_bytes().to_vec()).collect()
+        ["A", "C", "G", "T", "N", "GA", "AA", "GN", "GGC", "TTAC", "TACCAC", "AAGTGAAA"].iter().map(|x| x.as_bytes().to_vec()).collect()
     }
-    const chars: [u8; 5] = [65, 67, 71, 84, 95];
+    const CHARS: [u8; 5] = [65, 67, 71, 84, 95];
     fn text_rand_on() -> Vec<u8> {
         let mut rng = rand::thread_rng();
         let text_len: usize = rng.gen_range(50..100);
         let mut text: Vec<u8> = Vec::with_capacity(text_len);
-        (0..text_len).for_each(|_| text.push(chars[rng.gen_range(0..4)]));
+        (0..text_len).for_each(|_| text.push(CHARS[rng.gen_range(0..4)]));
         text
     }
     fn text_rand_nn() -> Vec<u8> {
         let mut rng = rand::thread_rng();
         let text_len: usize = rng.gen_range(50..100);
         let mut text: Vec<u8> = Vec::with_capacity(text_len);
-        (0..text_len).for_each(|_| text.push(chars[rng.gen_range(0..5)]));
+        (0..text_len).for_each(|_| text.push(CHARS[rng.gen_range(0..5)]));
         text
     }
 
@@ -385,9 +407,8 @@ mod tests {
     #[test]
     // for examples
     fn test_examples() {
-        // Use [FmIndexConfig] to generate [FmIndex]
+        // 1. Use [FmIndex] to locate pattern.
         // use lt_fm_index::FmIndexConfig;
-
         // (1) Define configuration for fm-index
         let fmi_config = FmIndexConfig::new()
             .set_kmer_lookup_table(8)
@@ -411,35 +432,21 @@ mod tests {
         assert_eq!(locations, vec![5,18]);
 
 
-        // Use [FmIndexOn] and [FmIndexNn] struct to generate [FmIndex]
-
-        // (1) Define configuration for fm-index
+        // use lt_fm_index::{FmIndexConfig, FmIndex, FmIndexOn, FmIndexNn};
+        // (1) Generate `FmIndex`
         let fmi_config = FmIndexConfig::new()
             .set_kmer_lookup_table(8)
-            .set_suffix_array_sampling_ratio(4)
-            .contain_non_nucleotide();
-        
-        // (2) Generate fm-index with text
-        //   - Use `FmIndexOn` struct directly
-        let text_only_nc = b"CTCCGTACACCTGTTTCGTATCGGA".to_vec();
-        let fm_index_on = FmIndexOn::new(&fmi_config, text_only_nc); // `only_nucleotide` field of config is ignored
-        //   - Use `FmIndexNn` struct directly
-        let text_non_nc = b"CTCCGTACACCTGTTTCGTATCGGANNN".to_vec();
-        let fm_index_nn = FmIndexNn::new(&fmi_config, text_non_nc);
+            .set_suffix_array_sampling_ratio(4);
+        let text = b"CTCCGTACACCTGTTTCGTATCGGA".to_vec();
+        let fm_index_pre = fmi_config.generate_fmindex(text); // text is consumed
 
-        // (3) match with pattern
-        let pattern = b"TA".to_vec();
-        //   - count
-        let count_on = fm_index_on.count(&pattern);
-        let count_nn = fm_index_nn.count(&pattern);
-        assert_eq!(count_on, count_nn);
-        //   - locate without k-mer lookup table
-        let locations_on = fm_index_on.locate_wo_klt(&pattern);
-        let locations_nn = fm_index_nn.locate_wo_klt(&pattern);
-        assert_eq!(locations_on, locations_nn);
-        //   - locate with k-mer lookup table
-        let locations_on = fm_index_on.locate_w_klt(&pattern);
-        let locations_nn = fm_index_nn.locate_w_klt(&pattern);
-        assert_eq!(locations_on, locations_nn);
+        // (2) Write fm-index to buffer (or file path)
+        let mut buffer = Vec::new();
+        fm_index_pre.write_index_to(&mut buffer).unwrap();
+
+        // (3) Read fm-index from buffer (or file path)
+        let fm_index_pro = FmIndex::read_index_from(&buffer[..]).unwrap();
+
+        assert_eq!(fm_index_pre, fm_index_pro);
     }
 }

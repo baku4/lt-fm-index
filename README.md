@@ -49,7 +49,7 @@ assert_eq!(locations, vec![5,18]);
 ```
 ### Use `FmIndexOn` and `FmIndexNn` struct to generate `FmIndex`
 ```rust
-use lt_fm_index::{FmIndexOn, FmIndexNn};
+use lt_fm_index::{FmIndexConfig, FmIndex, FmIndexOn, FmIndexNn};
 
 // (1) Define configuration for fm-index
 let fmi_config = FmIndexConfig::new()
@@ -63,7 +63,7 @@ let text_only_nc = b"CTCCGTACACCTGTTTCGTATCGGA".to_vec();
 let fm_index_on = FmIndexOn::new(&fmi_config, text_only_nc); // `only_nucleotide` field of config is ignored
 //   - Use `FmIndexNn` struct directly
 let text_non_nc = b"CTCCGTACACCTGTTTCGTATCGGANNN".to_vec();
-let fm_index_nn = FmIndexOn::new(&fmi_config, text_non_nc);
+let fm_index_nn = FmIndexNn::new(&fmi_config, text_non_nc);
 
 // (3) match with pattern
 let pattern = b"TA".to_vec();
@@ -80,14 +80,34 @@ let locations_on = fm_index_on.locate_w_klt(&pattern);
 let locations_nn = fm_index_nn.locate_w_klt(&pattern);
 assert_eq!(locations_on, locations_nn);
 ```
-### What's the difference?
-- The `FmIndexConfig::generate_fmindex()` generates `Box<dyn FmIndex>` type, while the `new()` function of structs generate struct that are not surrounded by `Box`.
+- What's the difference?
+  - The `FmIndexConfig::generate_fmindex()` generates `Box<dyn FmIndex>` type, while the `new()` function of structs generate struct that are not surrounded by `Box`.
+### Write and read `FmIndex`
+```rust
+use lt_fm_index::{FmIndexConfig, FmIndex, FmIndexOn, FmIndexNn};
+
+// (1) Generate `FmIndex`
+let fmi_config = FmIndexConfig::new()
+	.set_kmer_lookup_table(8)
+	.set_suffix_array_sampling_ratio(4);
+let text = b"CTCCGTACACCTGTTTCGTATCGGA".to_vec();
+let fm_index_pre = FmIndexOn::new(&fmi_config, text); // text is consumed
+
+// (2) Write fm-index to buffer (or file path)
+let mut buffer = Vec::new();
+fm_index_pre.write_index_to(&mut buffer).unwrap();
+
+// (3) Read fm-index from buffer (or file path)
+let fm_index_pro = FmIndexOn::read_index_from(&buffer[..]).unwrap();
+
+assert_eq!(fm_index_pre, fm_index_pro);
+```
 ## Future works
 - Support *SIMD* for BWT block compression.
 - Length of texts can be `32bit` integer
 ## Repository
 [https://github.com/baku4/lt-fm-index](https://github.com/baku4/lt-fm-index)
-## Docs
+## Doc
 [https://docs.rs/lt-fm-index/](https://docs.rs/lt-fm-index/)
 ## Reference
 - Ferragina, P., et al. (2004). An Alphabet-Friendly FM-Index, Springer Berlin Heidelberg: 150-160.

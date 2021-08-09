@@ -21,7 +21,7 @@
     - locate: Locate pattern index in text (KLT can be specified to enable or not)
 
 ## Examples
-### Use [FmIndexConfig] to generate [FmIndex]
+### Use `FmIndexConfig` to generate `FmIndex`
 ```rust
 use lt_fm_index::FmIndexConfig;
 
@@ -47,7 +47,7 @@ assert_eq!(locations, vec![5,18]);
 let locations = fm_index.locate_w_klt(&pattern);
 assert_eq!(locations, vec![5,18]);
 ```
-### Use [FmIndexOn] and [FmIndexNn] struct to generate [FmIndex]
+### Use `FmIndexOn` and `FmIndexNn` struct to generate `FmIndex`
 ```rust
 use lt_fm_index::{FmIndexOn, FmIndexNn};
 
@@ -81,7 +81,7 @@ let locations_nn = fm_index_nn.locate_w_klt(&pattern);
 assert_eq!(locations_on, locations_nn);
 ```
 ### What's the difference?
-- The [FmIndexConfig::generate_fmindex()] generates `Box<dyn FmIndex>` type, while the `new()` function of structs generate struct that are not surrounded by `Box`.
+- The `FmIndexConfig::generate_fmindex()` generates `Box<dyn FmIndex>` type, while the `new()` function of structs generate struct that are not surrounded by `Box`.
 ## Future works
 - Support *SIMD* for BWT block compression.
 - Length of texts can be `32bit` integer

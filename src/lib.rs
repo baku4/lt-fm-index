@@ -134,7 +134,7 @@ pub struct FmIndexConfig {
     /// Sampling ratio of suffix array
     sa_sampling_ratio: u64,
     /// Whether text contains only nucleotide sequences (ACGT) or not
-    only_nucleotide: bool,
+    pub only_nucleotide: bool,
 }
 impl FmIndexConfig {
     pub fn new() -> Self {

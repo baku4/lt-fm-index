@@ -234,7 +234,6 @@ pub trait LtFmIndex {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::*;
     use crate::fmindex_on::FmIndexOn;
     use crate::fmindex_nn::FmIndexNn;
@@ -298,10 +297,10 @@ mod tests {
     }
     // test with random seq
     #[test]
-    fn test_with_random_sequence() {
+    fn test_with_random_text() {
         let ssa = 8;
         let kmer = 4;
-        let text_count = 100;
+        let text_count = 50;
         let pattern_len = 10;
         for _ in 0..text_count {
             let text_on = text_rand_on();
@@ -313,9 +312,9 @@ mod tests {
             let fmi_on = config_on.generate_fmindex(text_on.clone());
             let fmi_nn = config_nn.generate_fmindex(text_nn.clone());
 
-            for l in 0..pattern_len {
-                let pattern_on = text_on[..pattern_len].to_vec();
-                let pattern_nn = text_nn[..pattern_len].to_vec();
+            for l in 1..=pattern_len {
+                let pattern_on = text_on[..l].to_vec();
+                let pattern_nn = text_nn[..l].to_vec();
 
                 let mut loc_on_res = fmi_on.locate_w_klt(&pattern_on);
                 loc_on_res.sort();

@@ -1,6 +1,6 @@
 use std::{fs::File, io::{Read, Write}};
 
-use super::{FmIndex, FmIndexNn, FmIndexOn};
+use super::FmIndex;
 
 impl FmIndex {
     /// Write [FmIndex] to writer
@@ -51,7 +51,6 @@ impl FmIndex {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::*;
 
     fn get_fmindex_on() -> FmIndex {

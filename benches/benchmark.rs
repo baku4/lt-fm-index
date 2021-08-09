@@ -1,169 +1,51 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{
+    black_box, criterion_group, criterion_main, Criterion, BenchmarkId
+};
 use lt_fm_index::*;
 
 /*
 Bench Use Enum vs Trait vs Struct
 */
 
-/*
-enum FmiEnums {
-    OnlyNc(FmIndexOn),
-    NonNc(FmIndexNn),
-}
-
-impl FmiEnums {
-    fn new(config: &FmIndexConfig, text: Vec<u8>) -> Self {
-        if config.only_nucleotide {
-            Self::OnlyNc(FmIndexOn::new(config, text))
-        } else {
-            Self::NonNc(FmIndexNn::new(config, text))
-        }
-    }
-}
-impl FmIndexTrait for FmiEnums {
-    fn count(&self, pattern: &[u8]) -> u64 {
-        match self {
-            Self::OnlyNc(fm_index) => {
-                fm_index.count(pattern)
-            },
-            Self::NonNc(fm_index) => {
-                fm_index.count(pattern)
-            },
-        }
-    }
-    fn locate_wo_klt(&self, pattern: &[u8]) -> Vec<u64> {
-        match self {
-            Self::OnlyNc(fm_index) => {
-                fm_index.locate_wo_klt(pattern)
-            },
-            Self::NonNc(fm_index) => {
-                fm_index.locate_wo_klt(pattern)
-            },
-        }
-    }
-    fn locate_w_klt(&self, pattern: &[u8]) -> Vec<u64> {
-        match self {
-            Self::OnlyNc(fm_index) => {
-                fm_index.locate_w_klt(pattern)
-            },
-            Self::NonNc(fm_index) => {
-                fm_index.locate_w_klt(pattern)
-            },
-        }
-    }
-}
-
-// Genrating bench
-fn fmi_generate_from_config(config: &FmIndexConfig, text: Vec<u8>) -> Box<dyn FmIndexTrait> {
-    config.generate_fmindex_dep(text)
-}
-fn fmi_generate_from_enum(config: &FmIndexConfig, text: Vec<u8>) -> FmiEnums {
-    FmiEnums::new(config, text)
-}
-fn fmi_generate_from_struct_on(config: &FmIndexConfig, text: Vec<u8>) -> FmIndexOn {
-    FmIndexOn::new(config, text)
-}
-fn fmi_generate_from_struct_nn(config: &FmIndexConfig, text: Vec<u8>) -> FmIndexNn {
-    FmIndexNn::new(config, text)
-}
-fn bench_generate_fmindex(c: &mut Criterion) {
+fn bench_locate_by_pattern_length(c: &mut Criterion) {
     let ssr = 2;
-    let kmer = 4;
+    let kmer = 8;
 
     let text = "CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACCCTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACCCTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCG".as_bytes().to_vec(); // length 500
-    let config_on = FmIndexConfig::new()
+    let config = FmIndexConfig::new()
         .set_suffix_array_sampling_ratio(ssr)
         .set_kmer_lookup_table(kmer);
-    let config_nn = FmIndexConfig::new()
-        .set_suffix_array_sampling_ratio(ssr)
-        .set_kmer_lookup_table(kmer)
-        .contain_non_nucleotide();
+    let pattern = b"TATGGTTCAATGGCACCGGA".to_vec();
+    let fm_index = config.generate_fmindex(text);
+    
+    // USE KLT
+    let mut group = c.benchmark_group("locate_by_length_w_klt");
+    for pattern_len in 1..=20 {
+        let pattern = pattern[..pattern_len].to_vec();
+        
+        group.bench_function(
+            BenchmarkId::from_parameter(pattern_len),
+            |b| {
+                b.iter(|| fm_index.locate_w_klt(black_box(&pattern)));
+            }
+        );
+    }
+    group.finish();
 
-    let mut group = c.benchmark_group("generate_fmi");
-    
-    // use new
-    group.bench_function(
-        "OnlyNc-Config",
-        |b| b.iter(|| fmi_generate_from_config(black_box(&config_on), black_box(text.clone())))
-    );
-    group.bench_function(
-        "OnlyNc-Struct",
-        |b| b.iter(|| fmi_generate_from_struct_on(black_box(&config_on), black_box(text.clone())))
-    );
-    group.bench_function(
-        "OnlyNc-Enum",
-        |b| b.iter(|| fmi_generate_from_enum(black_box(&config_on), black_box(text.clone())))
-    );
-    group.bench_function(
-        "NonNc-Config",
-        |b| b.iter(|| fmi_generate_from_config(black_box(&config_nn), black_box(text.clone())))
-    );
-    group.bench_function(
-        "NonNc-Struct",
-        |b| b.iter(|| fmi_generate_from_struct_nn(black_box(&config_nn), black_box(text.clone())))
-    );
-    group.bench_function(
-        "NonNc-Enum",
-        |b| b.iter(|| fmi_generate_from_enum(black_box(&config_nn), black_box(text.clone())))
-    );
-    
+    // NOT KLT
+    let mut group = c.benchmark_group("locate_by_length_wo_klt");
+    for pattern_len in 1..=20 {
+        let pattern = pattern[..pattern_len].to_vec();
+        
+        group.bench_function(
+            BenchmarkId::from_parameter(pattern_len),
+            |b| {
+                b.iter(|| fm_index.locate_wo_klt(black_box(&pattern)));
+            }
+        );
+    }
     group.finish();
 }
-
-// Locate bench
-fn bench_locate(c: &mut Criterion) {
-    let ssr = 2;
-    let kmer = 4;
-
-    let text = "CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACCCTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACCCTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCG".as_bytes().to_vec(); // length 500
-    let config_on = FmIndexConfig::new()
-        .set_suffix_array_sampling_ratio(ssr)
-        .set_kmer_lookup_table(kmer);
-    let config_nn = FmIndexConfig::new()
-        .set_suffix_array_sampling_ratio(ssr)
-        .set_kmer_lookup_table(kmer)
-        .contain_non_nucleotide();
-    
-    let fmindex_on_config = fmi_generate_from_config(&config_on, text.clone());
-    let fmindex_nn_config = fmi_generate_from_config(&config_nn, text.clone());
-    let fmindex_on_enum = fmi_generate_from_enum(&config_on, text.clone());
-    let fmindex_nn_enum = fmi_generate_from_enum(&config_nn, text.clone());
-    let fmindex_on_struct = fmi_generate_from_struct_on(&config_on, text.clone());
-    let fmindex_nn_struct = fmi_generate_from_struct_nn(&config_nn, text.clone());
-
-    let mut group = c.benchmark_group("locate_fmi");
-
-    let pattern = b"TGTTTCGTATCGGAACCGGTAAGTGAAATT".to_vec();
-
-    group.bench_function(
-        "OnlyNc-Config",
-        |b| b.iter(|| fmindex_on_config.locate_w_klt(black_box(&pattern)))
-    );
-    group.bench_function(
-        "OnlyNc-Struct",
-        |b| b.iter(|| fmindex_on_struct.locate_w_klt(black_box(&pattern)))
-    );
-    group.bench_function(
-        "OnlyNc-Enum",
-        |b| b.iter(|| fmindex_on_enum.locate_w_klt(black_box(&pattern)))
-    );
-    group.bench_function(
-        "NonNc-Config",
-        |b| b.iter(|| fmindex_nn_config.locate_w_klt(black_box(&pattern)))
-    );
-    group.bench_function(
-        "NonNc-Struct",
-        |b| b.iter(|| fmindex_nn_struct.locate_w_klt(black_box(&pattern)))
-    );
-    group.bench_function(
-        "NonNc-Enum",
-        |b| b.iter(|| fmindex_nn_enum.locate_w_klt(black_box(&pattern)))
-    );
-
-    group.finish();
-}
-
-*/
 
 /*
 Bench generating CA and KLT
@@ -194,5 +76,5 @@ fn bench_get_ca_klt(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, bench_get_ca_klt);
+criterion_group!(benches, bench_locate_by_pattern_length, bench_get_ca_klt);
 criterion_main!(benches);

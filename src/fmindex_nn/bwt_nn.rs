@@ -1,22 +1,5 @@
 const SEG_LEN: u64 = 64;
-const BIT_COUNT_TABLE: [u64; 256] = [
-    0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4,
-    1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
-    1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
-    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-    1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
-    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-    3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
-    1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
-    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-    3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
-    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-    3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
-    3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
-    4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8,
-];
+use crate::utils::BIT_COUNT_TABLE;
 
 // * VECTOR TABLE
 // | A | C | G | T | N |
@@ -63,7 +46,7 @@ impl BwtBlock {
             T_UTF8 => {
                 ((self.first_bwt_vector & self.second_bwt_vector) >> 64_u64-rem, self.rank_checkpoint[3])
             },
-            _ => { // X
+            _ => { // N
                 ((!self.second_bwt_vector & !self.third_bwt_vector) >> 64_u64-rem, self.rank_checkpoint[4])
             }
         };
@@ -150,7 +133,7 @@ impl BwtNn {
                 64-rem
             }
         };
-        let mut blocks: Vec<BwtBlock> = Vec::with_capacity(chunk_size);
+        let mut blocks: Vec<BwtBlock> = Vec::with_capacity(chunk_size+1);
         // push bwt block
         let mut rank_checkpoint: RankCheckpoint = [0; 5];
         bwt_string.chunks(64).for_each(|string_chunk| {
@@ -181,7 +164,7 @@ impl BwtNn {
                         first_bwt_vector += 1;
                         second_bwt_vector += 1;
                     },
-                    _ => {
+                    _ => { // N
                         rank_checkpoint[4] += 1;
                     }
                 }
@@ -227,13 +210,15 @@ impl BwtNn {
         }
     }
     #[inline]
-    pub fn get_pre_pos(&self, mut pos: u64, count_array: &CountArray) -> u64 {
-        if pos < self.primary_index {
+    pub fn get_pre_pos(&self, mut pos: u64, count_array: &CountArray) -> Option<u64> {
+        if pos == self.primary_index - 1 {
+            return None;
+        } else if pos < self.primary_index {
             pos += 1;
         }
         let quot = pos/SEG_LEN;
         let rem = pos%SEG_LEN;
         let (ca_idx, rank) = self.blocks[quot as usize].get_rank_and_chr(rem);
-        count_array[ca_idx as usize] + rank
+        Some(count_array[ca_idx as usize] + rank)
     }
 }

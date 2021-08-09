@@ -249,6 +249,7 @@ impl FmIndex {
     #[inline]
     pub fn locate(&self, pattern: &[u8]) -> Vec<u64> {
         let pos_range = self.lf_map(pattern);
+        println!("o: {}~{}", pos_range.0, pos_range.1);
         let mut locations: Vec<u64> = Vec::with_capacity((pos_range.1 - pos_range.0) as usize);
         for mut position in pos_range.0..pos_range.1 {
             let mut offset: u64 = 0;
@@ -440,7 +441,7 @@ mod tests {
     fn test_fmindex_locate_without_klt() {
         let text = "CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec();
         let config = Config::new()
-            .set_suffix_array_sampling_ratio(4);
+            .set_suffix_array_sampling_ratio(10);
         let fm_index = FmIndex::new(&config, text.clone());
         // test
         for pattern in vec!["A", "C", "G", "T", "TA", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
@@ -526,17 +527,18 @@ mod tests {
     fn test_fmindex_nn_locate_with_klt() {
         let text = "CTCCGTACACCTGTTTCGTATCGGNNNAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCNNNCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACNNNCGGATGNNNCATAGATTTCCCCATTTTGCGTANNNNNNNNNNNNNNNNNNCCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec();
         let config = Config::new()
-            .set_suffix_array_sampling_ratio(4)
+            .set_suffix_array_sampling_ratio(10)
             .set_kmer_lookup_table(7);
         let fm_index = fmindex_nn::FmIndexNn::new(&config, text.clone());
         // test
         // for pattern in vec!["AAGTGAAATTTCCACATCGCCGGAAAC", "CCGCTGCCGGTGG", "AAACCAGTCATCCTGA"] {
-        for pattern in vec!["A", "C", "G", "T", "TCCG", "TA", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
+        for pattern in vec!["TACCA","A", "C", "G", "T", "TCCG", "TA", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
             let pattern = pattern.as_bytes().to_vec();
             let mut locations_res = fm_index.locate_with_klt(&pattern);
             locations_res.sort();
             let mut locations_ans = get_locations_using_other_crate(&text, &pattern.to_vec());
             locations_ans.sort();
+            // println!("{:?}", locations_res);
             assert_eq!(locations_res, locations_ans);
         }
     }
@@ -591,7 +593,7 @@ mod tests {
         let config = Config::new()
             .set_kmer_lookup_table(kmer)
             .set_suffix_array_sampling_ratio(4);
-
+        
         let klt_old = FmIndex::new(&config, text.clone()).kmer_lookup_table.unwrap().1;
         let klt_new = fmindex_nn::FmIndexNn::new(&config, text.clone()).kmer_lookup_table.unwrap().1;
         // truncate
@@ -611,5 +613,25 @@ mod tests {
         }
 
         assert_eq!(klt_new_truncated, klt_old);
+    }
+
+    #[test]
+    fn test_new_nn_pos_is_right() {
+        let kmer: usize = 5;
+        let text = b"CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".to_vec();
+        let config = Config::new()
+            .set_kmer_lookup_table(kmer)
+            .set_suffix_array_sampling_ratio(4);
+
+        let fm_index_old = FmIndex::new(&config, text.clone());
+        let fm_index_new = fmindex_nn::FmIndexNn::new(&config, text.clone());
+
+        for pattern in vec!["A", "C", "G", "T", "TA", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
+            let pattern = pattern.as_bytes().to_vec();
+            let mut locations_res_1 = fm_index_old.locate(&pattern);
+            let mut locations_res_2 = fm_index_new.locate(&pattern);
+            locations_res_1.sort();
+            locations_res_2.sort();
+        }
     }
 }

@@ -1,22 +1,10 @@
 const SEG_LEN: u64 = 64;
-const BIT_COUNT_TABLE: [u64; 256] = [
-    0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4,
-    1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
-    1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
-    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-    1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
-    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-    3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
-    1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
-    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-    3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
-    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-    3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
-    3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
-    4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8,
-];
+use crate::utils::BIT_COUNT_TABLE;
+
+// * VECTOR TABLE
+// | A | C | G | T |
+// | 0 | 0 | 1 | 1 | first
+// | 0 | 1 | 0 | 1 | second
 
 #[allow(unused_imports)]
 use super::{A_UTF8, C_UTF8, G_UTF8, T_UTF8, A_U8_IDX, C_U8_IDX, G_U8_IDX, T_U8_IDX};
@@ -36,17 +24,37 @@ struct BwtBlock {
 
 impl BwtBlock {
     #[inline]
-    fn get_rank_and_cidx(&self, rem: u64) -> (u8, u64) {
-        let cidx = self.get_cidx(&rem);
+    fn get_rank_from_chr(&self, rem: &u64, c: &u8) -> u64 {
+        let (count_bits, rank_chkp) = match *c {
+            A_UTF8 => {
+                ((!self.first_bwt_vector & !self.second_bwt_vector) >> 64_u64-rem, self.rank_checkpoint[0])
+            },
+            C_UTF8 => {
+                ((!self.first_bwt_vector & self.second_bwt_vector) >> 64_u64-rem, self.rank_checkpoint[1])
+            },
+            G_UTF8 => {
+                ((self.first_bwt_vector & !self.second_bwt_vector) >> 64_u64-rem, self.rank_checkpoint[2])
+            },
+            _ => {
+                ((self.first_bwt_vector & self.second_bwt_vector) >> 64_u64-rem, self.rank_checkpoint[3])
+            }
+        };
+        let mut rank: u64 = 0;
+        count_bits.to_ne_bytes().iter().for_each(|&byte| rank += BIT_COUNT_TABLE[byte as usize]);
+        rank_chkp + rank
+    }
+    #[inline]
+    fn get_rank_and_chr(&self, rem: u64) -> (u8, u64) {
+        let cidx = self.get_chr(&rem);
         if rem == 0 {
             (cidx, self.rank_checkpoint[cidx as usize])
         } else {
-            let rank = self.get_rank_with_cidx(&rem, &cidx);
+            let rank = self.get_rank_from_chr_idx(&rem, &cidx);
             (cidx, rank)
         }
     }
     #[inline]
-    fn get_cidx(&self, rem: &u64) -> u8 {
+    fn get_chr(&self, rem: &u64) -> u8 {
         let mut pos_bit: u64 = 0b1000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;
         pos_bit >>= rem;
         if self.first_bwt_vector & pos_bit == 0 {
@@ -68,7 +76,7 @@ impl BwtBlock {
         }
     }
     #[inline]
-    fn get_rank_with_cidx(&self, rem: &u64, cidx: &u8) -> u64 {
+    fn get_rank_from_chr_idx(&self, rem: &u64, cidx: &u8) -> u64 {
         let count_bits = match *cidx {
             A_U8_IDX => {
                 (!self.first_bwt_vector & !self.second_bwt_vector) >> 64_u64-rem
@@ -87,36 +95,16 @@ impl BwtBlock {
         count_bits.to_ne_bytes().iter().for_each(|&byte| rank += BIT_COUNT_TABLE[byte as usize]);
         self.rank_checkpoint[*cidx as usize] + rank
     }
-    #[inline]
-    fn get_rank_with_c(&self, rem: &u64, c: &u8) -> u64 {
-        let (count_bits, rank_chkp) = match *c {
-            A_UTF8 => {
-                ((!self.first_bwt_vector & !self.second_bwt_vector) >> 64_u64-rem, self.rank_checkpoint[0])
-            },
-            C_UTF8 => {
-                ((!self.first_bwt_vector & self.second_bwt_vector) >> 64_u64-rem, self.rank_checkpoint[1])
-            },
-            G_UTF8 => {
-                ((self.first_bwt_vector & !self.second_bwt_vector) >> 64_u64-rem, self.rank_checkpoint[2])
-            },
-            _ => {
-                ((self.first_bwt_vector & self.second_bwt_vector) >> 64_u64-rem, self.rank_checkpoint[3])
-            }
-        };
-        let mut rank: u64 = 0;
-        count_bits.to_ne_bytes().iter().for_each(|&byte| rank += BIT_COUNT_TABLE[byte as usize]);
-        rank_chkp + rank
-    }
 }
 
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct Bwt {
+pub struct BwtOn {
     primary_index: u64,
     blocks: Vec<BwtBlock>,
 }
 
-impl Bwt {
+impl BwtOn {
     #[inline]
     pub fn new(bwt_string: Vec<u8>, primary_index: i64) -> Self {
         let mut chunk_size = bwt_string.len()/64;
@@ -176,14 +164,14 @@ impl Bwt {
         }
     }
     #[inline]
-    pub fn lf_map_with_range(&self, pos_range: (u64, u64), c: u8, count_array: &CountArray) -> (u64, u64) {
+    pub fn next_pos_range_from_range(&self, pos_range: (u64, u64), c: u8, count_array: &CountArray) -> (u64, u64) {
         (
-            self.lf_map_with_c(pos_range.0, &c, count_array),
-            self.lf_map_with_c(pos_range.1, &c, count_array),
+            self.next_pos_from_chr(pos_range.0, &c, count_array),
+            self.next_pos_from_chr(pos_range.1, &c, count_array),
         )
     }
     #[inline]
-    pub fn lf_map_with_c(&self, mut pos: u64, c: &u8, count_array: &CountArray) -> u64 {
+    pub fn next_pos_from_chr(&self, mut pos: u64, c: &u8, count_array: &CountArray) -> u64 {
         if pos < self.primary_index {
             pos += 1;
         }
@@ -192,18 +180,20 @@ impl Bwt {
         if rem == 0 {
             count_array[nc_to_idx(&c)] + self.blocks[quot as usize].rank_checkpoint[nc_to_idx(&c)]
         } else {
-            let rank = self.blocks[quot as usize].get_rank_with_c(&rem, &c);
+            let rank = self.blocks[quot as usize].get_rank_from_chr(&rem, &c);
             count_array[nc_to_idx(&c)] + rank
         }
     }
     #[inline]
-    pub fn lf_map_with_pos(&self, mut pos: u64, count_array: &CountArray) -> u64 {
-        if pos < self.primary_index {
+    pub fn get_pre_pos(&self, mut pos: u64, count_array: &CountArray) -> Option<u64> {
+        if pos == self.primary_index - 1 {
+            return None;
+        } else if pos < self.primary_index {
             pos += 1;
         }
         let quot = pos/SEG_LEN;
         let rem = pos%SEG_LEN;
-        let (cidx, rank) = self.blocks[quot as usize].get_rank_and_cidx(rem);
-        count_array[cidx as usize] + rank
+        let (cidx, rank) = self.blocks[quot as usize].get_rank_and_chr(rem);
+        Some(count_array[cidx as usize] + rank)
     }
 }

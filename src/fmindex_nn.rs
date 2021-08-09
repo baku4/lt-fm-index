@@ -18,7 +18,6 @@ const A_UTF8: u8 = 65;
 const C_UTF8: u8 = 67;
 const G_UTF8: u8 = 71;
 const T_UTF8: u8 = 84;
-// const N_UTF8: u8 = 64; // @ in ASCII
 const N_UTF8: u8 = 95; // '_' in ASCII
 
 const A_U8_IDX: u8 = 0b000;
@@ -54,14 +53,11 @@ impl FmIndexNn {
         // (2) suffix_array
         let suffix_array = divsufsort64(&text).unwrap();
         // (3) bwt & primary index
-        // original text is trasformed to bwt string
         let pidx = {
             let mut sa = suffix_array.clone();
             let pidx = bw_transform64(&mut text, &mut sa).unwrap();
             pidx
-        };
-        // TODO: to del
-        println!("{}", pidx);
+        }; // original text is trasformed to bwt string
         // (4) compression
         let suffix_array = compress_suffix_array(suffix_array, config.sa_sampling_ratio);
         let bwt = BwtNn::new(text, pidx);
@@ -88,7 +84,7 @@ impl FmIndexNn {
                     let i = klt_length/5;
                     [1*i, 2*i, 3*i, 4*i]
                 };
-                // each char to index
+                // Use each char
                 text.iter_mut().rev().for_each(|chr| {
                     match *chr {
                         A_UTF8 => {
@@ -130,120 +126,16 @@ impl FmIndexNn {
             },
             None => {
                 let mut count_array: CountArray = [0; 6];
-                for c in text {
-                    match *c {
+                for chr in text {
+                    match *chr {
                         A_UTF8 => count_array[1] += 1,
                         C_UTF8 => count_array[2] += 1,
                         G_UTF8 => count_array[3] += 1,
                         T_UTF8 => count_array[4] += 1,
-                        _ => count_array[5] += 1,
-                    }
-                }
-                accumulate_count_array(&mut count_array);
-                (count_array, None)
-            }
-        }
-    }
-    // FIXME: add this to 'fmindex on'
-    #[inline]
-    pub fn get_ca_and_klt_dep(config: &Config, text: &mut Vec<u8>) -> (CountArray, Option<KmerLookupTable>) {
-        match config.kmer_size {
-            Some(kmer) => {
-                // INIT
-                let mut count_array: CountArray = [0; 6];
-                let klt_length: usize = 5usize.pow(kmer as u32);
-                let mut kmer_lookup_table: Vec<u64> = vec![0; klt_length];
-                let mut klt_index: usize = 0;
-                let index_truncating_bits: usize = klt_length-1;
-                // ITERATING
-                // (1) first k-1
-                text[..kmer-1].iter_mut().for_each(|word| {
-                    match *word {
-                        A_UTF8 => {
-                            count_array[1] += 1;
-                            klt_index *= 5;
-                        },
-                        C_UTF8 => {
-                            count_array[2] += 1;
-                            klt_index *= 5;
-                            klt_index += 1;
-                        },
-                        G_UTF8 => {
-                            count_array[3] += 1;
-                            klt_index *= 5;
-                            klt_index += 2;
-                        },
-                        T_UTF8 => {
-                            count_array[4] += 1;
-                            klt_index *= 5;
-                            klt_index += 3;
-                        },
                         _ => {
                             count_array[5] += 1;
-                            klt_index *= 5;
-                            klt_index += 4;
-                            *word = N_UTF8;
+                            *chr = N_UTF8;
                         },
-                    }
-                });
-                // (2) kmer to end
-                text[kmer-1..].iter_mut().for_each(|word| {
-                    match *word {
-                        A_UTF8 => {
-                            count_array[1] += 1;
-                            klt_index <<= 2;
-                            klt_index &= index_truncating_bits;
-                            kmer_lookup_table[klt_index] += 1;
-                        },
-                        C_UTF8 => {
-                            count_array[2] += 1;
-                            klt_index <<= 2;
-                            klt_index += 1;
-                            klt_index &= index_truncating_bits;
-                            kmer_lookup_table[klt_index] += 1;
-                        },
-                        G_UTF8 => {
-                            count_array[3] += 1;
-                            klt_index <<= 2;
-                            klt_index += 2;
-                            klt_index &= index_truncating_bits;
-                            kmer_lookup_table[klt_index] += 1;
-                        },
-                        T_UTF8 => {
-                            count_array[4] += 1;
-                            klt_index <<= 2;
-                            klt_index += 3;
-                            klt_index &= index_truncating_bits;
-                            kmer_lookup_table[klt_index] += 1;
-                        },
-                        _ => {
-                            count_array[5] += 1;
-                            klt_index <<= 2;
-                            klt_index &= index_truncating_bits;
-                            kmer_lookup_table[klt_index] += 1;
-                        },
-                    }
-                });
-                // (3) last k
-                (0..kmer-1).for_each(|_| {
-                    klt_index <<= 2;
-                    klt_index &= index_truncating_bits;
-                    kmer_lookup_table[klt_index] += 1;
-                });
-                // accumulate array
-                accumulate_count_array(&mut count_array);
-                accumulate_count_array(&mut kmer_lookup_table);
-                (count_array, Some((kmer, kmer_lookup_table)))
-            },
-            None => {
-                let mut count_array: CountArray = [0; 6];
-                for c in text {
-                    match *c {
-                        A_UTF8 => count_array[1] += 1,
-                        C_UTF8 => count_array[2] += 1,
-                        G_UTF8 => count_array[3] += 1,
-                        T_UTF8 => count_array[4] += 1,
-                        _ => count_array[5] += 1,
                     }
                 }
                 accumulate_count_array(&mut count_array);
@@ -284,11 +176,18 @@ impl FmIndexTrait for FmIndexNn {
     fn locate(&self, pattern: &[u8]) -> Vec<u64> {
         let pos_range = self.lf_map(pattern);
         let mut locations: Vec<u64> = Vec::with_capacity((pos_range.1 - pos_range.0) as usize);
-        println!("{}~{}", pos_range.0, pos_range.1);
-        for mut position in pos_range.0..pos_range.1 {
+        'each_pos: for mut position in pos_range.0..pos_range.1 {
             let mut offset: u64 = 0;
             while position % self.sampling_ratio != 0 {
-                position = self.bwt.get_pre_pos(position, &self.count_array);
+                match self.bwt.get_pre_pos(position, &self.count_array) {
+                    Some(v) => {
+                        position = v;
+                    },
+                    None => { // if position == pidx
+                        locations.push(offset);
+                        continue 'each_pos;
+                    },
+                }
                 offset += 1;
             }
             let location = self.suffix_array[(position / self.sampling_ratio) as usize] + offset;
@@ -305,20 +204,20 @@ impl FmIndexTrait for FmIndexNn {
         // init pos range using KLT
         let mut pos_range: (u64, u64) = {
             // get index of klt
-            if *kmer_size < pattern.len() {
-                idx -= *kmer_size;
+            if *kmer_size < idx {
                 let klt_index = klt_index_of_pattern(&pattern[pattern.len()-*kmer_size..]);
+                idx -= *kmer_size;
                 if klt_index == 0 {
                     (0, klt[klt_index])
                 } else {
                     (klt[klt_index-1], klt[klt_index])
                 }
             } else {
-                idx = 0;
                 let klt_index = klt_index_of_pattern(pattern);
-                let offset_adder = 5_usize.pow((*kmer_size - pattern.len()) as u32);
+                let offset_adder = 5_usize.pow((*kmer_size - idx) as u32);
                 let klt_index_start = klt_index * offset_adder;
                 let klt_index_end = klt_index * offset_adder + offset_adder - 1;
+                idx = 0;
                 if klt_index_start == 0 {
                     (0, klt[klt_index_end])
                 } else {
@@ -332,19 +231,25 @@ impl FmIndexTrait for FmIndexNn {
             idx -= 1;
         }
         let mut locations: Vec<u64> = Vec::with_capacity((pos_range.1 - pos_range.0) as usize);
-        println!("{}~{}", pos_range.0, pos_range.1);
-        for mut position in pos_range.0..pos_range.1 {
+        'each_pos: for mut position in pos_range.0..pos_range.1 {
             let mut offset: u64 = 0;
             while position % self.sampling_ratio != 0 {
-                position = self.bwt.get_pre_pos(position, &self.count_array);
-                offset += 1;
+                match self.bwt.get_pre_pos(position, &self.count_array) {
+                    Some(v) => {
+                        position = v;
+                        offset += 1;
+                    },
+                    None => { // if position == pidx
+                        locations.push(offset);
+                        continue 'each_pos;
+                    },
+                }
             }
             let location = self.suffix_array[(position / self.sampling_ratio) as usize] + offset;
             // check if valid location
-            locations.push(location);
-            // if location + pattern_len <= self.text_len {
-            //     locations.push(location);
-            // }
+            if location + pattern_len <= self.text_len {
+                locations.push(location);
+            }
         }
         locations
     }
@@ -389,68 +294,6 @@ fn klt_index_of_pattern(pattern: &[u8]) -> usize {
             },
         }
     });
-    klt_index
-}
-#[inline]
-fn klt_index_of_shorter_pattern(pattern: &[u8], kmer: &usize) -> (usize, usize) {
-    let mut klt_index: usize = 0;
-    let length_offset = 5_usize.pow((*kmer - pattern.len()) as u32);
-    pattern.iter().for_each(|chr| {
-        match *chr {
-            A_UTF8 => {
-                klt_index *= 5;
-            },
-            C_UTF8 => {
-                klt_index *= 5;
-                klt_index += 1;
-            },
-            G_UTF8 => {
-                klt_index *= 5;
-                klt_index += 2;
-            },
-            T_UTF8 => {
-                klt_index *= 5;
-                klt_index += 3;
-            },
-            _ => {
-                klt_index *= 5;
-                klt_index += 4;
-            },
-        }
-    });
-    (klt_index * length_offset, klt_index * length_offset + length_offset - 1)
-}
-#[inline]
-fn kmer_table_index(pattern: &[u8], kmer: &usize) -> usize {
-    let mut klt_index: usize = 0;
-    let mut offset = kmer.clone();
-    for word in pattern.iter() {
-        match *word {
-            A_UTF8 => {
-                klt_index <<= 2;
-                offset -= 1;
-            },
-            C_UTF8 => {
-                klt_index <<= 2;
-                klt_index += 1;
-                offset -= 1;
-            },
-            G_UTF8 => {
-                klt_index <<= 2;
-                klt_index += 2;
-                offset -= 1;
-            },
-            T_UTF8 => {
-                klt_index <<= 2;
-                klt_index += 3;
-                offset -= 1;
-            },
-            _ => {
-                break;
-            },
-        }
-    };
-    klt_index <<= 2*offset;
     klt_index
 }
 

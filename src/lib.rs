@@ -296,6 +296,42 @@ mod tests {
             .contain_non_nucleotide();
         config
     }
+    // test with random seq
+    #[test]
+    fn test_with_random_sequence() {
+        let ssa = 8;
+        let kmer = 4;
+        let text_count = 100;
+        let pattern_len = 10;
+        for _ in 0..text_count {
+            let text_on = text_rand_on();
+            let text_nn = text_rand_nn();
+
+            let config_on = config_on(ssa, kmer);
+            let config_nn = config_nn(ssa, kmer);
+
+            let fmi_on = config_on.generate_fmindex(text_on.clone());
+            let fmi_nn = config_nn.generate_fmindex(text_nn.clone());
+
+            for l in 0..pattern_len {
+                let pattern_on = text_on[..pattern_len].to_vec();
+                let pattern_nn = text_nn[..pattern_len].to_vec();
+
+                let mut loc_on_res = fmi_on.locate_w_klt(&pattern_on);
+                loc_on_res.sort();
+                let mut loc_nn_res = fmi_nn.locate_w_klt(&pattern_nn);
+                loc_nn_res.sort();
+
+                let mut loc_on_ans = get_locations_using_other_crate(&text_on, &pattern_on.to_vec());
+                loc_on_ans.sort();
+                let mut loc_nn_ans = get_locations_using_other_crate(&text_nn, &pattern_nn.to_vec());
+                loc_nn_ans.sort();
+
+                assert_eq!(loc_on_res, loc_on_ans);
+                assert_eq!(loc_nn_res, loc_nn_ans);
+            }
+        }
+    }
 
     // FmIndexOn
     #[test]

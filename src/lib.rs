@@ -11,7 +11,7 @@
 //!   - `FmIndexOn` supports a text with only genetic nucleotide sequence (ACGT).
 //!   - `FmIndexNn` supports a text containing non-nucleotide sequence.
 //!     - `FmIndexNn` treats all non-nucleotide as the same character.
-//! 
+//! - **CAVEAT!** This `crate` is not stable. Functions can be changed without notice.
 //! ## Features
 //! - Fm-index using KLT with specified k-mer size.
 //! - Suffix array compression with sampling ratio.

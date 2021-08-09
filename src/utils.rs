@@ -39,3 +39,16 @@ pub fn compress_suffix_array(suffix_array: Vec<i64>, sampling_ratio: u64) -> Suf
         suffix_array.into_iter().step_by(sampling_ratio as usize).map(|x| x as u64).collect()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_compress_suffix_array() {
+        let raw_suffix_array: Vec<i64> = (0..30).collect();
+        let sampling_ratio: u64 = 5;
+        let sa = compress_suffix_array(raw_suffix_array, sampling_ratio);
+        assert_eq!(sa, vec![0, 5, 10, 15, 20, 25]);
+    }
+}

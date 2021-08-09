@@ -1,6 +1,6 @@
 mod bwt_on;
 
-use super::{Config, FmIndexTrait};
+use super::{FmIndexConfig, FmIndex};
 use super::utils::{
     SuffixArray,
     accumulate_count_array, compress_suffix_array,
@@ -37,7 +37,7 @@ pub struct FmIndexOn {
     sampling_ratio: u64,
     text_len: u64,
     suffix_array: SuffixArray,
-    kmer_lookup_table: Option<KmerLookupTable>,
+    pub kmer_lookup_table: Option<KmerLookupTable>,
     bwt: BwtOn,
 }
 
@@ -45,7 +45,7 @@ pub struct FmIndexOn {
 impl FmIndexOn {
     /// Create new fm-index with configuration
     #[inline]
-    pub fn new(config: &Config, mut text: Vec<u8>) -> Self {
+    pub fn new(config: &FmIndexConfig, mut text: Vec<u8>) -> Self {
         let text_len = text.len() as u64;
         // (1) count array & klt
         let (count_array, kmer_lookup_table): (CountArray, Option<KmerLookupTable>) = Self::get_ca_and_klt(&config, &mut text);
@@ -70,42 +70,42 @@ impl FmIndexOn {
         }
     }
     #[inline]
-    pub fn get_ca_and_klt(config: &Config, text: &mut Vec<u8>) -> (CountArray, Option<KmerLookupTable>) {
+    pub fn get_ca_and_klt(config: &FmIndexConfig, text: &mut Vec<u8>) -> (CountArray, Option<KmerLookupTable>) {
         match config.kmer_size {
             Some(kmer) => {
                 // Init
                 let mut count_array: CountArray = [0; 5];
-                let klt_length: usize = 5usize.pow(kmer as u32);
+                let klt_length: usize = 4usize.pow(kmer as u32);
                 let mut kmer_lookup_table: Vec<u64> = vec![0; klt_length];
                 let mut klt_index: usize = 0;
                 let index_truncating_bits: usize = klt_length-1;
                 // Use each char
                 //  - first k-1
-                text[..kmer-1].iter_mut().for_each(|word| {
+                text[..kmer-1].iter().for_each(|word| {
                     match *word {
                         A_UTF8 => {
                             count_array[1] += 1;
-                            klt_index *= 5;
+                            klt_index <<= 2;
                         },
                         C_UTF8 => {
                             count_array[2] += 1;
-                            klt_index *= 5;
+                            klt_index <<= 2;
                             klt_index += 1;
                         },
                         G_UTF8 => {
                             count_array[3] += 1;
-                            klt_index *= 5;
+                            klt_index <<= 2;
                             klt_index += 2;
                         },
                         _ => {
                             count_array[4] += 1;
-                            klt_index *= 5;
+                            klt_index <<= 2;
                             klt_index += 3;
                         },
                     }
                 });
                 //  - kmer to end
-                text[kmer-1..].iter_mut().for_each(|word| {
+                text[kmer-1..].iter().for_each(|word| {
                     match *word {
                         A_UTF8 => {
                             count_array[1] += 1;
@@ -183,7 +183,7 @@ impl FmIndexOn {
     }
 }
 
-impl FmIndexTrait for FmIndexOn {
+impl FmIndex for FmIndexOn {
     /// Count the number of pattern in the text
     #[inline]
     fn count(&self, pattern: &[u8]) -> u64 {
@@ -192,7 +192,7 @@ impl FmIndexTrait for FmIndexOn {
     }
     /// Locate index of the pattern in the text (not use k-mer lookup table)
     #[inline]
-    fn locate(&self, pattern: &[u8]) -> Vec<u64> {
+    fn locate_wo_klt(&self, pattern: &[u8]) -> Vec<u64> {
         let pos_range = self.lf_map(pattern);
         let mut locations: Vec<u64> = Vec::with_capacity((pos_range.1 - pos_range.0) as usize);
         'each_pos: for mut position in pos_range.0..pos_range.1 {
@@ -216,7 +216,7 @@ impl FmIndexTrait for FmIndexOn {
     }
     /// Locate index of the pattern in the text with k-mer lookup table
     #[inline]
-    fn locate_with_klt(&self, pattern: &[u8]) -> Vec<u64> {
+    fn locate_w_klt(&self, pattern: &[u8]) -> Vec<u64> {
         let (kmer_size, klt) = self.kmer_lookup_table.as_ref().unwrap();
         let mut idx = pattern.len();
         let pattern_len = idx.clone() as u64;
@@ -292,32 +292,21 @@ fn klt_index_of_pattern(pattern: &[u8]) -> usize {
     pattern.iter().for_each(|chr| {
         match *chr {
             A_UTF8 => {
-                klt_index *= 4;
+                klt_index <<= 2;
             },
             C_UTF8 => {
-                klt_index *= 4;
+                klt_index <<= 2;
                 klt_index += 1;
             },
             G_UTF8 => {
-                klt_index *= 4;
+                klt_index <<= 2;
                 klt_index += 2;
             },
             _ => {
-                klt_index *= 4;
+                klt_index <<= 2;
                 klt_index += 3;
             },
         }
     });
     klt_index
-}
-#[inline]
-fn kmer_table_index(window: &[u8]) -> usize {
-    window.iter().rev().enumerate().map(|(idx, c)| 
-        4usize.pow(idx as u32) * match *c {
-            A_UTF8 => 0,
-            C_UTF8 => 1,
-            G_UTF8 => 2,
-            _ => 3, // do not check if there is only ACGT
-        }
-    ).sum()
 }

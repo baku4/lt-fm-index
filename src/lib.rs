@@ -20,27 +20,8 @@
 //! ## Future works
 //! - Input text can be `slice`
 //! ## Example
+//! FIXME: examples
 //! ```rust
-//! use lt_fm_index::{Config, FmIndex};
-//!
-//! let text = b"CTCCGTACACCTGTTTCGTATCGGA".to_vec();
-//! let config = Config::new()
-//!     .set_kmer_lookup_table(8)
-//!     .set_suffix_array_sampling_ratio(4);
-//! let fm_index = FmIndex::new(&config, text);
-//! let pattern = b"TA".to_vec();
-//! 
-//! // count
-//! let count = fm_index.count(&pattern);
-//! assert_eq!(count, 2);
-//! 
-//! // locate without k-mer lookup table
-//! let locations = fm_index.locate(&pattern);
-//! assert_eq!(locations, vec![5,18]);
-//! 
-//! // locate with k-mer lookup table
-//! let locations = fm_index.locate_with_klt(&pattern);
-//! assert_eq!(locations, vec![5,18]);
 //! ```
 //! ## Repository
 //! [https://github.com/baku4/lt-fm-index](https://github.com/baku4/lt-fm-index)
@@ -50,28 +31,24 @@
 //! - Wang, Y., X. Li, D. Zang, G. Tan and N. Sun (2018). Accelerating FM-index Search for Genomic Data Processing, ACM.
 //! - Yuta Mori. [`libdivsufsort`](https://github.com/y-256/libdivsufsort)
 
-mod bwt;
 mod io;
 mod utils;
 
 pub mod fmindex_on;
 pub mod fmindex_nn;
 
-use bwt::Bwt;
-use libdivsufsort_rs::{divsufsort64, bw_transform64};
-use serde::{Serialize, Deserialize};
-
 pub use io::*;
 
 /// Configurations for [FmIndex]
-pub struct Config {
-    /// kmer lookup table
+pub struct FmIndexConfig {
+    /// Kmer size of kmer lookup table
     kmer_size: Option<usize>,
     /// Sampling ratio of suffix array
     sa_sampling_ratio: u64,
+    /// Whether text contains only nucleotide sequences (ACGT) or not
     only_nucleotide: bool,
 }
-impl Config {
+impl FmIndexConfig {
     pub fn new() -> Self {
         Self {
             kmer_size: None,
@@ -128,298 +105,35 @@ impl Config {
         self.only_nucleotide = false;
         self
     }
+    /// Text contains non-nucleotide sequences.
+    #[inline]
+    pub fn generate_fmindex(&self, text: Vec<u8>) -> Box<dyn FmIndex> {
+        if self.only_nucleotide {
+            Box::new(fmindex_on::FmIndexOn::new(self, text))
+        } else {
+            Box::new(fmindex_nn::FmIndexNn::new(self, text))
+        }
+    }
 }
 
-// TODO: naming
-trait FmIndexTrait {
+pub trait FmIndex {
     fn count(&self, pattern: &[u8]) -> u64;
-    fn locate(&self, pattern: &[u8]) -> Vec<u64>;
-    fn locate_with_klt(&self, pattern: &[u8]) -> Vec<u64>;
-}
-
-
-// TODO: TO DEP
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
-/// Lt-Fm-index data structure
-pub struct FmIndex {
-    count_array: CountArray,
-    sampling_ratio: u64,
-    text_len: u64,
-    suffix_array: SuffixArray,
-    kmer_lookup_table: Option<KmerLookupTable>,
-    bwt: Bwt,
-}
-
-impl FmIndex {
-    /// Create new fm-index with configuration
-    #[inline]
-    pub fn new(config: &Config, mut text: Vec<u8>) -> Self {
-        let text_len = text.len() as u64;
-        // count array
-        let (count_array, kmer_lookup_table): (CountArray, Option<KmerLookupTable>) = match config.kmer_size {
-            Some(kmer) => {
-                let mut count_array: CountArray = [0; 5];
-                let mut kmer_lookup_table: Vec<u64> = vec![0; 4usize.pow(kmer as u32)];
-                let mut kmer_iter = text[..].windows(kmer);
-                while let Some(v) = kmer_iter.next() {
-                    // Accum kmer table
-                    let table_index = kmer_table_index(v);
-                    kmer_lookup_table[table_index] += 1;
-                    // Accum count array
-                    match v[0] {
-                        A_UTF8 => count_array[1] += 1,
-                        C_UTF8 => count_array[2] += 1,
-                        G_UTF8 => count_array[3] += 1,
-                        _ => count_array[4] += 1,
-                    }
-                };
-                // dealing with last k-1 string
-                let mut table_index: usize = 0;
-                let pow = 4_usize.pow(kmer as u32 - 1);
-                for c in text[text_len as usize-kmer+1..].iter().rev() {
-                    match *c {
-                        A_UTF8 => {
-                            table_index /= 4;
-                            count_array[1] += 1;
-                        },
-                        C_UTF8 => {
-                            table_index /= 4;
-                            table_index += pow;
-                            count_array[2] += 1;
-                        },
-                        G_UTF8 => {
-                            table_index /= 4;
-                            table_index += 2*pow;
-                            count_array[3] += 1;
-                        },
-                        _ => {
-                            table_index /= 4;
-                            table_index += 3*pow;
-                            count_array[4] += 1;
-                        },
-                    }
-                    kmer_lookup_table[table_index] += 1;
-                }
-                accumulate_count_array(&mut count_array);
-                accumulate_count_array(&mut kmer_lookup_table);
-                (count_array, Some((kmer, kmer_lookup_table)))
-            },
-            None => {
-                let mut count_array: CountArray = [0; 5];
-                for c in &text {
-                    match *c {
-                        A_UTF8 => count_array[1] += 1,
-                        C_UTF8 => count_array[2] += 1,
-                        G_UTF8 => count_array[3] += 1,
-                        _ => count_array[4] += 1,
-                    }
-                }
-                accumulate_count_array(&mut count_array);
-                (count_array, None)
-            }
-        };
-        // suffix_array
-        let suffix_array = divsufsort64(&text).unwrap();
-        // bwt & primary index
-        // original text is trasformed to bwt string
-        let pidx = {
-            let mut sa = suffix_array.clone();
-            let pidx = bw_transform64(&mut text, &mut sa).unwrap();
-            pidx
-        };
-        // compress suffix array
-        let suffix_array = compress_suffix_array(suffix_array, config.sa_sampling_ratio);
-        let bwt = Bwt::new(text, pidx);
-        Self {
-            count_array: count_array,
-            sampling_ratio: config.sa_sampling_ratio,
-            suffix_array: suffix_array,
-            text_len: text_len,
-            kmer_lookup_table: kmer_lookup_table,
-            bwt: bwt,
-        }
-    }
-    /// Count the number of pattern in the text
-    #[inline]
-    pub fn count(&self, pattern: &[u8]) -> u64 {
-        let pos_range = self.lf_map(pattern);
-        pos_range.1 - pos_range.0
-    }
-    /// Locate index of the pattern in the text (not use k-mer lookup table)
-    #[inline]
-    pub fn locate(&self, pattern: &[u8]) -> Vec<u64> {
-        let pos_range = self.lf_map(pattern);
-        println!("o: {}~{}", pos_range.0, pos_range.1);
-        let mut locations: Vec<u64> = Vec::with_capacity((pos_range.1 - pos_range.0) as usize);
-        for mut position in pos_range.0..pos_range.1 {
-            let mut offset: u64 = 0;
-            while position % self.sampling_ratio != 0 {
-                position = self.bwt.lf_map_with_pos(position, &self.count_array);
-                offset += 1;
-            }
-            let location = self.suffix_array[(position / self.sampling_ratio) as usize] + offset;
-            locations.push(location);
-        }
-        locations
-    }
-    #[inline]
-    fn lf_map(&self, pattern: &[u8]) -> (u64, u64) {
-        let mut idx = pattern.len();
-        let c = pattern[idx-1];
-        let mut pos_range = self.pos_range_init(c);
-        idx -= 1;
-        // LF mapping
-        while pos_range.0 < pos_range.1 && idx > 0 {
-            let c = pattern[idx-1];
-            pos_range = self.bwt.lf_map_with_range(pos_range, c, &self.count_array);
-            idx -= 1;
-        }
-        pos_range
-    }
-    #[inline]
-    fn pos_range_init(&self, c: u8) -> (u64, u64) {
-        let idx = nc_to_idx(&c);
-        (self.count_array[idx], self.count_array[idx+1])
-    }
-    /// Locate index of the pattern in the text with k-mer lookup table
-    #[inline]
-    pub fn locate_with_klt(&self, pattern: &[u8]) -> Vec<u64> {
-        let (kmer_size, klt) = self.kmer_lookup_table.as_ref().unwrap();
-        let mut idx = pattern.len();
-        let pattern_len = idx.clone() as u64;
-        let mut pos_range: (u64, u64) = {
-            if *kmer_size >= idx {
-                let (start_klt_idx, end_kit_idx) = kmer_table_index_from_smaller_string(pattern, kmer_size);
-                idx -= idx;
-                if start_klt_idx == 0 {
-                    (0, klt[end_kit_idx])
-                } else {
-                    (klt[start_klt_idx-1], klt[end_kit_idx])
-                }
-            } else {
-                let kmer_window = &pattern[idx-kmer_size..];
-                let klt_idx = kmer_table_index(kmer_window);
-                idx -= kmer_size;
-                if klt_idx == 0 {
-                    (0, klt[klt_idx])
-                } else {
-                    (klt[klt_idx-1], klt[klt_idx])
-                }
-            }
-        };
-        while pos_range.0 < pos_range.1 && idx > 0 {
-            let c = pattern[idx-1];
-            pos_range = self.bwt.lf_map_with_range(pos_range, c, &self.count_array);
-            idx -= 1;
-        }
-        let mut locations: Vec<u64> = Vec::with_capacity((pos_range.1 - pos_range.0) as usize);
-        for mut position in pos_range.0..pos_range.1 {
-            let mut offset: u64 = 0;
-            while position % self.sampling_ratio != 0 {
-                position = self.bwt.lf_map_with_pos(position, &self.count_array);
-                offset += 1;
-            }
-            let location = self.suffix_array[(position / self.sampling_ratio) as usize] + offset;
-            // check if valid location
-            if location + pattern_len <= self.text_len {
-                locations.push(location);
-            }
-        }
-        locations
-    }
-}
-
-// using 5 space for lessconditional statements
-type CountArray = [u64; 5];
-
-#[inline]
-fn accumulate_count_array(count_array: &mut [u64]) {
-    let mut accumed_count: u64 = 0;
-    count_array.iter_mut().for_each(|count| {
-        accumed_count += *count;
-        *count = accumed_count;
-    });
-}
-
-const A_UTF8: u8 = 65;
-const C_UTF8: u8 = 67;
-const G_UTF8: u8 = 71;
-const T_UTF8: u8 = 84;
-
-const A_U8_IDX: u8 = 0b00;
-const C_U8_IDX: u8 = 0b01;
-const G_U8_IDX: u8 = 0b10;
-const T_U8_IDX: u8 = 0b11;
-
-#[inline]
-fn nc_to_idx(c: &u8) -> usize {
-    match *c {
-        A_UTF8 => 0,
-        C_UTF8 => 1,
-        G_UTF8 => 2,
-        _ => 3,
-    }
-}
-
-type KmerLookupTable = (usize, Vec<u64>); // kmer_size, table vector
-
-#[inline]
-fn kmer_table_index(window: &[u8]) -> usize {
-    window.iter().rev().enumerate().map(|(idx, c)| 
-        4usize.pow(idx as u32) * match *c {
-            A_UTF8 => 0,
-            C_UTF8 => 1,
-            G_UTF8 => 2,
-            _ => 3, // do not check if there is only ACGT
-        }
-    ).sum()
-}
-#[inline]
-fn kmer_table_index_from_smaller_string(window: &[u8], kmer: &usize) -> (usize, usize) {
-    let mut table_index: usize = 0;
-    let pow = 4_usize.pow(*kmer as u32 - 1);
-    window.iter().rev().for_each(|c| {
-        match *c {
-            A_UTF8 => {
-                table_index /= 4;
-            },
-            C_UTF8 => {
-                table_index /= 4;
-                table_index += pow;
-            },
-            G_UTF8 => {
-                table_index /= 4;
-                table_index += 2*pow;
-            },
-            _ => {
-                table_index /= 4;
-                table_index += 3*pow;
-            },
-        }
-    });
-    let offset = 4_usize.pow((*kmer - window.len()) as u32);
-    (table_index, table_index + offset - 1)
-}
-
-type SuffixArray = Vec<u64>;
-
-#[inline]
-fn compress_suffix_array(suffix_array: Vec<i64>, sampling_ratio: u64) -> SuffixArray {
-    if sampling_ratio == 1 {
-        suffix_array.into_iter().map(|x| x as u64).collect()
-    } else {
-        suffix_array.into_iter().step_by(sampling_ratio as usize).map(|x| x as u64).collect()
-    }
+    fn locate_wo_klt(&self, pattern: &[u8]) -> Vec<u64>;
+    fn locate_w_klt(&self, pattern: &[u8]) -> Vec<u64>;
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::*;
+    use crate::fmindex_on::FmIndexOn;
+    use crate::fmindex_nn::FmIndexNn;
 
     // For cross check
     use fm_index::converter::RangeConverter;
     use fm_index::suffix_array::SuffixOrderSampler;
     use fm_index::{BackwardSearchIndex, FMIndex};
+    use rand::Rng;
 
     fn get_locations_using_other_crate(text: &Vec<u8>, pattern: &Vec<u8>) -> Vec<u64> {
         let converter = RangeConverter::new(b' ', b'~');
@@ -429,176 +143,141 @@ mod tests {
         search.locate()
     }
 
-    #[test]
-    fn test_compress_suffix_array() {
-        let raw_suffix_array: Vec<i64> = (0..30).collect();
-        let sampling_ratio: u64 = 5;
-        let sa = compress_suffix_array(raw_suffix_array, sampling_ratio);
-        assert_eq!(sa, vec![0, 5, 10, 15, 20, 25]);
+    // Set data
+    fn text_on() -> Vec<u8> {
+        "CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec()
+    }
+    fn pattern_on() -> Vec<Vec<u8>> {
+        vec!["A", "C", "G", "T", "TA", "AA", "GGC", "TTAC", "TACCAC", "AAGTGAAA"].into_iter().map(|x| x.as_bytes().to_vec()).collect()
+    }
+    fn text_nn() -> Vec<u8> {
+        "CTCCGTACACCTGTTTCGTATCGGNNNAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCNNNCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACNNNCGGATGNNNCATAGATTTCCCCATTTTGCGTANNNNNNNNNNNNNNNNNNCCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec()
+    }
+    fn pattern_nn() -> Vec<Vec<u8>> {
+        ["A", "C", "G", "T", "N", "GA", "AA", "GN", "GGC", "TTAC", "TACCAC", "AAGTGAAA"].into_iter().map(|x| x.as_bytes().to_vec()).collect()
+    }
+    const chars: [u8; 5] = [65, 67, 71, 84, 95];
+    fn text_rand_on() -> Vec<u8> {
+        let mut rng = rand::thread_rng();
+        let text_len: usize = rng.gen_range(50..100);
+        let mut text: Vec<u8> = Vec::with_capacity(text_len);
+        (0..text_len).for_each(|_| text.push(chars[rng.gen_range(0..4)]));
+        text
+    }
+    fn text_rand_nn() -> Vec<u8> {
+        let mut rng = rand::thread_rng();
+        let text_len: usize = rng.gen_range(50..100);
+        let mut text: Vec<u8> = Vec::with_capacity(text_len);
+        (0..text_len).for_each(|_| text.push(chars[rng.gen_range(0..5)]));
+        text
     }
 
-    #[test]
-    fn test_fmindex_locate_without_klt() {
-        let text = "CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec();
-        let config = Config::new()
-            .set_suffix_array_sampling_ratio(10);
-        let fm_index = FmIndex::new(&config, text.clone());
-        // test
-        for pattern in vec!["A", "C", "G", "T", "TA", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
-            let pattern = pattern.as_bytes().to_vec();
-            let mut locations_res = fm_index.locate(&pattern);
-            locations_res.sort();
-            let mut locations_ans = get_locations_using_other_crate(&text, &pattern.to_vec());
-            locations_ans.sort();
-            assert_eq!(locations_res, locations_ans);
-        }
+    // config
+    fn config_on(ssa: u64, kmer: usize) -> FmIndexConfig {
+        let config = FmIndexConfig::new()
+            .set_suffix_array_sampling_ratio(ssa)
+            .set_kmer_lookup_table(kmer);
+        config
     }
-
-    #[test]
-    fn test_fmindex_locate_with_klt() {
-        let text = "CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec();
-        let config = Config::new()
-            .set_suffix_array_sampling_ratio(4)
-            .set_kmer_lookup_table(7);
-        let fm_index = FmIndex::new(&config, text.clone());
-        // test
-        for pattern in vec!["A", "C", "G", "T", "TA", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
-            let pattern = pattern.as_bytes().to_vec();
-            let mut locations_res = fm_index.locate_with_klt(&pattern);
-            locations_res.sort();
-            let mut locations_ans = get_locations_using_other_crate(&text, &pattern.to_vec());
-            locations_ans.sort();
-            assert_eq!(locations_res, locations_ans);
-        }
-    }
-
-    #[test]
-    fn test_fmindex_with_config() {
-        let text = b"CTCCGTACACCTGTTTCGTATCGGA".to_vec();
-        let config = Config::new()
-            .set_kmer_lookup_table(8)
-            .set_suffix_array_sampling_ratio(4);
-        let fm_index = FmIndex::new(&config, text);
-        let pattern = b"TA".to_vec();
-
-        // count
-        let count = fm_index.count(&pattern);
-        assert_eq!(count, 2);
-
-        // locate without k-mer lookup table
-        let locations = fm_index.locate(&pattern);
-        assert_eq!(locations, vec![5,18]);
-
-        // locate with k-mer lookup table
-        let locations = fm_index.locate_with_klt(&pattern);
-        assert_eq!(locations, vec![5,18]);
-    }
-    
-    #[test]
-    fn mem_size_check() {
-        println!("size of FmIndex: {}", std::mem::size_of::<FmIndex>());
-        println!("size of CountArray: {}", std::mem::size_of::<CountArray>());
-        println!("size of SuffixArray: {}", std::mem::size_of::<SuffixArray>());
-        println!("size of KmerLookupTable: {}", std::mem::size_of::<KmerLookupTable>());
-        println!("size of klt option: {}", std::mem::size_of::<Option<KmerLookupTable>>());
-        println!("size of Bwt: {}", std::mem::size_of::<Bwt>());
-    }
-
-    // for NN
-
-    #[test]
-    fn test_fmindex_nn_locate_without_klt() {
-        let text = "CTCCGTACACCTGTTTCGTATCGGNNNAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCNNNCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACNNNCGGATGNNNCATAGATTTCCCCATTTTGCGTANNNNNNNNNNNNNNNNNNCCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec();
-        let config = Config::new()
-            .set_suffix_array_sampling_ratio(4);
-        let fm_index = fmindex_nn::FmIndexNn::new(&config, text.clone());
-        // test
-        for pattern in vec!["A", "C", "G", "T", "TA", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
-            let pattern = pattern.as_bytes().to_vec();
-            let mut locations_res = fm_index.locate(&pattern);
-            locations_res.sort();
-            let mut locations_ans = get_locations_using_other_crate(&text, &pattern.to_vec());
-            locations_ans.sort();
-            assert_eq!(locations_res, locations_ans);
-        }
-    }
-
-    #[test]
-    fn test_fmindex_nn_locate_with_klt() {
-        let text = "CTCCGTACACCTGTTTCGTATCGGNNNAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCNNNCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACNNNCGGATGNNNCATAGATTTCCCCATTTTGCGTANNNNNNNNNNNNNNNNNNCCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec();
-        let config = Config::new()
-            .set_suffix_array_sampling_ratio(10)
-            .set_kmer_lookup_table(7);
-        let fm_index = fmindex_nn::FmIndexNn::new(&config, text.clone());
-        // test
-        // for pattern in vec!["AAGTGAAATTTCCACATCGCCGGAAAC", "CCGCTGCCGGTGG", "AAACCAGTCATCCTGA"] {
-        for pattern in vec!["TACCA","A", "C", "G", "T", "TCCG", "TA", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
-            let pattern = pattern.as_bytes().to_vec();
-            let mut locations_res = fm_index.locate_with_klt(&pattern);
-            locations_res.sort();
-            let mut locations_ans = get_locations_using_other_crate(&text, &pattern.to_vec());
-            locations_ans.sort();
-            // println!("{:?}", locations_res);
-            assert_eq!(locations_res, locations_ans);
-        }
-    }
-
-    #[test]
-    fn test_fmindex_nn_locate_w_vs_wo_klt() {
-        let text = "CTCCGTACACCTGTTTCGTATCGGNNNAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCNNNCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACNNNCGGATGNNNCATAGATTTCCCCATTTTGCGTANNNNNNNNNNNNNNNNNNCCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec();
-        let config = Config::new()
-            .set_suffix_array_sampling_ratio(4)
-            .set_kmer_lookup_table(7);
-        let fm_index = fmindex_nn::FmIndexNn::new(&config, text.clone());
-        // test
-        for pattern in vec!["A", "C", "G", "T", "CCGT", "TCCG", "TA", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
-            let pattern = pattern.as_bytes().to_vec();
-            let mut locations_res_w = fm_index.locate_with_klt(&pattern);
-            locations_res_w.sort();
-            let mut locations_res_wo = fm_index.locate(&pattern);
-            locations_res_wo.sort();
-            println!("{:?}\n{:?}", locations_res_w,locations_res_wo)
-            // let mut locations_ans = get_locations_using_other_crate(&text, &pattern.to_vec());
-            // locations_ans.sort();
-            // assert_eq!(locations_res, locations_ans);
-        }
-    }
-
-    #[test]
-    fn test_fmindex_nn_with_config() {
-        let text = b"CTCCGTACACCTGTTTCGTATCGGA".to_vec();
-        let config = Config::new()
-            .set_kmer_lookup_table(8)
-            .set_suffix_array_sampling_ratio(4);
-        let fm_index = fmindex_nn::FmIndexNn::new(&config, text);
-        let pattern = b"TA".to_vec();
-
-        // count
-        let count = fm_index.count(&pattern);
-        assert_eq!(count, 2);
-
-        // locate without k-mer lookup table
-        let locations = fm_index.locate(&pattern);
-        assert_eq!(locations, vec![5,18]);
-
-        // locate with k-mer lookup table
-        let locations = fm_index.locate_with_klt(&pattern);
-        assert_eq!(locations, vec![5,18]);
-    }
-
-    #[test]
-    fn test_new_nn_klt_is_right() {
-        let kmer: usize = 8;
-        let text = b"CTCCGTACACCTGTTTCGTATCGGA".to_vec();
-        let config = Config::new()
+    fn config_nn(ssa: u64, kmer: usize) -> FmIndexConfig {
+        let config = FmIndexConfig::new()
+            .set_suffix_array_sampling_ratio(ssa)
             .set_kmer_lookup_table(kmer)
-            .set_suffix_array_sampling_ratio(4);
-        
-        let klt_old = FmIndex::new(&config, text.clone()).kmer_lookup_table.unwrap().1;
-        let klt_new = fmindex_nn::FmIndexNn::new(&config, text.clone()).kmer_lookup_table.unwrap().1;
+            .contain_non_nucleotide();
+        config
+    }
+
+    // FmIndexOn
+    #[test]
+    fn test_fmindex_on_count() {
+        let config = config_on(8, 4);
+        let text = text_on();
+        let fm_index = config.generate_fmindex(text.clone());
+        for pattern in pattern_on() {
+            let count_res = fm_index.count(&pattern);
+            let count_ans = get_locations_using_other_crate(&text, &pattern.to_vec()).len() as u64;
+            assert_eq!(count_res, count_ans);
+        };
+    }
+    #[test]
+    fn test_fmindex_on_locate_wo_klt() {
+        let config = config_on(8, 4);
+        let text = text_on();
+        let fm_index = config.generate_fmindex(text.clone());
+        for pattern in pattern_on() {
+            let mut locations_res = fm_index.locate_wo_klt(&pattern);
+            locations_res.sort();
+            let mut locations_ans = get_locations_using_other_crate(&text, &pattern.to_vec());
+            locations_ans.sort();
+            assert_eq!(locations_res, locations_ans);
+        };
+    }
+    #[test]
+    fn test_fmindex_on_locate_w_klt() {
+        let config = config_on(8, 4);
+        let text = text_on();
+        let fm_index = config.generate_fmindex(text.clone());
+        for pattern in pattern_on() {
+            let mut locations_res = fm_index.locate_w_klt(&pattern);
+            locations_res.sort();
+            let mut locations_ans = get_locations_using_other_crate(&text, &pattern.to_vec());
+            locations_ans.sort();
+            assert_eq!(locations_res, locations_ans);
+        };
+    }
+    // FmIndexNn
+    #[test]
+    fn test_fmindex_nn_count() {
+        let config = config_nn(8, 4);
+        let text = text_nn();
+        let fm_index = config.generate_fmindex(text.clone());
+        for pattern in pattern_nn() {
+            let count_res = fm_index.count(&pattern);
+            let count_ans = get_locations_using_other_crate(&text, &pattern.to_vec()).len() as u64;
+            assert_eq!(count_res, count_ans);
+        };
+    }
+    #[test]
+    fn test_fmindex_nn_locate_wo_klt() {
+        let config = config_nn(8, 4);
+        let text = text_nn();
+        let fm_index = config.generate_fmindex(text.clone());
+        for pattern in pattern_nn() {
+            let mut locations_res = fm_index.locate_wo_klt(&pattern);
+            locations_res.sort();
+            let mut locations_ans = get_locations_using_other_crate(&text, &pattern.to_vec());
+            locations_ans.sort();
+            assert_eq!(locations_res, locations_ans);
+        };
+    }
+    #[test]
+    fn test_fmindex_nn_locate_w_klt() {
+        let config = config_nn(8, 4);
+        let text = text_nn();
+        let fm_index = config.generate_fmindex(text.clone());
+        for pattern in pattern_nn() {
+            let mut locations_res = fm_index.locate_w_klt(&pattern);
+            locations_res.sort();
+            let mut locations_ans = get_locations_using_other_crate(&text, &pattern.to_vec());
+            locations_ans.sort();
+            assert_eq!(locations_res, locations_ans);
+        };
+    }
+
+    // KLT check
+    #[test]
+    fn test_klt_is_matched() {
+        let ssa = 8;
+        let kmer = 3;
+        let text = text_on();
+        let config_on = config_on(ssa, kmer);
+        let config_nn = config_nn(ssa, kmer);
+        // klt
+        let klt_on = FmIndexOn::new(&config_on, text.clone()).kmer_lookup_table.unwrap().1;
+        let klt_nn = FmIndexNn::new(&config_nn, text.clone()).kmer_lookup_table.unwrap().1;
         // truncate
-        let mut klt_new_truncated: Vec<u64> = Vec::new();
-        for (idx, v) in klt_new.iter().enumerate() {
+        let mut klt_nn_truncated: Vec<u64> = Vec::new();
+        for (idx, v) in klt_nn.iter().enumerate() {
             let mut have_n = false;
             for k in 0..kmer {
                 let pow = 5_usize.pow(k as u32);
@@ -608,30 +287,10 @@ mod tests {
                 }
             }
             if !have_n {
-                klt_new_truncated.push(*v)
+                klt_nn_truncated.push(*v)
             }
         }
 
-        assert_eq!(klt_new_truncated, klt_old);
-    }
-
-    #[test]
-    fn test_new_nn_pos_is_right() {
-        let kmer: usize = 5;
-        let text = b"CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".to_vec();
-        let config = Config::new()
-            .set_kmer_lookup_table(kmer)
-            .set_suffix_array_sampling_ratio(4);
-
-        let fm_index_old = FmIndex::new(&config, text.clone());
-        let fm_index_new = fmindex_nn::FmIndexNn::new(&config, text.clone());
-
-        for pattern in vec!["A", "C", "G", "T", "TA", "AAGTGAAATTTCCACATCGCCGGAAAC", "AA", "GGC"] {
-            let pattern = pattern.as_bytes().to_vec();
-            let mut locations_res_1 = fm_index_old.locate(&pattern);
-            let mut locations_res_2 = fm_index_new.locate(&pattern);
-            locations_res_1.sort();
-            locations_res_2.sort();
-        }
+        assert_eq!(klt_nn_truncated, klt_on);
     }
 }

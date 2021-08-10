@@ -29,7 +29,7 @@ use lt_fm_index::FmIndexConfig;
 let fmi_config = FmIndexConfig::new()
 	.set_kmer_lookup_table(8)
 	.set_suffix_array_sampling_ratio(4)
-	.contain_non_nucleotide(); // Default is `true`
+	.contain_non_nucleotide(); // Default is `contain only nucleotide`
 
 // (2) Generate fm-index with text
 let text = b"CTCCGTACACCTGTTTCGTATCGGANNN".to_vec();

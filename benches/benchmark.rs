@@ -61,8 +61,8 @@ fn bench_locate_w_or_wo_klt(c: &mut Criterion) {
     group.finish();
 }
 fn bench_locate_sm_w_or_wo_klt(c: &mut Criterion) {
-    let ssr = 2;
-    let kemr = 8; // if kmer == 8
+    let ssr = 1;
+    let kemr = 13; // if kmer == 8
 
     let text = text_1000_on();
     let pattern = pattern_100_on();
@@ -79,7 +79,7 @@ fn bench_locate_sm_w_or_wo_klt(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("locate_sm_w_or_wo_klt");
 
-    let pattern_len: Vec<usize> = (1..=20).into_iter().map(|x| x*1).collect();
+    let pattern_len: Vec<usize> = (2..=30).into_iter().map(|x| x*1).collect();
 
     for i in &pattern_len {
         let pattern_sliced = pattern[..*i].to_vec();

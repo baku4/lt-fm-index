@@ -35,12 +35,12 @@ const N_IDX: usize = 0b100;
 /// Lt-Fm-index data structure
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct FmIndexNn {
-    count_array: CountArray,
-    sampling_ratio: u64,
-    text_len: u64,
-    suffix_array: SuffixArray,
+    pub count_array: CountArray,
+    pub sampling_ratio: u64,
+    pub text_len: u64,
+    pub suffix_array: SuffixArray,
     pub kmer_lookup_table: Option<KmerLookupTable>,
-    bwt: BwtNn,
+    pub bwt: BwtNn,
 }
 
 impl FmIndexNn {

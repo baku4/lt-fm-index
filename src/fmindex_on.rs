@@ -33,12 +33,12 @@ const T_IDX: usize = 0b011;
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 /// Lt-Fm-index data structure
 pub struct FmIndexOn {
-    count_array: CountArray,
-    sampling_ratio: u64,
-    text_len: u64,
-    suffix_array: SuffixArray,
+    pub count_array: CountArray,
+    pub sampling_ratio: u64,
+    pub text_len: u64,
+    pub suffix_array: SuffixArray,
     pub kmer_lookup_table: Option<KmerLookupTable>,
-    bwt: BwtOn,
+    pub bwt: BwtOn,
 }
 
 

@@ -4,9 +4,120 @@ use criterion::{
 use lt_fm_index::*;
 
 /*
+Bench KLT vs no KLT
+*/
+fn bench_locate_w_or_wo_klt(c: &mut Criterion) {
+    let ssr = 2;
+    let kemr = 8; // if kmer == 8
+
+    let text = text_1000_on();
+    let pattern = pattern_100_on();
+
+    let fm_index_on = FmIndexConfig::new()
+        .set_suffix_array_sampling_ratio(ssr)
+        .set_kmer_lookup_table(kemr)
+        .generate_fmindex(text.clone());
+    let fm_index_nn = FmIndexConfig::new()
+        .set_suffix_array_sampling_ratio(ssr)
+        .set_kmer_lookup_table(kemr)
+        .contain_non_nucleotide()
+        .generate_fmindex(text);
+
+    let mut group = c.benchmark_group("locate_w_or_wo_klt");
+
+    let pattern_len: Vec<usize> = (1..=20).into_iter().map(|x| x*5).collect();
+
+    for i in &pattern_len {
+        let pattern_sliced = pattern[..*i].to_vec();
+        group.bench_with_input(
+            BenchmarkId::new("On-wo-klt", i),
+            i, 
+            |b, i| b.iter(|| {
+                fm_index_on.locate_wo_klt(black_box(&pattern_sliced));
+            }
+        ));
+        group.bench_with_input(
+            BenchmarkId::new("On-w-klt", i),
+            i, 
+            |b, i| b.iter(|| {
+                fm_index_on.locate_w_klt(black_box(&pattern_sliced));
+            }
+        ));
+        group.bench_with_input(
+            BenchmarkId::new("Nn-wo-klt", i),
+            i, 
+            |b, i| b.iter(|| {
+                fm_index_nn.locate_wo_klt(black_box(&pattern_sliced));
+            }
+        ));
+        group.bench_with_input(
+            BenchmarkId::new("Nn-w-klt", i),
+            i, 
+            |b, i| b.iter(|| {
+                fm_index_nn.locate_w_klt(black_box(&pattern_sliced));
+            }
+        ));
+    }
+    group.finish();
+}
+fn bench_locate_sm_w_or_wo_klt(c: &mut Criterion) {
+    let ssr = 2;
+    let kemr = 8; // if kmer == 8
+
+    let text = text_1000_on();
+    let pattern = pattern_100_on();
+
+    let fm_index_on = FmIndexConfig::new()
+        .set_suffix_array_sampling_ratio(ssr)
+        .set_kmer_lookup_table(kemr)
+        .generate_fmindex(text.clone());
+    let fm_index_nn = FmIndexConfig::new()
+        .set_suffix_array_sampling_ratio(ssr)
+        .set_kmer_lookup_table(kemr)
+        .contain_non_nucleotide()
+        .generate_fmindex(text);
+
+    let mut group = c.benchmark_group("locate_sm_w_or_wo_klt");
+
+    let pattern_len: Vec<usize> = (1..=20).into_iter().map(|x| x*1).collect();
+
+    for i in &pattern_len {
+        let pattern_sliced = pattern[..*i].to_vec();
+        group.bench_with_input(
+            BenchmarkId::new("On-wo-klt", i),
+            i, 
+            |b, i| b.iter(|| {
+                fm_index_on.locate_wo_klt(black_box(&pattern_sliced));
+            }
+        ));
+        group.bench_with_input(
+            BenchmarkId::new("On-w-klt", i),
+            i, 
+            |b, i| b.iter(|| {
+                fm_index_on.locate_w_klt(black_box(&pattern_sliced));
+            }
+        ));
+        group.bench_with_input(
+            BenchmarkId::new("Nn-wo-klt", i),
+            i, 
+            |b, i| b.iter(|| {
+                fm_index_nn.locate_wo_klt(black_box(&pattern_sliced));
+            }
+        ));
+        group.bench_with_input(
+            BenchmarkId::new("Nn-w-klt", i),
+            i, 
+            |b, i| b.iter(|| {
+                fm_index_nn.locate_w_klt(black_box(&pattern_sliced));
+            }
+        ));
+    }
+    group.finish();
+}
+
+/*
 Bench Use Enum vs Trait vs Struct
 */
-
 fn bench_locate_by_pattern_length(c: &mut Criterion) {
     let ssr = 2;
     let kmer = 8;
@@ -266,5 +377,8 @@ fn bench_get_ca_klt(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, bench_no_klt_generate_and_locate_by_crate, bench_generate_and_locate_by_crate, bench_locate_by_crate, bench_generate_by_crate, bench_locate_by_pattern_length, bench_get_ca_klt);
+criterion_group!(
+    benches,
+    bench_locate_w_or_wo_klt, bench_locate_sm_w_or_wo_klt,
+    bench_no_klt_generate_and_locate_by_crate, bench_generate_and_locate_by_crate, bench_locate_by_crate, bench_generate_by_crate, bench_locate_by_pattern_length, bench_get_ca_klt);
 criterion_main!(benches);

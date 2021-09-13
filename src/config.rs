@@ -1,7 +1,6 @@
-use super::{
-    Result, error_msg,
-    FmIndex, Pattern, Text, TextType, BitSize,
-};
+use super::{Result, error_msg};
+use super::fm_index::*;
+use super::structure::*;
 
 pub struct FmIndexConfig {
     /// Type of text
@@ -12,6 +11,13 @@ pub struct FmIndexConfig {
     bit_size: BitSize,
     /// Sampling ratio of suffix array
     sa_sampling_ratio: u64,
+}
+
+pub enum TextType {
+    OnlyNucleotide,
+    NucleotideWithNoise,
+    OnlyAminoacid,
+    AminoacidWithNoise,
 }
 
 impl FmIndexConfig {
@@ -73,6 +79,7 @@ impl FmIndexConfig {
         // TODO:
     }
 
+    //FIXME: to const
     fn pointer_width_of_target() -> usize {
         #[cfg(target_pointer_width = "32")]
         let pointer_width: usize = 32;

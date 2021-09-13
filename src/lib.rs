@@ -1,39 +1,14 @@
 use anyhow::Result;
 use anyhow::bail as error_msg;
+use serde::{Serialize, Deserialize};
 
 mod fm_index;
+mod structure;
+mod generator;
 
 mod config;
 
-pub trait FmIndex {
-    fn count(&self, pattern: Pattern) -> u64;
-    fn locate(&self, pattern: Pattern) -> Vec<u64>;
-}
 
-pub type Pattern<'a> = &'a [u8];
-
-pub trait LtFmIndex: FmIndex {
-    fn generate_with_text_and_config(text: Text, lt_fm_index_config: &LtFmIndexConfig) -> Self;
-}
-
-pub type Text = Vec<u8>;
-
-pub struct LtFmIndexConfig {
-    text_type: TextType,
-    kmer_size: usize,
-    bit_size: BitSize,
-    sa_sampling_ratio: u64,
-}
-enum TextType {
-    OnlyNucleotide,
-    NucleotideWithNoise,
-    OnlyAminoacid,
-    AminoacidWithNoise,
-}
-enum BitSize {
-    Bit8,
-    Bit16,
-}
 
 // FIXME: **************** REFACTORING
 
@@ -46,8 +21,6 @@ pub mod fmindex_nn;
 use fmindex_on::FmIndexOn;
 use fmindex_nn::FmIndexNn;
 pub use io::*;
-
-use serde::{Serialize, Deserialize};
 
 /// Configurations for [FmIndex]
 #[derive(Debug, Serialize, Deserialize, PartialEq)]

@@ -106,13 +106,19 @@ impl FmIndexConfigDep {
             self
         }
     }
-    /// Text contains only nucleotide sequences.
+    /// Whether the text contains only nucleotide sequence or not.
+    #[inline]
+    pub fn only_nucleotide(mut self, only_nc: bool) -> Self {
+        self.only_nucleotide = only_nc;
+        self
+    }
+    /// Text contains only nucleotide sequences. (to be deprecated)
     #[inline]
     pub fn contain_only_nucleotide(mut self) -> Self {
         self.only_nucleotide = true;
         self
     }
-    /// Text contains non-nucleotide sequences.
+    /// Text contains non-nucleotide sequences. (to be deprecated)
     #[inline]
     pub fn contain_non_nucleotide(mut self) -> Self {
         self.only_nucleotide = false;

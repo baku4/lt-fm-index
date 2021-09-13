@@ -1,6 +1,8 @@
 use anyhow::Result;
 use anyhow::bail as error_msg;
 
+mod fm_index;
+
 mod config;
 
 pub trait FmIndex {
@@ -18,9 +20,9 @@ pub type Text = Vec<u8>;
 
 pub struct LtFmIndexConfig {
     text_type: TextType,
-    kmer_size: KmerSize,
+    kmer_size: usize,
     bit_size: BitSize,
-    sa_sampling_ratio: SaSamplingRatio,
+    sa_sampling_ratio: u64,
 }
 enum TextType {
     OnlyNucleotide,
@@ -28,14 +30,10 @@ enum TextType {
     OnlyAminoacid,
     AminoacidWithNoise,
 }
-type KmerSize = usize;
 enum BitSize {
     Bit8,
     Bit16,
 }
-type SaSamplingRatio = u64;
-
-
 
 // FIXME: **************** REFACTORING
 
@@ -203,9 +201,9 @@ mod tests {
     use crate::fmindex_nn::FmIndexNn;
 
     // For cross check
-    use fm_index::converter::RangeConverter;
-    use fm_index::suffix_array::SuffixOrderSampler;
-    use fm_index::{BackwardSearchIndex, FMIndex};
+    use crate_fm_index::converter::RangeConverter;
+    use crate_fm_index::suffix_array::SuffixOrderSampler;
+    use crate_fm_index::{BackwardSearchIndex, FMIndex};
     use rand::Rng;
 
     fn get_locations_using_other_crate(text: &Vec<u8>, pattern: &Vec<u8>) -> Vec<u64> {

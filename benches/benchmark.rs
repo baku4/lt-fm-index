@@ -161,9 +161,9 @@ fn bench_locate_by_pattern_length(c: &mut Criterion) {
 /*
 Compare to crate `fm-index`
 */
-use fm_index::converter::RangeConverter;
-use fm_index::suffix_array::{SuffixOrderSampler, SuffixOrderSampledArray};
-use fm_index::{BackwardSearchIndex, FMIndex};
+use crate_fm_index::converter::RangeConverter;
+use crate_fm_index::suffix_array::{SuffixOrderSampler, SuffixOrderSampledArray};
+use crate_fm_index::{BackwardSearchIndex, FMIndex};
 
 fn generate_index_of_crate_fm_index(ssr: usize, text: &Vec<u8>) -> FMIndex<u8, RangeConverter<u8>, SuffixOrderSampledArray> {
     let converter = RangeConverter::new(b' ', b'~');

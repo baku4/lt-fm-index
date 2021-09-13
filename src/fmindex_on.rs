@@ -1,6 +1,6 @@
 mod bwt_on;
 
-use super::{FmIndexConfig, LtFmIndex};
+use super::{FmIndexConfigDep, LtFmIndexDep};
 use super::utils::{
     SuffixArray,
     accumulate_count_array, compress_suffix_array,
@@ -45,7 +45,7 @@ pub struct FmIndexOn {
 impl FmIndexOn {
     /// Create new fm-index with configuration
     #[inline]
-    pub fn new(config: &FmIndexConfig, mut text: Vec<u8>) -> Self {
+    pub fn new(config: &FmIndexConfigDep, mut text: Vec<u8>) -> Self {
         let text_len = text.len() as u64;
         // (1) count array & klt
         let (count_array, kmer_lookup_table): (CountArray, Option<KmerLookupTable>) = Self::get_ca_and_klt(&config, &mut text);
@@ -70,7 +70,7 @@ impl FmIndexOn {
         }
     }
     #[inline]
-    pub fn get_ca_and_klt(config: &FmIndexConfig, text: &mut Vec<u8>) -> (CountArray, Option<KmerLookupTable>) {
+    pub fn get_ca_and_klt(config: &FmIndexConfigDep, text: &mut Vec<u8>) -> (CountArray, Option<KmerLookupTable>) {
         match config.kmer_size {
             Some(kmer) => {
                 // Init
@@ -183,7 +183,7 @@ impl FmIndexOn {
     }
 }
 
-impl LtFmIndex for FmIndexOn {
+impl LtFmIndexDep for FmIndexOn {
     /// Count the number of pattern in the text
     #[inline]
     fn count(&self, pattern: &[u8]) -> u64 {

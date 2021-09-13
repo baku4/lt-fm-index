@@ -13,11 +13,11 @@ fn bench_locate_w_or_wo_klt(c: &mut Criterion) {
     let text = text_1000_on();
     let pattern = pattern_100_on();
 
-    let fm_index_on = FmIndexConfig::new()
+    let fm_index_on = FmIndexConfigDep::new()
         .set_suffix_array_sampling_ratio(ssr)
         .set_kmer_lookup_table(kemr)
         .generate_fmindex(text.clone());
-    let fm_index_nn = FmIndexConfig::new()
+    let fm_index_nn = FmIndexConfigDep::new()
         .set_suffix_array_sampling_ratio(ssr)
         .set_kmer_lookup_table(kemr)
         .contain_non_nucleotide()
@@ -67,11 +67,11 @@ fn bench_locate_sm_w_or_wo_klt(c: &mut Criterion) {
     let text = text_1000_on();
     let pattern = pattern_100_on();
 
-    let fm_index_on = FmIndexConfig::new()
+    let fm_index_on = FmIndexConfigDep::new()
         .set_suffix_array_sampling_ratio(ssr)
         .set_kmer_lookup_table(kemr)
         .generate_fmindex(text.clone());
-    let fm_index_nn = FmIndexConfig::new()
+    let fm_index_nn = FmIndexConfigDep::new()
         .set_suffix_array_sampling_ratio(ssr)
         .set_kmer_lookup_table(kemr)
         .contain_non_nucleotide()
@@ -123,7 +123,7 @@ fn bench_locate_by_pattern_length(c: &mut Criterion) {
     let kmer = 8;
 
     let text = "CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACCCTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACCCTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCG".as_bytes().to_vec(); // length 500
-    let config = FmIndexConfig::new()
+    let config = FmIndexConfigDep::new()
         .set_suffix_array_sampling_ratio(ssr)
         .set_kmer_lookup_table(kmer);
     let pattern = b"TATGGTTCAATGGCACCGGA".to_vec();
@@ -170,14 +170,14 @@ fn generate_index_of_crate_fm_index(ssr: usize, text: &Vec<u8>) -> FMIndex<u8, R
     let sampler = SuffixOrderSampler::new().level(ssr);
     FMIndex::new(text.clone(), converter, sampler)
 }
-fn generate_index_of_lt_fm_index_on(ssr: u64, kmer: usize,text: Vec<u8>) -> FmIndex {
-    let config = FmIndexConfig::new()
+fn generate_index_of_lt_fm_index_on(ssr: u64, kmer: usize,text: Vec<u8>) -> FmIndexDep {
+    let config = FmIndexConfigDep::new()
         .set_kmer_lookup_table(kmer)
         .set_suffix_array_sampling_ratio(ssr);
     config.generate_fmindex(text)
 }
-fn generate_index_of_lt_fm_index_nn(ssr: u64, kmer: usize,text: Vec<u8>) -> FmIndex {
-    let config = FmIndexConfig::new()
+fn generate_index_of_lt_fm_index_nn(ssr: u64, kmer: usize,text: Vec<u8>) -> FmIndexDep {
+    let config = FmIndexConfigDep::new()
         .set_kmer_lookup_table(kmer)
         .set_suffix_array_sampling_ratio(ssr)
         .contain_non_nucleotide();
@@ -327,7 +327,7 @@ fn bench_no_klt_generate_and_locate_by_crate(c: &mut Criterion) {
             BenchmarkId::new("Lt-fm-index-on", i),
             i, 
             |b, i| b.iter(|| {
-                FmIndexConfig::new()
+                FmIndexConfigDep::new()
                     .set_suffix_array_sampling_ratio(black_box(ssr as u64))
                     .generate_fmindex(black_box(text.clone()))
                     .locate_wo_klt(black_box(&pattern_sliced));
@@ -337,7 +337,7 @@ fn bench_no_klt_generate_and_locate_by_crate(c: &mut Criterion) {
             BenchmarkId::new("Lt-fm-index-nn", i),
             i, 
             |b, i| b.iter(|| {
-                FmIndexConfig::new()
+                FmIndexConfigDep::new()
                     .set_suffix_array_sampling_ratio(black_box(ssr as u64))
                     .contain_non_nucleotide()
                     .generate_fmindex(black_box(text.clone()))
@@ -351,15 +351,15 @@ fn bench_no_klt_generate_and_locate_by_crate(c: &mut Criterion) {
 /*
 Bench generating CA and KLT
 */
-fn get_ca_klt_nn(config: &FmIndexConfig, mut text: Vec<u8>) {
+fn get_ca_klt_nn(config: &FmIndexConfigDep, mut text: Vec<u8>) {
     let _ = fmindex_nn::FmIndexNn::get_ca_and_klt(config, &mut text);
 }
-fn get_ca_klt_on(config: &FmIndexConfig, mut text: Vec<u8>) {
+fn get_ca_klt_on(config: &FmIndexConfigDep, mut text: Vec<u8>) {
     let _ = fmindex_on::FmIndexOn::get_ca_and_klt(config, &mut text);
 }
 fn bench_get_ca_klt(c: &mut Criterion) {
     let text = "CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACCCTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACCCTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCG".as_bytes().to_vec(); // length 500
-    let config = FmIndexConfig::new()
+    let config = FmIndexConfigDep::new()
     .set_suffix_array_sampling_ratio(4)
     .set_kmer_lookup_table(8);
 

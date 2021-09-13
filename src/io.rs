@@ -1,8 +1,8 @@
 use std::{fs::File, io::{Read, Write}};
 
-use super::FmIndex;
+use super::FmIndexDep;
 
-impl FmIndex {
+impl FmIndexDep {
     /// Write [FmIndex] to writer
     pub fn write_index_to<W>(&self, writer: W) -> Result<(), String>
         where W: Write 
@@ -53,18 +53,18 @@ impl FmIndex {
 mod tests {
     use crate::*;
 
-    fn get_fmindex_on() -> FmIndex {
+    fn get_fmindex_on() -> FmIndexDep {
         let text = "CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec();
-        let config = FmIndexConfig::new()
+        let config = FmIndexConfigDep::new()
             .set_kmer_lookup_table(7)
             .set_suffix_array_sampling_ratio(4);
         let fm_index = config.generate_fmindex(text.clone());
         fm_index
     }
     
-    fn get_fmindex_nn() -> FmIndex {
+    fn get_fmindex_nn() -> FmIndexDep {
         let text = "CTCCGTACACCTGTTTCGTATCGGAACCGGTAAGTGAAATTTCCACATCGCCGGAAACCGTATATTGTCCATCCGCTGCCGGTGGATCCGGCTCCTGCGTGGAAAACCAGTCATCCTGATTTACATATGGTTCAATGGCACCGGATGCATAGATTTCCCCATTTTGCGTACCGGAAACGTGCGCAAGCACGATCTGTGTCTTACC".as_bytes().to_vec();
-        let config = FmIndexConfig::new()
+        let config = FmIndexConfigDep::new()
             .set_kmer_lookup_table(7)
             .set_suffix_array_sampling_ratio(4)
             .contain_non_nucleotide();
@@ -79,7 +79,7 @@ mod tests {
         let fm_index_on_to_write = get_fmindex_on();
         fm_index_on_to_write.write_index_to(&mut buffer).unwrap();
         // read
-        let fm_index_on_readed = FmIndex::read_index_from(&buffer[..]).unwrap();
+        let fm_index_on_readed = FmIndexDep::read_index_from(&buffer[..]).unwrap();
         assert_eq!(fm_index_on_to_write, fm_index_on_readed);
     }
     #[test]
@@ -89,7 +89,7 @@ mod tests {
         let fm_index_nn_to_write = get_fmindex_nn();
         fm_index_nn_to_write.write_index_to(&mut buffer).unwrap();
         // read
-        let fm_index_nn_readed = FmIndex::read_index_from(&buffer[..]).unwrap();
+        let fm_index_nn_readed = FmIndexDep::read_index_from(&buffer[..]).unwrap();
         assert_eq!(fm_index_nn_to_write, fm_index_nn_readed);
     }
 }

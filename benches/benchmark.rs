@@ -1,7 +1,7 @@
 use criterion::{
     black_box, criterion_group, criterion_main, Criterion, BenchmarkId
 };
-use lt_fm_index::*;
+use lt_fm_index::deprecated::*;
 
 /*
 Bench KLT vs no KLT

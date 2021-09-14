@@ -1,6 +1,7 @@
 use super::CountArrayInterface;
-use super::Pattern;
+use super::{Pattern, Serialize, Deserialize};
 
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 struct CountArray<F> where F: Fn(u8)->usize {
     chr_encoder: F,
     count_array: Vec<u64>,
@@ -39,6 +40,7 @@ impl<F> CountArray<F> where F: Fn(u8)->usize {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 struct KmerLookupTable<F> where F: Fn(u8)->usize {
     kmer_size: usize,
     idx_formatter: IdxFormatter<F>,
@@ -76,6 +78,7 @@ impl<F> KmerLookupTable<F> where F: Fn(u8)->usize {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 struct IdxFormatter<F> where F: Fn(u8)->usize {
     idx_encoder: F,
     multiplier: Vec<usize>,

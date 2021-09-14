@@ -76,8 +76,7 @@ trait CountArrayInterface {
 
 trait BwtInterface {
     fn get_pre_chridx_and_rank_of_pos(&self, pos: u64) -> Option<(usize, u64)>;
-    fn get_chridx_and_rank_of_pos(&self, pos: u64) -> (usize, u64);
-    fn get_next_rank_of_pos_and_chridx(&self, pos: u64, chr_idx: usize) -> u64;
+    fn get_next_rank_of_pos_and_chridx(&self, pos: u64, chridx: usize) -> u64;
 }
 
 #[cfg(test)]

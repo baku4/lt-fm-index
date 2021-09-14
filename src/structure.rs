@@ -62,16 +62,16 @@ impl<C: CountArrayInterface, B: BwtInterface> LtFmIndex<C, B> {
     }
     fn get_next_pos_range_of_pos_range_and_chr(&self, pos_range: (u64, u64), chr: u8) -> (u64, u64) {
         let (chridx, count) = self.count_array.get_chridx_and_count_of_chr(chr);
-        let first_rank = self.bwt.get_next_rank_of_pos_and_chridx(pos_range.0, chridx);
-        let second_rank = self.bwt.get_next_rank_of_pos_and_chridx(pos_range.1, chridx);
-        (count + first_rank, count + second_rank)
+        let start_rank = self.bwt.get_next_rank_of_pos_and_chridx(pos_range.0, chridx);
+        let end_rank = self.bwt.get_next_rank_of_pos_and_chridx(pos_range.1, chridx);
+        (count + start_rank, count + end_rank)
     }
 }
 
 trait CountArrayInterface {
     fn get_count_of_chridx(&self, chridx: usize) -> u64;
-    fn get_initial_pos_range_and_idx_of_pattern(&self, pattern: Pattern) -> ((u64, u64), usize);
     fn get_chridx_and_count_of_chr(&self, chr: u8) -> (usize, u64);
+    fn get_initial_pos_range_and_idx_of_pattern(&self, pattern: Pattern) -> ((u64, u64), usize);
 }
 
 trait BwtInterface {
@@ -80,23 +80,12 @@ trait BwtInterface {
     fn get_next_rank_of_pos_and_chridx(&self, pos: u64, chr_idx: usize) -> u64;
 }
 
-// 
-pub type Text = Vec<u8>;
-
-pub struct LtFmIndexOption {
-    lookup_table_option: LookupTableOption,
-    sa_sampling_ratio: u64,
-}
-pub struct LookupTableOption {
-    kmer_size: usize,
-    bit_size: BitSize,
-}
-pub enum BitSize {
-    Bit8,
-    Bit16,
-}
-
 #[cfg(test)]
 mod tests {
+    fn test_count() {
 
+    }
+    fn test_locate() {
+        
+    }
 }

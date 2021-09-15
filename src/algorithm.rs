@@ -1,11 +1,11 @@
-use crate::{Result, error_msg, Serialize, Deserialize};
+use crate::{Serialize, Deserialize};
 use crate::fm_index::{FmIndex, Pattern};
 
-mod count_array;
-mod bwt;
+pub mod count_array;
+pub mod bwt;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-struct LtFmIndex<C: CountArrayInterface, B: BwtInterface> {
+pub struct LtFmIndex<C: CountArrayInterface, B: BwtInterface> {
     text_len: u64,
     sa_sampling_ratio: u64,
     suffix_array: Vec<u64>,
@@ -68,13 +68,13 @@ impl<C: CountArrayInterface, B: BwtInterface> LtFmIndex<C, B> {
     }
 }
 
-trait CountArrayInterface {
+pub trait CountArrayInterface {
     fn get_count_of_chridx(&self, chridx: usize) -> u64;
     fn get_chridx_and_count_of_chr(&self, chr: u8) -> (usize, u64);
     fn get_initial_pos_range_and_idx_of_pattern(&self, pattern: Pattern) -> ((u64, u64), usize);
 }
 
-trait BwtInterface {
+pub trait BwtInterface {
     fn get_pre_chridx_and_rank_of_pos(&self, pos: u64) -> Option<(usize, u64)>;
     fn get_next_rank_of_pos_and_chridx(&self, pos: u64, chridx: usize) -> u64;
 }

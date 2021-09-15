@@ -2,13 +2,13 @@ use super::CountArrayInterface;
 use super::{Pattern, Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-struct CountArray<F> where F: Fn(u8)->usize {
+pub struct CountArray<F> where F: Fn(u8) -> usize {
     chr_encoder: F,
     count_array: Vec<u64>,
     kmer_lookup_table: Option<KmerLookupTable<F>>,
 }
 
-impl<F> CountArrayInterface for CountArray<F> where F: Fn(u8)->usize {
+impl<F> CountArrayInterface for CountArray<F> where F: Fn(u8) -> usize {
     fn get_count_of_chridx(&self, chridx: usize) -> u64 {
         self.count_array[chridx]
     }
@@ -34,20 +34,20 @@ impl<F> CountArrayInterface for CountArray<F> where F: Fn(u8)->usize {
     }
 }
 
-impl<F> CountArray<F> where F: Fn(u8)->usize {
+impl<F> CountArray<F> where F: Fn(u8) -> usize {
     fn get_chridx_of_chr(&self, chr: u8) -> usize {
         (self.chr_encoder)(chr)
     }
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-struct KmerLookupTable<F> where F: Fn(u8)->usize {
+struct KmerLookupTable<F> where F: Fn(u8) -> usize {
     kmer_size: usize,
     idx_formatter: IdxFormatter<F>,
     table: Vec<u64>,
 }
 
-impl<F> KmerLookupTable<F> where F: Fn(u8)->usize {
+impl<F> KmerLookupTable<F> where F: Fn(u8) -> usize {
     fn get_pos_range_and_idx_of_pattern(&self, pattern: Pattern) -> ((u64, u64), usize) {
         let pattern_len = pattern.len();
         let kmer_size = self.kmer_size;
@@ -79,12 +79,12 @@ impl<F> KmerLookupTable<F> where F: Fn(u8)->usize {
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-struct IdxFormatter<F> where F: Fn(u8)->usize {
+struct IdxFormatter<F> where F: Fn(u8) -> usize {
     idx_encoder: F,
     multiplier: Vec<usize>,
 }
 
-impl<F> IdxFormatter<F> where F: Fn(u8)->usize {
+impl<F> IdxFormatter<F> where F: Fn(u8) -> usize {
     fn idx_of_sliced_pattern(&self, sliced_pattern: Pattern) -> usize {
         let sum: usize = sliced_pattern.iter()
             .zip(self.multiplier.iter())

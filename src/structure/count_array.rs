@@ -1,15 +1,21 @@
 use super::{Text, Pattern, Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct CountArray<F> where F: Fn(u8) -> usize {
-    chr_encoder: F,
+pub struct CountArray<F> where F: Fn(&mut u8) -> usize {
     counts: Vec<u64>,
-    kmer_lookup_table: Option<KmerLookupTable<F>>,
+    chr_encoder: F,
+    kmer_lookup_table: Option<KmerLookupTable>,
 }
 
-impl<F> CountArray<F> where F: Fn(u8) -> usize {
-    pub fn new_and_encode_text(text: &mut Text) {
-
+impl<F>  CountArray<F> where F: Fn(&mut u8) -> usize {
+    pub fn new_and_encode_text(
+        text: &mut Text,
+        kmer_size: Option<usize>,
+        chr_count: usize,
+        chr_encoder: F,
+    ) {
+        let mut counts: Vec<u64> = vec![0; chr_count];
+        
     }
     pub fn get_count_of_chridx(&self, chridx: usize) -> u64 {
         self.counts[chridx]
@@ -35,26 +41,42 @@ impl<F> CountArray<F> where F: Fn(u8) -> usize {
         }
     }
 
-    fn get_chridx_of_chr(&self, chr: u8) -> usize {
+    fn get_chridx_of_chr(&self, chr: &mut u8) -> usize {
         (self.chr_encoder)(chr)
     }
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-struct KmerLookupTable<F> where F: Fn(u8) -> usize {
+struct KmerLookupTable {
     kmer_size: usize,
-    idx_formatter: IdxFormatter<F>,
+    multiplier: Vec<usize>,
+    offset: usize,
     table: Vec<u64>,
 }
 
-impl<F> KmerLookupTable<F> where F: Fn(u8) -> usize {
+impl KmerLookupTable {
+    fn new(text: &mut Text, kmer_size: usize, chr_count: usize, ) {
+        let multiplier = Self::get_multiplier(kmer_size, chr_count);
+        let offset = kmer_size;
+        let klt_length = multiplier[0] * chr_count + 1;
+    }
+    fn get_multiplier(kmer_size: usize, chr_count: usize) -> Vec<usize> {
+        let mut mul_of_pos: usize = 0;
+        let mut multiplier: Vec<usize> = (0..kmer_size).map(|position| {
+            mul_of_pos = mul_of_pos * chr_count + 1;
+            mul_of_pos
+        }).collect();
+        multiplier.reverse();
+        multiplier
+    }
+
     fn get_pos_range_and_idx_of_pattern(&self, pattern: Pattern) -> ((u64, u64), usize) {
         let pattern_len = pattern.len();
         let kmer_size = self.kmer_size;
 
         if pattern_len <= kmer_size { // if pattern is not longer than kmer
-            let start_idx = self.idx_formatter.idx_of_sliced_pattern(pattern);
-            let end_idx = start_idx + self.idx_formatter.idx_offset_of_sliced_pattern_length(pattern_len);
+            let start_idx = self.idx_of_sliced_pattern(pattern);
+            let end_idx = start_idx + self.idx_offset_of_sliced_pattern_length(pattern_len);
             
             let pos_range = if start_idx == 0 {
                 (0, self.table[end_idx])
@@ -65,7 +87,7 @@ impl<F> KmerLookupTable<F> where F: Fn(u8) -> usize {
             (pos_range, 0)
         } else {
             let pattern_idx = pattern_len - kmer_size;
-            let start_idx = self.idx_formatter.idx_of_sliced_pattern(&pattern[pattern_idx..]);
+            let start_idx = self.idx_of_sliced_pattern(&pattern[pattern_idx..]);
 
             let pos_range = if start_idx == 0 {
                 (0, self.table[start_idx])
@@ -76,15 +98,9 @@ impl<F> KmerLookupTable<F> where F: Fn(u8) -> usize {
             (pos_range, pattern_idx)
         }
     }
-}
-
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
-struct IdxFormatter<F> where F: Fn(u8) -> usize {
-    idx_encoder: F,
-    multiplier: Vec<usize>,
-}
-
-impl<F> IdxFormatter<F> where F: Fn(u8) -> usize {
+    fn idx_offset_of_sliced_pattern_length(&self, sliced_pattern_length: usize) -> usize {
+        self.multiplier[sliced_pattern_length - 1] - 1
+    }
     fn idx_of_sliced_pattern(&self, sliced_pattern: Pattern) -> usize {
         let sum: usize = sliced_pattern.iter()
             .zip(self.multiplier.iter())
@@ -92,9 +108,6 @@ impl<F> IdxFormatter<F> where F: Fn(u8) -> usize {
                 (self.idx_encoder)(chr) * multiplier_of_position
             })
             .sum();
-        sum - self.multiplier[0]
-    }
-    fn idx_offset_of_sliced_pattern_length(&self, sliced_pattern_length: usize) -> usize {
-        self.multiplier[sliced_pattern_length - 1] - 1
+        sum - self.offset
     }
 }

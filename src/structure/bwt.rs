@@ -3,13 +3,13 @@ use super::{Text, Serialize, Deserialize};
 const BLOCK_SEG_LEN: u64 = 64;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct Bwt<B: BwtBlockInterface> {
+pub struct Bwt<B: BwtBlock> {
     primary_index: u64,
     blocks: Vec<B>,
     bitcount_lookup_table: BitcountLookupTable,
 }
 
-impl<B: BwtBlockInterface> Bwt<B> {
+impl<B: BwtBlock> Bwt<B> {
     pub fn new(text: Text, pidx: u64) {
 
     }
@@ -40,7 +40,7 @@ impl<B: BwtBlockInterface> Bwt<B> {
     }
 }
 
-pub trait BwtBlockInterface {
+pub trait BwtBlock {
     fn get_chridx_and_rank_of_rem(&self, rem: u64) -> (usize, u64);
     fn get_rank_of_chridx(&self, chridx: usize) -> u64;
     fn get_rank_of_chridx_and_rem(&self, chridx: usize, rem: u64) -> u64;
@@ -50,8 +50,4 @@ pub trait BwtBlockInterface {
 enum BitcountLookupTable {
     Bit8CountTable,
     Bit16CountTable,
-}
-
-struct BwtBlock {
-    
 }

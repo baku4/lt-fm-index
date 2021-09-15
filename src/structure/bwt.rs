@@ -1,5 +1,4 @@
-use super::BwtInterface;
-use super::{Serialize, Deserialize};
+use super::{Text, Serialize, Deserialize};
 
 const BLOCK_SEG_LEN: u64 = 64;
 
@@ -10,8 +9,12 @@ pub struct Bwt<B: BwtBlockInterface> {
     bitcount_lookup_table: BitcountLookupTable,
 }
 
-impl<B: BwtBlockInterface> BwtInterface for Bwt<B> {
-    fn get_pre_chridx_and_rank_of_pos(&self, mut pos: u64) -> Option<(usize, u64)> {
+impl<B: BwtBlockInterface> Bwt<B> {
+    pub fn new(text: Text, pidx: u64) {
+
+    }
+
+    pub fn get_pre_chridx_and_rank_of_pos(&self, mut pos: u64) -> Option<(usize, u64)> {
         if pos == self.primary_index - 1 {
             return None;
         } else if pos < self.primary_index {
@@ -23,7 +26,7 @@ impl<B: BwtBlockInterface> BwtInterface for Bwt<B> {
         let (chridx, rank) = self.blocks[quot as usize].get_chridx_and_rank_of_rem(rem);
         Some((chridx, rank))
     }
-    fn get_next_rank_of_pos_and_chridx(&self, mut pos: u64, chridx: usize) -> u64 {
+    pub fn get_next_rank_of_pos_and_chridx(&self, mut pos: u64, chridx: usize) -> u64 {
         if pos < self.primary_index {
             pos += 1;
         }

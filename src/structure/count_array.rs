@@ -1,23 +1,25 @@
-use super::CountArrayInterface;
-use super::{Pattern, Serialize, Deserialize};
+use super::{Text, Pattern, Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct CountArray<F> where F: Fn(u8) -> usize {
     chr_encoder: F,
-    count_array: Vec<u64>,
+    counts: Vec<u64>,
     kmer_lookup_table: Option<KmerLookupTable<F>>,
 }
 
-impl<F> CountArrayInterface for CountArray<F> where F: Fn(u8) -> usize {
-    fn get_count_of_chridx(&self, chridx: usize) -> u64 {
-        self.count_array[chridx]
+impl<F> CountArray<F> where F: Fn(u8) -> usize {
+    pub fn new_and_encode_text(text: &mut Text) {
+
     }
-    fn get_chridx_and_count_of_chr(&self, chr: u8) -> (usize, u64) {
+    pub fn get_count_of_chridx(&self, chridx: usize) -> u64 {
+        self.counts[chridx]
+    }
+    pub fn get_chridx_and_count_of_chr(&self, chr: u8) -> (usize, u64) {
         let chridx = self.get_chridx_of_chr(chr);
         let count = self.get_count_of_chridx(chridx);
         (chridx, count)
     }
-    fn get_initial_pos_range_and_idx_of_pattern(&self, pattern: Pattern) -> ((u64, u64), usize) {
+    pub fn get_initial_pos_range_and_idx_of_pattern(&self, pattern: Pattern) -> ((u64, u64), usize) {
         match &self.kmer_lookup_table {
             Some(klt) => { // have kmer lookup table
                 klt.get_pos_range_and_idx_of_pattern(pattern)
@@ -26,15 +28,13 @@ impl<F> CountArrayInterface for CountArray<F> where F: Fn(u8) -> usize {
                 let mut idx = pattern.len() - 1;
                 let chr = pattern[idx];
                 let chridx = self.get_chridx_of_chr(chr);
-                let pos_range = (self.count_array[chridx], self.count_array[chridx+1]);
+                let pos_range = (self.counts[chridx], self.counts[chridx+1]);
                 idx -= 1;
                 (pos_range, idx)
             }
         }
     }
-}
 
-impl<F> CountArray<F> where F: Fn(u8) -> usize {
     fn get_chridx_of_chr(&self, chr: u8) -> usize {
         (self.chr_encoder)(chr)
     }

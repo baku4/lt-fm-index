@@ -3,7 +3,7 @@ use anyhow::bail as error_msg;
 use serde::{Serialize, Deserialize};
 
 mod fm_index;
-mod algorithm;
+mod structure;
 mod builder;
 
 mod config;

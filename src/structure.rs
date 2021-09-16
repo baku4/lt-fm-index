@@ -1,13 +1,9 @@
 use crate::{Serialize, Deserialize};
-use crate::fm_index::{FmIndex, Pattern};
+use crate::{FmIndex, Text, Pattern};
 
 pub mod suffix_array;
-pub mod count_array;
-pub mod bwt;
 
 use suffix_array::SuffixArray;
-
-type Text = Vec<u8>;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct LtFmIndex<C: CountArray, B: Bwt> {
@@ -31,9 +27,13 @@ impl<C: CountArray, B: Bwt> FmIndex for LtFmIndex<C, B> {
 }
 
 impl<C: CountArray, B: Bwt> LtFmIndex<C, B> {
-    pub fn new(mut text: Text, sa_sampling_ratio: u64) -> Self {
+    pub fn new(
+        mut text: Text,
+        sa_sampling_ratio: u64,
+        kmer_size: Option<usize>,
+    ) -> Self {
         let text_len = text.len() as u64;
-        let count_array: C = CountArray::new_and_encode_text(&mut text, sa_sampling_ratio);
+        let count_array: C = CountArray::new_and_encode_text(&mut text, kmer_size);
         let (suffix_array, pidx) = SuffixArray::new_while_bwt(&mut text, sa_sampling_ratio);
         let bwt: B = Bwt::new(text, pidx);
         Self {
@@ -45,14 +45,15 @@ impl<C: CountArray, B: Bwt> LtFmIndex<C, B> {
     }
     
     fn get_location_from_pos_range(&self, pos_range: (u64, u64)) -> Vec<u64> {
+        println!("locate:{:?}", pos_range);
         let mut locations: Vec<u64> = Vec::with_capacity((pos_range.1 - pos_range.0) as usize);
         'each_pos: for mut pos in pos_range.0..pos_range.1 {
             let mut offset: u64 = 0;
             while pos % self.suffix_array.sampling_ratio != 0 { 
                 match self.bwt.get_pre_chridx_and_rank_of_pos(pos) {
                     Some((chridx, rank)) => {
-                        let count = self.count_array.get_count_of_chridx(chridx);
-                        pos = count + rank;
+                        let precount = self.count_array.get_precount_of_chridx(chridx);
+                        pos = precount + rank;
                     },
                     None => { // if position == pidx
                         locations.push(offset);
@@ -70,39 +71,30 @@ impl<C: CountArray, B: Bwt> LtFmIndex<C, B> {
         let (mut pos_range, mut idx) = self.count_array.get_initial_pos_range_and_idx_of_pattern(pattern);
         // LF mapping
         while pos_range.0 < pos_range.1 && idx > 0 {
-            let chr = pattern[idx-1];
-            pos_range = self.get_next_pos_range_of_pos_range_and_chr(pos_range, chr);
             idx -= 1;
+            let next_chr = pattern[idx];
+            pos_range = self.get_next_pos_range_of_pos_range_and_chr(pos_range, next_chr);
         }
         pos_range
     }
     fn get_next_pos_range_of_pos_range_and_chr(&self, pos_range: (u64, u64), chr: u8) -> (u64, u64) {
-        let (chridx, count) = self.count_array.get_chridx_and_count_of_chr(chr);
+        println!("{:?}", pos_range);
+        let (chridx, precount) = self.count_array.get_chridx_and_precount_of_chr(chr);
         let start_rank = self.bwt.get_next_rank_of_pos_and_chridx(pos_range.0, chridx);
         let end_rank = self.bwt.get_next_rank_of_pos_and_chridx(pos_range.1, chridx);
-        (count + start_rank, count + end_rank)
+        (precount + start_rank, precount + end_rank)
     }
 }
 
-trait CountArray {
-    fn new_and_encode_text(text: &mut Text, sa_sampling_ratio: u64) -> Self;
-    fn get_count_of_chridx(&self, chridx: usize) -> u64;
-    fn get_chridx_and_count_of_chr(&self, chr: u8) -> (usize, u64);
+pub trait CountArray {
+    fn new_and_encode_text(text: &mut Text, kmer_size: Option<usize>) -> Self;
+    fn get_precount_of_chridx(&self, chridx: usize) -> u64;
+    fn get_chridx_and_precount_of_chr(&self, chr: u8) -> (usize, u64);
     fn get_initial_pos_range_and_idx_of_pattern(&self, pattern: Pattern) -> ((u64, u64), usize);
 }
 
-trait Bwt {
-    fn new(bwted_text: Text, pidx: u64) -> Self;
+pub trait Bwt {
+    fn new(bwt_text: Text, pidx: u64) -> Self;
     fn get_pre_chridx_and_rank_of_pos(&self, pos: u64) -> Option<(usize, u64)>;
     fn get_next_rank_of_pos_and_chridx(&self, pos: u64, chridx: usize) -> u64;
-}
-
-#[cfg(test)]
-mod tests {
-    fn test_count() {
-
-    }
-    fn test_locate() {
-        
-    }
 }

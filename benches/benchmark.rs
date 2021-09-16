@@ -3,6 +3,51 @@ use criterion::{
 };
 use lt_fm_index::deprecated::*;
 
+mod counting_bit;
+
+/*
+Bench bit counting
+*/
+
+fn bench_counting_bits_of_u64(c: &mut Criterion) {
+    let bits_to_count: Vec<u64> = (0..=8_u32).map(|x| {
+        2_u64.pow(x) - 1
+    }).collect();
+
+    let mut group = c.benchmark_group("counting_bits_of_u64");
+
+    let bit_counts: Vec<usize> = (0..8).collect();
+
+    for i in bit_counts {
+        let bit_to_count = bits_to_count[i];
+        
+        group.bench_with_input(
+            BenchmarkId::new("with_func", i),
+            &i,
+            |b, i| b.iter(|| {
+                counting_bit::count_with_count_bits_method(black_box(bit_to_count));
+            }
+        ));
+
+        group.bench_with_input(
+            BenchmarkId::new("table_mut_var", i),
+            &i,
+            |b, i| b.iter(|| {
+                counting_bit::count_with_bit_count_table_8_mut_var(black_box(bit_to_count));
+            }
+        ));
+
+        group.bench_with_input(
+            BenchmarkId::new("table_map", i),
+            &i,
+            |b, i| b.iter(|| {
+                counting_bit::count_with_bit_count_table_8_map(black_box(bit_to_count));
+            }
+        ));
+    }
+    group.finish();
+}
+
 /*
 Bench KLT vs no KLT
 */
@@ -379,6 +424,6 @@ fn bench_get_ca_klt(c: &mut Criterion) {
 
 criterion_group!(
     benches,
-    bench_locate_w_or_wo_klt, bench_locate_sm_w_or_wo_klt,
-    bench_no_klt_generate_and_locate_by_crate, bench_generate_and_locate_by_crate, bench_locate_by_crate, bench_generate_by_crate, bench_locate_by_pattern_length, bench_get_ca_klt);
+    bench_counting_bits_of_u64
+);
 criterion_main!(benches);

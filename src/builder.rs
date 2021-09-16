@@ -351,12 +351,6 @@ impl Bwt for BwtNN {
         let quot = pos / BLOCK_SEG_LEN;
         let rem = pos % BLOCK_SEG_LEN;
 
-        #[cfg(test)]
-        if quot as usize >= self.blocks.len() {
-            println!("block_len:{}, quot:{}", self.blocks.len(), quot);
-            println!("pos:{}, chridx: {}", pos, chridx);
-        }
-
         self.blocks[quot as usize].get_rank_of_chridx_and_rem(chridx, rem)
     }
 }
@@ -419,10 +413,8 @@ mod tests {
             let text_nn = text_rand_nn();
 
             let lt_fm_index:LtFmIndex<CountArrayNN, BwtNN> = LtFmIndex::new(
-                text_nn.clone(), ssa, None,
+                text_nn.clone(), ssa, Some(kmer),
             );
-
-            println!("{:?}", lt_fm_index);
 
             for l in 1..=pattern_len {
                 let pattern_nn = text_nn[..l].to_vec();

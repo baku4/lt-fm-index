@@ -45,7 +45,6 @@ impl<C: CountArray, B: Bwt> LtFmIndex<C, B> {
     }
     
     fn get_location_from_pos_range(&self, pos_range: (u64, u64)) -> Vec<u64> {
-        println!("locate:{:?}", pos_range);
         let mut locations: Vec<u64> = Vec::with_capacity((pos_range.1 - pos_range.0) as usize);
         'each_pos: for mut pos in pos_range.0..pos_range.1 {
             let mut offset: u64 = 0;
@@ -78,7 +77,6 @@ impl<C: CountArray, B: Bwt> LtFmIndex<C, B> {
         pos_range
     }
     fn get_next_pos_range_of_pos_range_and_chr(&self, pos_range: (u64, u64), chr: u8) -> (u64, u64) {
-        println!("{:?}", pos_range);
         let (chridx, precount) = self.count_array.get_chridx_and_precount_of_chr(chr);
         let start_rank = self.bwt.get_next_rank_of_pos_and_chridx(pos_range.0, chridx);
         let end_rank = self.bwt.get_next_rank_of_pos_and_chridx(pos_range.1, chridx);

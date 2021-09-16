@@ -415,7 +415,7 @@ mod tests {
             let lt_fm_index:LtFmIndex<CountArrayNN, BwtNN> = LtFmIndex::new(
                 text_nn.clone(), ssa, Some(kmer),
             );
-
+            
             for l in 1..=pattern_len {
                 let pattern_nn = text_nn[..l].to_vec();
 

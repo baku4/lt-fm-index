@@ -5,7 +5,9 @@ use anyhow::bail as error_msg;
 use serde::{Serialize, Deserialize};
 
 mod structure;
+mod proto;
 mod builder;
+mod use_case;
 mod config;
 
 pub mod deprecated;

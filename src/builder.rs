@@ -17,6 +17,127 @@ const G_IDX: usize = 2;
 const T_IDX: usize = 3;
 const NOISE_IDX: usize = 4;
 
+
+
+
+type KmerSize = Option<usize>;
+type CountTable = Vec<u64>;
+type KmerCountTable = Vec<u64>;
+type Multiplier = Vec<usize>;
+
+pub trait CountArrayBuilder: CountArray {
+    const CHR_COUNT: usize;
+    const CHR_WITH_PIDX_COUNT2: usize = CHR_COUNT + 1;
+
+    fn new_and_encode_text(text: &mut Text, kmer_size: KmerSize) -> Self where Self: Sized{
+        let mut count_table: Vec<u64> = vec![0; CHR_WITH_PIDX_COUNT];
+
+        let (kmer_count_table, multiplier) = match kmer_size {
+            Some(kmer) => {
+                let table_length: usize = (CHR_WITH_PIDX_COUNT).pow(kmer as u32);
+                let mut kmer_count_table: Vec<u64> = vec![0; table_length];
+                let mut table_index: usize = 0;
+        
+                let multiplier: Vec<usize> = {
+                    (0..kmer as u32).map(|pos| {
+                        (CHR_WITH_PIDX_COUNT).pow(pos)
+                    }).rev().collect()
+                };
+        
+                let index_for_each_chr: Vec<usize> = {
+                    (0..CHR_COUNT).map(|chridx| {
+                        multiplier[0] * (chridx + 1)
+                    }).collect()
+                };
+        
+                text.iter_mut().rev().for_each(|chr| {
+                    let chridx = Self::get_chridx_with_encoding_chr(chr);
+                    // Add count to counts
+                    count_table[chridx + 1] += 1;
+                    // Add count to lookup table
+                    table_index /= CHR_WITH_PIDX_COUNT;
+                    table_index += index_for_each_chr[chridx];
+                    kmer_count_table[table_index] += 1;
+                });
+
+                Self::accumulate_count_table(&mut kmer_count_table);
+
+                (kmer_count_table, multiplier)
+            },
+            None => {
+                text.iter_mut().rev().for_each(|chr| {
+                    let chridx = Self::get_chridx_with_encoding_chr(chr);
+                    // Add count to counts
+                    count_table[chridx + 1] += 1
+                });
+                
+                (Vec::new(), Vec::new())
+            },
+        };
+
+        Self::new(kmer_size, count_table, kmer_count_table, multiplier)
+    }
+    fn get_initial_pos_range_and_idx_of_pattern(
+        kmer_size: &KmerSize,
+        count_table: &CountTable,
+        kmer_count_table: &KmerCountTable,
+        multiplier: &Multiplier,
+        pattern: Pattern
+    ) -> ((u64, u64), usize) {
+        match kmer_size {
+            Some(kmer) => { // have kmer lookup table
+                let pattern_len = pattern.len();
+                if pattern_len < *kmer {
+                    let start_idx = Self::get_idx_of_kmer_count_table(multiplier, pattern);
+                    let gap_btw_unsearched_kmer = multiplier[pattern_len - 1] - 1;
+                    let end_idx = start_idx + gap_btw_unsearched_kmer;
+
+                    let pos_range = (kmer_count_table[start_idx -1], kmer_count_table[end_idx]);
+                    (pos_range, 0)
+                } else {
+                    let sliced_pattern = &pattern[pattern.len()-kmer..];
+                    let start_idx = Self::get_idx_of_kmer_count_table(multiplier, sliced_pattern);
+
+                    let pos_range = (kmer_count_table[start_idx -1], kmer_count_table[start_idx]);
+                    (pos_range, pattern_len-kmer)
+                }
+            },
+            None => { // do not have kmer lookup table
+                let idx = pattern.len() - 1;
+                let chr = pattern[idx];
+                let chridx = Self::chridx_of_chr(chr);
+                let pos_range = (count_table[chridx], count_table[chridx+1]);
+                (pos_range, idx)
+            }
+        }
+    }
+
+    fn get_idx_of_kmer_count_table(multiplier: &Multiplier, sliced_pattern: Pattern) -> usize {
+        sliced_pattern.iter().zip(multiplier.iter())
+            .map(|(&chr, &mul_of_pos)| {
+                Self::chrwpidx_of_chr(chr) * mul_of_pos
+            }).sum::<usize>()
+    }
+    fn accumulate_count_table(count_table: &mut [u64]) {
+        let mut accumed_count: u64 = 0;
+        count_table.iter_mut().for_each(|count| {
+            accumed_count += *count;
+            *count = accumed_count;
+        });
+    }
+
+    fn new(
+        kmer_size: KmerSize,
+        count_table: CountTable,
+        kmer_count_table: KmerCountTable,
+        multiplier: Multiplier,
+    ) -> Self;    
+    fn chridx_of_chr(chr: u8) -> usize;
+    fn chrwpidx_of_chr(chr: u8) -> usize;
+    fn get_chridx_with_encoding_chr(chr: &mut u8) -> usize;
+    fn count_of_count_table(&self, chridx: usize) -> usize;
+}
+
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 struct CountArrayNN {
     kmer_size: Option<usize>,
@@ -80,7 +201,6 @@ impl CountArray for CountArrayNN {
             kmer_count_table,
             multiplier,
         }
-
     }
     fn get_precount_of_chridx(&self, chridx: usize) -> u64 {
         self.count_table[chridx]
@@ -155,6 +275,7 @@ impl CountArrayNN {
             },
         }
     }
+
     fn get_idx_of_kmer_count_table(&self, sliced_pattern: Pattern) -> usize {
         sliced_pattern.iter().zip(self.multiplier.iter())
             .map(|(&chr, &mul_of_pos)| {

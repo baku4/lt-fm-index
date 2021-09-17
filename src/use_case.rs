@@ -8,7 +8,7 @@ mod nc_with_noise;
 mod only_aa;
 mod aa_with_noise;
 
-use only_nc::{CountArrayON, Bwt64ON, Bwt128ON};
-use nc_with_noise::{CountArrayNN, Bwt64NN, Bwt128NN};
-use only_aa::{CountArrayOA, Bwt64OA, Bwt128OA};
-use aa_with_noise::{CountArrayAN, Bwt64AN, Bwt128AN};
+pub use only_nc::{CountArrayON, Bwt64ON, Bwt128ON};
+pub use nc_with_noise::{CountArrayNN, Bwt64NN, Bwt128NN};
+pub use only_aa::{CountArrayOA, Bwt64OA, Bwt128OA};
+pub use aa_with_noise::{CountArrayAN, Bwt64AN, Bwt128AN};

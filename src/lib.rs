@@ -6,7 +6,6 @@ use serde::{Serialize, Deserialize};
 
 mod structure;
 mod proto;
-mod builder;
 mod use_case;
 mod config;
 

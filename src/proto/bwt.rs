@@ -3,8 +3,6 @@ use crate::{Text};
 
 use crate::structure::Bwt;
 
-mod bwt_block;
-
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct BwtProto<W: BwtBlock> {
     primary_index: u64,
@@ -47,7 +45,7 @@ pub trait BwtBlock {
     const BLOCK_SEG_LEN: u64;
     
     fn new_with_bwt_text(bwt_text: Text) -> Vec<Self> where Self: Sized;
-    fn get_chridx_and_rank_of_rem(&self, rem: u64) -> (usize, u64);
     fn add_offset(&mut self, offset: usize);
+    fn get_chridx_and_rank_of_rem(&self, rem: u64) -> (usize, u64);
     fn get_rank_of_chridx_and_rem(&self, chridx: usize, rem: u64) -> u64;
 }

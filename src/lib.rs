@@ -11,10 +11,12 @@ mod config;
 
 pub mod deprecated;
 
+pub type Text = Vec<u8>;
+pub type Pattern<'a> = &'a [u8];
+
 pub trait FmIndex {
     fn count(&self, pattern: Pattern) -> u64;
     fn locate(&self, pattern: Pattern) -> Vec<u64>;
 }
 
-pub type Text = Vec<u8>;
-pub type Pattern<'a> = &'a [u8];
+pub use config::LtFmIndexConfig;

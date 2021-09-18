@@ -1,4 +1,4 @@
-use crate::{proto::{CountArray, CountArrayProto, BwtProto, BwtBlock}, structure::LtFmIndex};
+use crate::proto::{LtFmIndex, CountArray, CountArrayProto, BwtProto, BwtBlock};
 
 const POS_BIT_64: u64 = 0b1000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;
 const POS_BIT_128: u128 = 0b1000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;

@@ -30,7 +30,7 @@ impl<C: CountArray, B: Bwt> LtFmIndex<C, B> {
     pub fn new(
         mut text: Text,
         sa_sampling_ratio: u64,
-        kmer_size: Option<usize>,
+        kmer_size: usize,
     ) -> Self {
         let text_len = text.len() as u64;
         let count_array: C = CountArray::new_and_encode_text(&mut text, kmer_size);
@@ -85,7 +85,7 @@ impl<C: CountArray, B: Bwt> LtFmIndex<C, B> {
 }
 
 pub trait CountArray {
-    fn new_and_encode_text(text: &mut Text, kmer_size: Option<usize>) -> Self;
+    fn new_and_encode_text(text: &mut Text, kmer_size: usize) -> Self;
     fn get_precount_of_chridx(&self, chridx: usize) -> u64;
     fn get_chridx_and_precount_of_chr(&self, chr: u8) -> (usize, u64);
     fn get_initial_pos_range_and_idx_of_pattern(&self, pattern: Pattern) -> ((u64, u64), usize);

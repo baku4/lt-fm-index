@@ -1,10 +1,7 @@
 use crate::{Deserialize, Serialize};
 use crate::{Text, Pattern};
 
-use super::{CountArray, CountArrayProto, BwtProto, BwtBlock, POS_BIT_64, POS_BIT_128};
-
-pub type Bwt64NN = BwtProto<BwtBlock64NN>;
-pub type Bwt128NN = BwtProto<BwtBlock128NN>;
+use super::{CountArray, CountArrayProto, BwtBlock, POS_BIT_64, POS_BIT_128};
 
 const CHR_COUNT: usize = 5;
 const CHR_WITH_PIDX_COUNT: usize = CHR_COUNT + 1;
@@ -39,7 +36,7 @@ pub struct CountArrayNN {
 }
 
 impl CountArray for CountArrayNN {
-    fn new_and_encode_text(text: &mut Text, kmer_size: Option<usize>) -> Self {
+    fn new_and_encode_text(text: &mut Text, kmer_size: usize) -> Self {
         let proto = CountArrayProto::new_and_encode_text(
             text,
             kmer_size,
@@ -56,7 +53,7 @@ impl CountArray for CountArrayNN {
         self.proto.get_chridx_and_precount_of_chr(chr, Self::chridx_of_chr)
     }
     fn get_initial_pos_range_and_idx_of_pattern(&self, pattern: Pattern) -> ((u64, u64), usize) {
-        self.proto.get_initial_pos_range_and_idx_of_pattern(pattern, Self::chridx_of_chr, Self::chrwpidx_of_chr)
+        self.proto.get_initial_pos_range_and_idx_of_pattern(pattern, Self::chrwpidx_of_chr)
     }
 }
 

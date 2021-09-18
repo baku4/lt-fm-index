@@ -3,6 +3,9 @@ use crate::{Text, Pattern};
 
 use super::{CountArray, CountArrayProto, BwtProto, BwtBlock, POS_BIT_64, POS_BIT_128};
 
+pub type Bwt64NO = BwtProto<BwtBlock64NO>;
+pub type Bwt128NO = BwtProto<BwtBlock128NO>;
+
 const CHR_COUNT: usize = 4;
 const CHR_WITH_PIDX_COUNT: usize = CHR_COUNT + 1;
 
@@ -27,11 +30,11 @@ const NOISE_IDX_WP: usize = NOISE_IDX + 1;
 // | 0 | 1 | 0 | 1 | second
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct CountArrayON {
+pub struct CountArrayNO {
     proto: CountArrayProto,
 }
 
-impl CountArray for CountArrayON {
+impl CountArray for CountArrayNO {
     fn new_and_encode_text(text: &mut Text, kmer_size: Option<usize>) -> Self {
         let proto = CountArrayProto::new_and_encode_text(
             text,
@@ -53,7 +56,7 @@ impl CountArray for CountArrayON {
     }
 }
 
-impl CountArrayON {
+impl CountArrayNO {
     fn chridx_of_chr(chr: u8) -> usize {
         match chr {
             A_UTF8 => A_IDX,
@@ -83,17 +86,14 @@ impl CountArrayON {
     }
 }
 
-pub type Bwt64ON = BwtProto<BwtBlock64ON>;
-pub type Bwt128ON = BwtProto<BwtBlock128ON>;
-
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct BwtBlock64ON {
+pub struct BwtBlock64NO {
     rank_checkpoint: [u64; CHR_COUNT],
     first_bwt_vector: u64,
     second_bwt_vector: u64,
 }
 
-impl BwtBlock for BwtBlock64ON {
+impl BwtBlock for BwtBlock64NO {
     const BLOCK_SEG_LEN: u64 = 64;
 
     fn new_with_bwt_text(bwt_text: Text) -> Vec<Self> {
@@ -217,13 +217,13 @@ impl BwtBlock for BwtBlock64ON {
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct BwtBlock128ON {
+pub struct BwtBlock128NO {
     rank_checkpoint: [u64; CHR_COUNT],
     first_bwt_vector: u128,
     second_bwt_vector: u128,
 }
 
-impl BwtBlock for BwtBlock128ON {
+impl BwtBlock for BwtBlock128NO {
     const BLOCK_SEG_LEN: u64 = 128;
 
     fn new_with_bwt_text(bwt_text: Text) -> Vec<Self> {

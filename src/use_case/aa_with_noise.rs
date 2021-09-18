@@ -3,6 +3,9 @@ use crate::{Text, Pattern};
 
 use super::{CountArray, CountArrayProto, BwtProto, BwtBlock, POS_BIT_64, POS_BIT_128};
 
+pub type Bwt64AN = BwtProto<BwtBlock64AN>;
+pub type Bwt128AN = BwtProto<BwtBlock128AN>;
+
 const CHR_COUNT: usize = 21;
 const CHR_WITH_PIDX_COUNT: usize = CHR_COUNT + 1;
 
@@ -193,9 +196,6 @@ impl CountArrayAN {
         }
     }
 }
-
-pub type Bwt64AN = BwtProto<BwtBlock64AN>;
-pub type Bwt128AN = BwtProto<BwtBlock128AN>;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct BwtBlock64AN {

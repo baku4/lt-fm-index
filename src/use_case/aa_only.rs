@@ -3,6 +3,9 @@ use crate::{Text, Pattern};
 
 use super::{CountArray, CountArrayProto, BwtProto, BwtBlock, POS_BIT_64, POS_BIT_128};
 
+pub type Bwt64AO = BwtProto<BwtBlock64AO>;
+pub type Bwt128AO = BwtProto<BwtBlock128AO>;
+
 const CHR_COUNT: usize = 20;
 const CHR_WITH_PIDX_COUNT: usize = CHR_COUNT + 1;
 
@@ -84,11 +87,11 @@ const NOISE_IDX_WP: usize = NOISE_IDX + 1;
 
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct CountArrayOA {
+pub struct CountArrayAO {
     proto: CountArrayProto,
 }
 
-impl CountArray for CountArrayOA {
+impl CountArray for CountArrayAO {
     fn new_and_encode_text(text: &mut Text, kmer_size: Option<usize>) -> Self {
         let proto = CountArrayProto::new_and_encode_text(
             text,
@@ -110,7 +113,7 @@ impl CountArray for CountArrayOA {
     }
 }
 
-impl CountArrayOA {
+impl CountArrayAO {
     fn chridx_of_chr(chr: u8) -> usize {
         match chr {
             A_UTF8 => A_IDX,
@@ -188,11 +191,8 @@ impl CountArrayOA {
     }
 }
 
-pub type Bwt64OA = BwtProto<BwtBlock64OA>;
-pub type Bwt128OA = BwtProto<BwtBlock128OA>;
-
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct BwtBlock64OA {
+pub struct BwtBlock64AO {
     rank_checkpoint: [u64; CHR_COUNT],
     first_bwt_vector: u64,
     second_bwt_vector: u64,
@@ -201,7 +201,7 @@ pub struct BwtBlock64OA {
     fifth_bwt_vector: u64,
 }
 
-impl BwtBlock for BwtBlock64OA {
+impl BwtBlock for BwtBlock64AO {
     const BLOCK_SEG_LEN: u64 = 64;
 
     fn new_with_bwt_text(bwt_text: Text) -> Vec<Self> {
@@ -627,7 +627,7 @@ impl BwtBlock for BwtBlock64OA {
 
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct BwtBlock128OA {
+pub struct BwtBlock128AO {
     rank_checkpoint: [u64; CHR_COUNT],
     first_bwt_vector: u128,
     second_bwt_vector: u128,
@@ -636,7 +636,7 @@ pub struct BwtBlock128OA {
     fifth_bwt_vector: u128,
 }
 
-impl BwtBlock for BwtBlock128OA {
+impl BwtBlock for BwtBlock128AO {
     const BLOCK_SEG_LEN: u64 = 128;
 
     fn new_with_bwt_text(bwt_text: Text) -> Vec<Self> {

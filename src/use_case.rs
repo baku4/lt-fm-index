@@ -8,10 +8,10 @@ mod nc_with_noise;
 mod aa_only;
 mod aa_with_noise;
 
-use nc_only::{CountArrayNO, BwtBlock64NO, BwtBlock128NO};
-use nc_with_noise::{CountArrayNN, BwtBlock64NN, BwtBlock128NN};
-use aa_only::{CountArrayAO, BwtBlock64AO, BwtBlock128AO};
-use aa_with_noise::{CountArrayAN, BwtBlock64AN, BwtBlock128AN};
+pub use nc_only::{CountArrayNO, BwtBlock64NO, BwtBlock128NO};
+pub use nc_with_noise::{CountArrayNN, BwtBlock64NN, BwtBlock128NN};
+pub use aa_only::{CountArrayAO, BwtBlock64AO, BwtBlock128AO};
+pub use aa_with_noise::{CountArrayAN, BwtBlock64AN, BwtBlock128AN};
 
 pub type LtFmIndexNO64 = LtFmIndex<CountArrayNO, BwtProto<BwtBlock64NO>>;
 pub type LtFmIndexNO128 = LtFmIndex<CountArrayNO, BwtProto<BwtBlock128NO>>;

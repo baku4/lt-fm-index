@@ -1,7 +1,7 @@
 use crate::*;
 use crate::use_case::*;
 
-mod random_text;
+pub mod random_text;
 #[cfg(test)]
 mod all_use_cases;
 #[cfg(test)]

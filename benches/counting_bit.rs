@@ -1,6 +1,49 @@
+use criterion::{
+    black_box, criterion_group, criterion_main, Criterion, BenchmarkId
+};
+
 /*
 Bench bit counting
 */
+
+pub fn bench_counting_bits_of_u64(c: &mut Criterion) {
+    let bits_to_count: Vec<u64> = (0..=8_u32).map(|x| {
+        2_u64.pow(x) - 1
+    }).collect();
+
+    let mut group = c.benchmark_group("counting_bits_of_u64");
+
+    let bit_counts: Vec<usize> = (0..8).collect();
+
+    for i in bit_counts {
+        let bit_to_count = bits_to_count[i];
+        
+        group.bench_with_input(
+            BenchmarkId::new("with_func", i),
+            &i,
+            |b, i| b.iter(|| {
+                count_with_count_bits_method(black_box(bit_to_count));
+            }
+        ));
+
+        group.bench_with_input(
+            BenchmarkId::new("table_mut_var", i),
+            &i,
+            |b, i| b.iter(|| {
+                count_with_bit_count_table_8_mut_var(black_box(bit_to_count));
+            }
+        ));
+
+        group.bench_with_input(
+            BenchmarkId::new("table_map", i),
+            &i,
+            |b, i| b.iter(|| {
+                count_with_bit_count_table_8_map(black_box(bit_to_count));
+            }
+        ));
+    }
+    group.finish();
+}
 
 #[inline]
 pub fn count_with_count_bits_method(bits_to_count: u64) {

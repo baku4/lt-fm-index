@@ -12,7 +12,7 @@ mod use_case;
 mod config;
 
 pub mod deprecated;
-mod tests;
+pub mod tests;
 
 pub type Text = Vec<u8>;
 pub type Pattern<'a> = &'a [u8];

@@ -73,6 +73,7 @@ impl LtFmIndexConfig {
         self.bwt_interval = BwtInterval::_128;
         self
     }
+    // TODO: can generate with text larger than kmer size
     pub fn generate(self, text: Text) -> Box<dyn FmIndex> {
         match self.text_type {
             TextType::NucleotideOnly => {

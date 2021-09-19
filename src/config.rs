@@ -1,4 +1,3 @@
-use crate::deprecated::FmIndexConfigDep;
 use crate::{FmIndex, Result, error_msg};
 use crate::{Text};
 
@@ -9,6 +8,7 @@ const POINTER_WIDTH: usize = 32;
 #[cfg(target_pointer_width = "64")]
 const POINTER_WIDTH: usize = 64;
 
+#[derive(Debug)]
 pub struct LtFmIndexConfig {
     /// Type of text
     text_type: TextType,
@@ -132,6 +132,7 @@ impl LtFmIndexConfig {
     }
 }
 
+#[derive(Debug)]
 enum TextType {
     NucleotideOnly,
     NucleotideWithNoise,
@@ -150,6 +151,7 @@ impl TextType {
     }
 }
 
+#[derive(Debug)]
 enum BwtInterval {
     _64,
     _128,

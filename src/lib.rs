@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 // Error propagation
 use anyhow::Result;
 use anyhow::bail as error_msg;
@@ -10,6 +12,7 @@ mod use_case;
 mod config;
 
 pub mod deprecated;
+mod tests;
 
 pub type Text = Vec<u8>;
 pub type Pattern<'a> = &'a [u8];

@@ -15,8 +15,8 @@ fn test_all_use_cases() {
         // NO
         {
             let text = rand_text_of_no();
-            let lt_fm_index_64 =LtFmIndexConfig64NO(kmer_size, sa_sampling_ratio).generate(text.clone());
-            let lt_fm_index_128 =LtFmIndexConfig128NO(kmer_size, sa_sampling_ratio).generate(text.clone());
+            let lt_fm_index_64 =LtFmIndexConfig64NO(kmer_size, sa_sampling_ratio).generate(text.clone()).unwrap();
+            let lt_fm_index_128 =LtFmIndexConfig128NO(kmer_size, sa_sampling_ratio).generate(text.clone()).unwrap();
 
             let fm_index_other = get_fmindex_of_other_crate(&text);
 
@@ -36,8 +36,8 @@ fn test_all_use_cases() {
         // NN
         {
             let text = rand_text_of_nn();
-            let lt_fm_index_64 =LtFmIndexConfig64NN(kmer_size, sa_sampling_ratio).generate(text.clone());
-            let lt_fm_index_128 =LtFmIndexConfig128NN(kmer_size, sa_sampling_ratio).generate(text.clone());
+            let lt_fm_index_64 =LtFmIndexConfig64NN(kmer_size, sa_sampling_ratio).generate(text.clone()).unwrap();
+            let lt_fm_index_128 =LtFmIndexConfig128NN(kmer_size, sa_sampling_ratio).generate(text.clone()).unwrap();
 
             let fm_index_other = get_fmindex_of_other_crate(&text);
 
@@ -57,8 +57,8 @@ fn test_all_use_cases() {
         // AO
         {
             let text = rand_text_of_ao();
-            let lt_fm_index_64 =LtFmIndexConfig64AO(kmer_size, sa_sampling_ratio).generate(text.clone());
-            let lt_fm_index_128 =LtFmIndexConfig128AO(kmer_size, sa_sampling_ratio).generate(text.clone());
+            let lt_fm_index_64 =LtFmIndexConfig64AO(kmer_size, sa_sampling_ratio).generate(text.clone()).unwrap();
+            let lt_fm_index_128 =LtFmIndexConfig128AO(kmer_size, sa_sampling_ratio).generate(text.clone()).unwrap();
 
             let fm_index_other = get_fmindex_of_other_crate(&text);
 
@@ -78,8 +78,8 @@ fn test_all_use_cases() {
         // AN
         {
             let text = rand_text_of_an();
-            let lt_fm_index_64 =LtFmIndexConfig64AN(kmer_size, sa_sampling_ratio).generate(text.clone());
-            let lt_fm_index_128 =LtFmIndexConfig128AN(kmer_size, sa_sampling_ratio).generate(text.clone());
+            let lt_fm_index_64 =LtFmIndexConfig64AN(kmer_size, sa_sampling_ratio).generate(text.clone()).unwrap();
+            let lt_fm_index_128 =LtFmIndexConfig128AN(kmer_size, sa_sampling_ratio).generate(text.clone()).unwrap();
 
             let fm_index_other = get_fmindex_of_other_crate(&text);
 

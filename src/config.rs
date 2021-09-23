@@ -1,4 +1,4 @@
-use crate::{FmIndex, Result, error_msg};
+use crate::{Result, error_msg};
 use crate::{Text};
 
 use super::use_case::*;
@@ -73,58 +73,91 @@ impl LtFmIndexConfig {
         self.bwt_interval = BwtInterval::_128;
         self
     }
-    // TODO: can generate with text larger than kmer size
-    pub fn generate(self, text: Text) -> Box<dyn FmIndex> {
-        match self.text_type {
-            TextType::NucleotideOnly => {
-                match self.bwt_interval {
-                    BwtInterval::_64 => {
-                        Box::new(LtFmIndexNO64::new(text, self.sa_sampling_ratio, self.get_kmer_size()))
-                    },
-                    BwtInterval::_128 => {
-                        Box::new(LtFmIndexNO128::new(text, self.sa_sampling_ratio, self.get_kmer_size()))
-                    },
+    pub fn generate(self, text: Text) -> Result<LtFmIndexWrapper> {
+        let text_len = text.len();
+        let kmer_size = match self.kmer_size {
+            Some(specified_kmer) => {
+                if text_len < specified_kmer {
+                    specified_kmer
+                } else {
+                    error_msg!(
+                        "Text length({}) can't be shorter than kmer size({}).",
+                        text_len, specified_kmer,
+                    );
                 }
             },
-            TextType::NucleotideWithNoise => {
-                match self.bwt_interval {
-                    BwtInterval::_64 => {
-                        Box::new(LtFmIndexNN64::new(text, self.sa_sampling_ratio, self.get_kmer_size()))
-                    },
-                    BwtInterval::_128 => {
-                        Box::new(LtFmIndexNN128::new(text, self.sa_sampling_ratio, self.get_kmer_size()))
-                    },
+            None => {
+                let default_kmer = self.text_type.default_kmer_size();
+                if text_len < default_kmer {
+                    text_len
+                } else {
+                    default_kmer
                 }
             },
-            TextType::AminoacidOnly => {
-                match self.bwt_interval {
-                    BwtInterval::_64 => {
-                        Box::new(LtFmIndexAO64::new(text, self.sa_sampling_ratio, self.get_kmer_size()))
-                    },
-                    BwtInterval::_128 => {
-                        Box::new(LtFmIndexAO128::new(text, self.sa_sampling_ratio, self.get_kmer_size()))
-                    },
-                }
-            },
-            TextType::AminoacidWithNoise => {
-                match self.bwt_interval {
-                    BwtInterval::_64 => {
-                        Box::new(LtFmIndexAN64::new(text, self.sa_sampling_ratio, self.get_kmer_size()))
-                    },
-                    BwtInterval::_128 => {
-                        Box::new(LtFmIndexAN128::new(text, self.sa_sampling_ratio, self.get_kmer_size()))
-                    },
-                }
-            },
-        }
-    }
+        };
 
-    fn get_kmer_size(&self) -> usize {
-        match self.kmer_size {
-            Some(kmer_size) => kmer_size,
-            None => self.text_type.default_kmer_size(),
-        }
+        Ok(
+            match self.text_type {
+                TextType::NucleotideOnly => {
+                    match self.bwt_interval {
+                        BwtInterval::_64 => {
+                            LtFmIndexWrapper::NO64(
+                                LtFmIndexNO64::new(text, self.sa_sampling_ratio, kmer_size)
+                            )
+                        },
+                        BwtInterval::_128 => {
+                            LtFmIndexWrapper::NO128(
+                                LtFmIndexNO128::new(text, self.sa_sampling_ratio, kmer_size)
+                            )
+                        },
+                    }
+                },
+                TextType::NucleotideWithNoise => {
+                    match self.bwt_interval {
+                        BwtInterval::_64 => {
+                            LtFmIndexWrapper::NN64(
+                                LtFmIndexNN64::new(text, self.sa_sampling_ratio, kmer_size)
+                            )
+                        },
+                        BwtInterval::_128 => {
+                            LtFmIndexWrapper::NN128(
+                                LtFmIndexNN128::new(text, self.sa_sampling_ratio, kmer_size)
+                            )
+                        },
+                    }
+                },
+                TextType::AminoacidOnly => {
+                    match self.bwt_interval {
+                        BwtInterval::_64 => {
+                            LtFmIndexWrapper::AO64(
+                                LtFmIndexAO64::new(text, self.sa_sampling_ratio, kmer_size)
+                            )
+                        },
+                        BwtInterval::_128 => {
+                            LtFmIndexWrapper::AO128(
+                                LtFmIndexAO128::new(text, self.sa_sampling_ratio, kmer_size)
+                            )
+                        },
+                    }
+                },
+                TextType::AminoacidWithNoise => {
+                    match self.bwt_interval {
+                        BwtInterval::_64 => {
+                            LtFmIndexWrapper::AN64(
+                                LtFmIndexAN64::new(text, self.sa_sampling_ratio, kmer_size)
+                            )
+                        },
+                        BwtInterval::_128 => {
+                            LtFmIndexWrapper::AN128(
+                                LtFmIndexAN128::new(text, self.sa_sampling_ratio, kmer_size)
+                            )
+                        },
+                    }
+                },
+            }
+        )
     }
+    
     fn default_sa_sampling_ratio() -> u64 {
         2
     }

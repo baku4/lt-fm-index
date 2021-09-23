@@ -1,17 +1,18 @@
-use std::fmt::Debug;
-
 // Error propagation
 use anyhow::Result;
 use anyhow::bail as error_msg;
 // Serialization
-use serde::{Serialize, Deserialize};
+use serde::{Serialize, Deserialize, de::DeserializeOwned};
 
 mod structure;
 mod proto;
-mod use_case;
+pub mod use_case;
+pub mod io;
 mod config;
 
+#[doc(hidden)]
 pub mod deprecated;
+#[doc(hidden)]
 pub mod tests;
 
 pub type Text = Vec<u8>;

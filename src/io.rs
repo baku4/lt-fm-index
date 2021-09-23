@@ -6,7 +6,7 @@ use crate::use_case::*;
 use std::fs::File;
 use std::io::{Read, Write};
 
-trait IO: Serialize + DeserializeOwned {
+pub trait IO: Serialize + DeserializeOwned {
     fn write_to_file(&self, file_path: &str) -> Result<()> {
         let file = {
             match File::create(file_path) {
@@ -49,36 +49,12 @@ trait IO: Serialize + DeserializeOwned {
     }
 }
 
-impl IO for LtFmIndexNO64  {}
+impl IO for LtFmIndexNO64 {}
 impl IO for LtFmIndexNO128 {}
-impl IO for LtFmIndexNN64  {}
+impl IO for LtFmIndexNN64 {}
 impl IO for LtFmIndexNN128 {}
-impl IO for LtFmIndexAO64  {}
+impl IO for LtFmIndexAO64 {}
 impl IO for LtFmIndexAO128 {}
-impl IO for LtFmIndexAN64  {}
+impl IO for LtFmIndexAN64 {}
 impl IO for LtFmIndexAN128 {}
-impl IO for LtFmIndexWrapper  {}
-
-#[allow(unused)]
-#[cfg(test)]
-mod tests {
-    use crate::*;
-    use super::*;
-    use crate::use_case::*;
-
-    #[test]
-    fn test_write_ltm() {
-        let mut buffer = Vec::new();
-
-        let text = b"ATTGGGGCGCGG".to_vec();
-        let lt_fm_index = LtFmIndexNO64::new(text, 3, 4);
-
-        bincode::serialize_into(&mut buffer, &lt_fm_index);
-
-        println!("{:?}", buffer);
-
-        let test: LtFmIndexNO64 = bincode::deserialize_from(&buffer[..]).unwrap();
-
-        println!("{:?}", test);
-    }
-}
+impl IO for LtFmIndexWrapper {}

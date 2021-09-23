@@ -7,6 +7,7 @@ use serde::{Serialize, Deserialize, de::DeserializeOwned};
 mod structure;
 mod proto;
 pub mod use_case;
+/// IO
 pub mod io;
 mod config;
 

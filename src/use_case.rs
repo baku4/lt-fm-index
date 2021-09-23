@@ -24,7 +24,7 @@ pub type LtFmIndexAO128 = LtFmIndex<CountArrayAO, BwtProto<BwtBlock128AO>>;
 pub type LtFmIndexAN64 = LtFmIndex<CountArrayAN, BwtProto<BwtBlock64AN>>;
 pub type LtFmIndexAN128 = LtFmIndex<CountArrayAN, BwtProto<BwtBlock128AN>>;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub enum LtFmIndexWrapper {
     NO64(LtFmIndexNO64),
     NO128(LtFmIndexNO128),

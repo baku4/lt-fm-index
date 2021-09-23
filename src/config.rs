@@ -8,6 +8,7 @@ const POINTER_WIDTH: usize = 32;
 #[cfg(target_pointer_width = "64")]
 const POINTER_WIDTH: usize = 64;
 
+/// Config
 #[derive(Debug)]
 pub struct LtFmIndexConfig {
     /// Type of text
@@ -78,12 +79,12 @@ impl LtFmIndexConfig {
         let kmer_size = match self.kmer_size {
             Some(specified_kmer) => {
                 if text_len < specified_kmer {
-                    specified_kmer
-                } else {
                     error_msg!(
                         "Text length({}) can't be shorter than kmer size({}).",
                         text_len, specified_kmer,
                     );
+                } else {
+                    specified_kmer
                 }
             },
             None => {

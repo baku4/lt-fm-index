@@ -1,6 +1,22 @@
+/*! Implementation of [LtFmIndex] according to use cases.
+
+In general, it is more recommended to use [crate::LtFmIndexConfig] instead of using [LtFmIndex] directly.  
+Using the struct implemented in this module directly can occur `panic!`.
+
+- **8** Case of LtFmIndex structure
+  - By text type (4)
+    - Nucleotide only
+    - Nucleotide with noise
+    - Aminoacid only
+    - Aminoacid with noise
+  - By bwt interval (2)
+    - 64
+    - 128 */
+
 use crate::{FmIndex, Pattern};
 use crate::{Serialize, Deserialize};
-use crate::proto::{LtFmIndex, CountArray, CountArrayProto, BwtProto, BwtBlock};
+use crate::proto::{CountArray, CountArrayProto, BwtProto, BwtBlock};
+pub use crate::proto::LtFmIndex;
 
 const POS_BIT_64: u64 = 0b1000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;
 const POS_BIT_128: u128 = 0b1000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;
@@ -15,17 +31,26 @@ use nc_with_noise::{CountArrayNN, BwtBlock64NN, BwtBlock128NN};
 use aa_only::{CountArrayAO, BwtBlock64AO, BwtBlock128AO};
 use aa_with_noise::{CountArrayAN, BwtBlock64AN, BwtBlock128AN};
 
+/// [LtFmIndex] of only nucleotide and 64 sized bwt block.
 pub type LtFmIndexNO64 = LtFmIndex<CountArrayNO, BwtProto<BwtBlock64NO>>;
+/// [LtFmIndex] of only nucleotide and 128 sized bwt block.
 pub type LtFmIndexNO128 = LtFmIndex<CountArrayNO, BwtProto<BwtBlock128NO>>;
+/// [LtFmIndex] of nucleotide with noise and 64 sized bwt block.
 pub type LtFmIndexNN64 = LtFmIndex<CountArrayNN, BwtProto<BwtBlock64NN>>;
+/// [LtFmIndex] of nucleotide with noise and 128 sized bwt block.
 pub type LtFmIndexNN128 = LtFmIndex<CountArrayNN, BwtProto<BwtBlock128NN>>;
+/// [LtFmIndex] of only amino acid and 64 sized bwt block.
 pub type LtFmIndexAO64 = LtFmIndex<CountArrayAO, BwtProto<BwtBlock64AO>>;
+/// [LtFmIndex] of only amino acid and 128 sized bwt block.
 pub type LtFmIndexAO128 = LtFmIndex<CountArrayAO, BwtProto<BwtBlock128AO>>;
+/// [LtFmIndex] of amino acid with noise and 64 sized bwt block.
 pub type LtFmIndexAN64 = LtFmIndex<CountArrayAN, BwtProto<BwtBlock64AN>>;
+/// [LtFmIndex] of amino acid with noise and 128 sized bwt block.
 pub type LtFmIndexAN128 = LtFmIndex<CountArrayAN, BwtProto<BwtBlock128AN>>;
 
+/// Wrapper for [LtFmIndex] to be generated safely from [crate::LtFmIndexConfig]
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub enum LtFmIndexWrapper {
+pub enum LtFmIndexAll {
     NO64(LtFmIndexNO64),
     NO128(LtFmIndexNO128),
     NN64(LtFmIndexNN64),
@@ -36,7 +61,7 @@ pub enum LtFmIndexWrapper {
     AN128(LtFmIndexAN128),
 }
 
-impl FmIndex for LtFmIndexWrapper {
+impl FmIndex for LtFmIndexAll {
     fn count(&self, pattern: Pattern) -> u64 {
         match self {
             Self::NO64(lt_fm_index) => lt_fm_index.count(pattern),

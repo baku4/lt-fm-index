@@ -6,7 +6,11 @@ use crate::use_case::*;
 use std::fs::File;
 use std::io::{Read, Write};
 
+/// Trait for write and read
+///
+/// All [LtFmIndex] in [crate::use_case] have this trait
 pub trait IO: Serialize + DeserializeOwned {
+    /// Write to file
     fn write_to_file(&self, file_path: &str) -> Result<()> {
         let file = {
             match File::create(file_path) {
@@ -16,6 +20,7 @@ pub trait IO: Serialize + DeserializeOwned {
         };
         self.write_to(file)
     }
+    /// Read from file
     fn read_from_file(file_path: &str) -> Result<Self> {
         let file = {
             match File::open(file_path) {
@@ -25,6 +30,7 @@ pub trait IO: Serialize + DeserializeOwned {
         };
         Self::read_from(file)
     }
+    /// Write to [Write]r
     fn write_to<W>(&self, writer: W) -> Result<()>
         where W: Write 
     {
@@ -35,6 +41,7 @@ pub trait IO: Serialize + DeserializeOwned {
             },
         }
     }
+    /// Read from [Read]r
     fn read_from<R>(reader: R) -> Result<Self>
         where R: Read,
     {
@@ -57,4 +64,4 @@ impl IO for LtFmIndexAO64 {}
 impl IO for LtFmIndexAO128 {}
 impl IO for LtFmIndexAN64 {}
 impl IO for LtFmIndexAN128 {}
-impl IO for LtFmIndexWrapper {}
+impl IO for LtFmIndexAll {}

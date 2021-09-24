@@ -114,19 +114,19 @@ const KMER_SIZE: usize = 8;
 const SA_SAMPLING_RATIO: u64 = 1;
 
 #[inline]
-fn generate_new_no(text: Text) -> LtFmIndexWrapper {
+fn generate_new_no(text: Text) -> LtFmIndexAll {
     LtFmIndexConfig::for_nucleotide()
         .change_kmer_size(KMER_SIZE).unwrap()
-        .change_suffix_array_sampling_ratio(SA_SAMPLING_RATIO).unwrap()
+        .change_sampling_ratio(SA_SAMPLING_RATIO).unwrap()
         .generate(text).unwrap()
 }
 
 #[inline]
-fn generate_new_nn(text: Text) -> LtFmIndexWrapper {
+fn generate_new_nn(text: Text) -> LtFmIndexAll {
     LtFmIndexConfig::for_nucleotide()
         .with_noise()
         .change_kmer_size(KMER_SIZE).unwrap()
-        .change_suffix_array_sampling_ratio(SA_SAMPLING_RATIO).unwrap()
+        .change_sampling_ratio(SA_SAMPLING_RATIO).unwrap()
         .generate(text).unwrap()
 }
 

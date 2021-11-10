@@ -51,6 +51,9 @@ impl CountArray for CountArrayNO {
     fn get_initial_pos_range_and_idx_of_pattern(&self, pattern: Pattern) -> ((u64, u64), usize) {
         self.proto.get_initial_pos_range_and_idx_of_pattern(pattern, Self::chrwpidx_of_chr)
     }
+    fn kmer_size(&self) -> usize {
+        self.proto.kmer_size()
+    }
 }
 
 impl CountArrayNO {

@@ -1,6 +1,6 @@
 [package]
 name = "lt-fm-index"
-version = "0.4.0"
+version = "0.4.1"
 authors = ["baku4 <bahkhun@gmail.com>"]
 edition = "2018"
 description = "Fm-index using k-mer lookup table for exact pattern matching"

@@ -44,6 +44,7 @@ impl<C: CountArray, B: Bwt> LtFmIndex<C, B> {
         }
     }
     
+    // Methods for count and locate pattern
     fn get_location_from_pos_range(&self, pos_range: (u64, u64)) -> Vec<u64> {
         let mut locations: Vec<u64> = Vec::with_capacity((pos_range.1 - pos_range.0) as usize);
         'each_pos: for mut pos in pos_range.0..pos_range.1 {
@@ -82,6 +83,14 @@ impl<C: CountArray, B: Bwt> LtFmIndex<C, B> {
         let end_rank = self.bwt.get_next_rank_of_pos_and_chridx(pos_range.1, chridx);
         (precount + start_rank, precount + end_rank)
     }
+
+    // Methods to get information
+    pub fn suffix_array_sampling_ratio(&self) -> u64 {
+        self.suffix_array.sampling_ratio
+    }
+    pub fn lookup_table_kmer_size(&self) -> usize {
+        self.count_array.kmer_size()
+    }
 }
 
 pub trait CountArray {
@@ -89,6 +98,7 @@ pub trait CountArray {
     fn get_precount_of_chridx(&self, chridx: usize) -> u64;
     fn get_chridx_and_precount_of_chr(&self, chr: u8) -> (usize, u64);
     fn get_initial_pos_range_and_idx_of_pattern(&self, pattern: Pattern) -> ((u64, u64), usize);
+    fn kmer_size(&self) -> usize;
 }
 
 pub trait Bwt {

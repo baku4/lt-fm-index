@@ -1,6 +1,6 @@
 [package]
 name = "lt-fm-index"
-version = "0.3.1"
+version = "0.4.2"
 authors = ["baku4 <bahkhun@gmail.com>"]
 edition = "2018"
 description = "Fm-index using k-mer lookup table for exact pattern matching"
@@ -12,10 +12,16 @@ categories = ["science", "algorithms"]
 
 [dependencies]
 anyhow = "1.0.44"
-libdivsufsort-rs = "0.1.1"
-serde = "1.0.127"
+serde = { version = "1.0.127", features = ["derive"]}
 bincode = "1.3.3"
 rand = "0.8.0"
+bio = "0.39.0"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+libdivsufsort-rs = "0.1.1"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }
 
 [dev-dependencies]
 crate_fm_index = { package = "fm-index", version = "0.1" }

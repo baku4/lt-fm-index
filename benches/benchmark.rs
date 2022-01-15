@@ -1,5 +1,5 @@
 use criterion::{
-    black_box, criterion_group, criterion_main, Criterion, BenchmarkId
+    criterion_group, criterion_main,
 };
 
 mod vs_dep;
@@ -13,8 +13,6 @@ use vs_dep::{
 
 // Bench counting bits
 use counting_bit::bench_counting_bits_of_u64;
-
-// Bench performance version of new vs deprecated
 
 criterion_group!(
     benches,

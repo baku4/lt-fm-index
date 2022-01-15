@@ -111,4 +111,8 @@ impl CountArrayProto {
             *count = accumed_count;
         });
     }
+
+    pub fn kmer_size(&self) -> usize {
+        self.kmer_size
+    }
 }

@@ -1,11 +1,13 @@
 use crate::*;
+use crate::use_case::LtFmIndexAll;
+use crate::io::IO;
 use super::random_text::*;
 use super::other_crate::*;
 
 #[test]
-fn test_all_use_cases() {
+fn test_all_use_cases_are_accurate() {
     let kmer_size = 4;
-    let sa_sampling_ratio = 1;
+    let sa_sampling_ratio = 4;
 
     let text_count = 10;
     let pattern_count_for_each_text = 5;
@@ -15,8 +17,8 @@ fn test_all_use_cases() {
         // NO
         {
             let text = rand_text_of_no();
-            let lt_fm_index_64 =LtFmIndexConfig64NO(kmer_size, sa_sampling_ratio).generate(text.clone());
-            let lt_fm_index_128 =LtFmIndexConfig128NO(kmer_size, sa_sampling_ratio).generate(text.clone());
+            let lt_fm_index_64 =lt_fm_index_config64_no(kmer_size, sa_sampling_ratio).generate(text.clone()).unwrap();
+            let lt_fm_index_128 =lt_fm_index_config128_no(kmer_size, sa_sampling_ratio).generate(text.clone()).unwrap();
 
             let fm_index_other = get_fmindex_of_other_crate(&text);
 
@@ -36,8 +38,8 @@ fn test_all_use_cases() {
         // NN
         {
             let text = rand_text_of_nn();
-            let lt_fm_index_64 =LtFmIndexConfig64NN(kmer_size, sa_sampling_ratio).generate(text.clone());
-            let lt_fm_index_128 =LtFmIndexConfig128NN(kmer_size, sa_sampling_ratio).generate(text.clone());
+            let lt_fm_index_64 =lt_fm_index_config64_nn(kmer_size, sa_sampling_ratio).generate(text.clone()).unwrap();
+            let lt_fm_index_128 =lt_fm_index_config128_nn(kmer_size, sa_sampling_ratio).generate(text.clone()).unwrap();
 
             let fm_index_other = get_fmindex_of_other_crate(&text);
 
@@ -57,8 +59,8 @@ fn test_all_use_cases() {
         // AO
         {
             let text = rand_text_of_ao();
-            let lt_fm_index_64 =LtFmIndexConfig64AO(kmer_size, sa_sampling_ratio).generate(text.clone());
-            let lt_fm_index_128 =LtFmIndexConfig128AO(kmer_size, sa_sampling_ratio).generate(text.clone());
+            let lt_fm_index_64 =lt_fm_index_config64_ao(kmer_size, sa_sampling_ratio).generate(text.clone()).unwrap();
+            let lt_fm_index_128 =lt_fm_index_config128_ao(kmer_size, sa_sampling_ratio).generate(text.clone()).unwrap();
 
             let fm_index_other = get_fmindex_of_other_crate(&text);
 
@@ -78,8 +80,8 @@ fn test_all_use_cases() {
         // AN
         {
             let text = rand_text_of_an();
-            let lt_fm_index_64 =LtFmIndexConfig64AN(kmer_size, sa_sampling_ratio).generate(text.clone());
-            let lt_fm_index_128 =LtFmIndexConfig128AN(kmer_size, sa_sampling_ratio).generate(text.clone());
+            let lt_fm_index_64 =lt_fm_index_config64_an(kmer_size, sa_sampling_ratio).generate(text.clone()).unwrap();
+            let lt_fm_index_128 =lt_fm_index_config128_an(kmer_size, sa_sampling_ratio).generate(text.clone()).unwrap();
 
             let fm_index_other = get_fmindex_of_other_crate(&text);
 
@@ -99,51 +101,109 @@ fn test_all_use_cases() {
     }
 }
 
-fn LtFmIndexConfig64NO(kmer_size: usize, sa_sampling_ratio: u64) -> LtFmIndexConfig {
+#[test]
+fn test_all_use_cases_are_io_able_to_buffer() {
+    let kmer_size = 4;
+    let sa_sampling_ratio = 4;
+
+    let text_count = 10;
+
+    for c in 0..text_count {
+        println!("Text count: {}/{}", c+1, text_count);
+        // NO
+        {
+            let text = rand_text_of_no();
+            let lt_fm_index_64 =lt_fm_index_config64_no(kmer_size, sa_sampling_ratio).generate(text.clone()).unwrap();
+            let lt_fm_index_128 =lt_fm_index_config128_no(kmer_size, sa_sampling_ratio).generate(text.clone()).unwrap();
+
+            assert_write_to_and_read_from_buffer(lt_fm_index_64);
+            assert_write_to_and_read_from_buffer(lt_fm_index_128);
+        }
+        // NN
+        {
+            let text = rand_text_of_nn();
+            let lt_fm_index_64 =lt_fm_index_config64_nn(kmer_size, sa_sampling_ratio).generate(text.clone()).unwrap();
+            let lt_fm_index_128 =lt_fm_index_config128_nn(kmer_size, sa_sampling_ratio).generate(text.clone()).unwrap();
+
+            assert_write_to_and_read_from_buffer(lt_fm_index_64);
+            assert_write_to_and_read_from_buffer(lt_fm_index_128);
+        }
+        // AO
+        {
+            let text = rand_text_of_ao();
+            let lt_fm_index_64 =lt_fm_index_config64_ao(kmer_size, sa_sampling_ratio).generate(text.clone()).unwrap();
+            let lt_fm_index_128 =lt_fm_index_config128_ao(kmer_size, sa_sampling_ratio).generate(text.clone()).unwrap();
+
+            assert_write_to_and_read_from_buffer(lt_fm_index_64);
+            assert_write_to_and_read_from_buffer(lt_fm_index_128);
+        }
+        // AN
+        {
+            let text = rand_text_of_an();
+            let lt_fm_index_64 =lt_fm_index_config64_an(kmer_size, sa_sampling_ratio).generate(text.clone()).unwrap();
+            let lt_fm_index_128 =lt_fm_index_config128_an(kmer_size, sa_sampling_ratio).generate(text.clone()).unwrap();
+
+            assert_write_to_and_read_from_buffer(lt_fm_index_64);
+            assert_write_to_and_read_from_buffer(lt_fm_index_128);
+        }
+    }
+}
+
+fn assert_write_to_and_read_from_buffer(lt_fm_index: LtFmIndexAll) {
+    let mut buffer = Vec::new();
+    // write
+    lt_fm_index.write_to(&mut buffer).unwrap();
+    // read
+    let lt_fm_index_from_buffer = LtFmIndexAll::read_from(&buffer[..]).unwrap();
+
+    assert_eq!(lt_fm_index, lt_fm_index_from_buffer);
+}
+
+fn lt_fm_index_config64_no(kmer_size: usize, sa_sampling_ratio: u64) -> LtFmIndexConfig {
     LtFmIndexConfig::for_nucleotide()
         .change_kmer_size(kmer_size).unwrap()
-        .change_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
+        .change_sampling_ratio(sa_sampling_ratio).unwrap()
 }
-fn LtFmIndexConfig64NN(kmer_size: usize, sa_sampling_ratio: u64) -> LtFmIndexConfig {
+fn lt_fm_index_config64_nn(kmer_size: usize, sa_sampling_ratio: u64) -> LtFmIndexConfig {
     LtFmIndexConfig::for_nucleotide()
         .with_noise()
         .change_kmer_size(kmer_size).unwrap()
-        .change_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
+        .change_sampling_ratio(sa_sampling_ratio).unwrap()
 }
-fn LtFmIndexConfig64AO(kmer_size: usize, sa_sampling_ratio: u64) -> LtFmIndexConfig {
+fn lt_fm_index_config64_ao(kmer_size: usize, sa_sampling_ratio: u64) -> LtFmIndexConfig {
     LtFmIndexConfig::for_aminoacid()
         .change_kmer_size(kmer_size).unwrap()
-        .change_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
+        .change_sampling_ratio(sa_sampling_ratio).unwrap()
 }
-fn LtFmIndexConfig64AN(kmer_size: usize, sa_sampling_ratio: u64) -> LtFmIndexConfig {
+fn lt_fm_index_config64_an(kmer_size: usize, sa_sampling_ratio: u64) -> LtFmIndexConfig {
     LtFmIndexConfig::for_aminoacid()
         .with_noise()
         .change_kmer_size(kmer_size).unwrap()
-        .change_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
+        .change_sampling_ratio(sa_sampling_ratio).unwrap()
 }
-fn LtFmIndexConfig128NO(kmer_size: usize, sa_sampling_ratio: u64) -> LtFmIndexConfig {
+fn lt_fm_index_config128_no(kmer_size: usize, sa_sampling_ratio: u64) -> LtFmIndexConfig {
     LtFmIndexConfig::for_nucleotide()
         .change_kmer_size(kmer_size).unwrap()
-        .change_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
+        .change_sampling_ratio(sa_sampling_ratio).unwrap()
         .change_bwt_interval_to_128()
 }
-fn LtFmIndexConfig128NN(kmer_size: usize, sa_sampling_ratio: u64) -> LtFmIndexConfig {
+fn lt_fm_index_config128_nn(kmer_size: usize, sa_sampling_ratio: u64) -> LtFmIndexConfig {
     LtFmIndexConfig::for_nucleotide()
         .with_noise()
         .change_kmer_size(kmer_size).unwrap()
-        .change_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
+        .change_sampling_ratio(sa_sampling_ratio).unwrap()
         .change_bwt_interval_to_128()
 }
-fn LtFmIndexConfig128AO(kmer_size: usize, sa_sampling_ratio: u64) -> LtFmIndexConfig {
+fn lt_fm_index_config128_ao(kmer_size: usize, sa_sampling_ratio: u64) -> LtFmIndexConfig {
     LtFmIndexConfig::for_aminoacid()
         .change_kmer_size(kmer_size).unwrap()
-        .change_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
+        .change_sampling_ratio(sa_sampling_ratio).unwrap()
         .change_bwt_interval_to_128()
 }
-fn LtFmIndexConfig128AN(kmer_size: usize, sa_sampling_ratio: u64) -> LtFmIndexConfig {
+fn lt_fm_index_config128_an(kmer_size: usize, sa_sampling_ratio: u64) -> LtFmIndexConfig {
     LtFmIndexConfig::for_aminoacid()
         .with_noise()
         .change_kmer_size(kmer_size).unwrap()
-        .change_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
+        .change_sampling_ratio(sa_sampling_ratio).unwrap()
         .change_bwt_interval_to_128()
 }

@@ -1,75 +1,70 @@
 # LT FM-Index
-`lt-fm-index` is library for locate and count nucleotide sequence (ATGC) string.  
-`lt-fm-index` using k-mer lookup table (As you noticed, LT stands for lookup table).
+`lt-fm-index` is library for locate and count nucleotide and amino acid sequence string.  
+`lt-fm-index` use lookup table (LT) in count table
 
+**CAVEAT!** This `crate` is not stable. Functions can be changed without notification.
 ## Description
 - Fm-index is a data structure used for pattern matching.
-- K-mer lookup table(KLT) is precalculated count table containing all kmer occurrences.
-- With KLT, you can find the first k-mer pattern at once.
-- Supports two types of text.
-  - `FmIndexOn` supports a text with only genetic nucleotide sequence (ACGT).
-  - `FmIndexNn` supports a text containing non-nucleotide sequence.
-    - `FmIndexNn` treats all non-nucleotide as the same character.
-- **CAVEAT!** This `crate` is not stable. Functions can be changed without notice.
+- `LT` is precalculated count table containing all kmer occurrences.
+- With `LT`, you can find the first k-mer pattern at once.
 ## Features
-- Fm-index using KLT with specified k-mer size.
-- Suffix array compression with sampling ratio.
-- BWT and suffix array are generated using `libdivsufsort` library.
-- BWT(burrow wheeler transformed) string and occurrence array (OA) are aligned in one block of 64 strings.
-- There are two main functions.
-    - count: Count the number of patterns in the text
-    - locate: Locate pattern index in text (KLT can be specified to enable or not)
-
+- `LtFmIndex` is generated from `Text`
+- `LtFmIndex` have two functions for `Pattern`
+    - count: Count the number of times the `Pattern` appears in `Text`.
+    - locate: Locate the start index in which the `Pattern` appears in `Text`.
+- Supports **four** types of text.
+    - `NucleotideOnly` supports a text with only genetic nucleotide sequence (ACGT).
+    - `NucleotideWithNoise` supports a text containing non-nucleotide sequence.
+    - `AminoacidOnly` supports a text with only amino acid sequence.
+    - `AminoacidWithNoise` supports a text containing non-amino acid sequence.
+- The last character of each text type is treated as a wildcard.
+    - The last characters of each text type are *T*, *_*, *Y* and *_*.
+    - Wildcard is assigned to all non-supported characters.
+    - For example, in `NucleotideOnly`, pattern of *ACGTXYZ* can be matched with *ACGTTTT*. Because *X*, *Y* and *Z* are not in *ACG* (nucleotide except *T*). And `lt-fm-index` generated with text of *ACGTXYZ* indexes the text as *ACGTTTT*.
+- BWT is stored with rank count tables in every 64 or 128 intervals.
 ## Examples
-### 1. Use `FmIndex` to locate pattern.
+### 1. Use `LtFmIndex` to count and locate pattern.
 ```rust
-use lt_fm_index::FmIndexConfig;
+use lt_fm_index::{FmIndex, LtFmIndexConfig};
 
-// (1) Define configuration for fm-index
-let fmi_config = FmIndexConfig::new()
-	.set_kmer_lookup_table(8)
-	.set_suffix_array_sampling_ratio(4)
-	.contain_non_nucleotide(); // Default is `contain only nucleotide`
+// (1) Define configuration for lt-fm-index
+let config = LtFmIndexConfig::for_nucleotide()
+    .with_noise()
+    .change_kmer_size(4).unwrap()
+    .change_sampling_ratio(4).unwrap()
+    .change_bwt_interval_to_128();
 
 // (2) Generate fm-index with text
-let text = b"CTCCGTACACCTGTTTCGTATCGGANNN".to_vec();
-let fm_index = fmi_config.generate_fmindex(text); // text is consumed
+let text = b"CTCCGTACACCTGTTTCGTATCGGANNNN".to_vec();
+let lt_fm_index = config.generate(text).unwrap(); // text is consumed
 
 // (3) Match with pattern
 let pattern = b"TA".to_vec();
 //   - count
-let count = fm_index.count(&pattern);
+let count = lt_fm_index.count(&pattern);
 assert_eq!(count, 2);
-//   - locate without k-mer lookup table
-let locations = fm_index.locate_wo_klt(&pattern);
-assert_eq!(locations, vec![5,18]);
-//   - locate with k-mer lookup table
-let locations = fm_index.locate_w_klt(&pattern);
+//   - locate
+let locations = lt_fm_index.locate(&pattern);
 assert_eq!(locations, vec![5,18]);
 ```
-### 2. Write and read `FmIndex`
+### 2. Write and read `LtFmIndex`
 ```rust
-use lt_fm_index::{FmIndexConfig, FmIndex};
+use lt_fm_index::{LtFmIndexConfig, LtFmIndexAll, IO};
 
 // (1) Generate `FmIndex`
-let fmi_config = FmIndexConfig::new()
-    .set_kmer_lookup_table(8)
-    .set_suffix_array_sampling_ratio(4);
+let config = LtFmIndexConfig::for_nucleotide();
 let text = b"CTCCGTACACCTGTTTCGTATCGGA".to_vec();
-let fm_index_pre = fmi_config.generate_fmindex(text); // text is consumed
+let lt_fm_index = config.generate(text).unwrap(); // text is consumed
 
 // (2) Write fm-index to buffer (or file path)
 let mut buffer = Vec::new();
-fm_index_pre.write_index_to(&mut buffer).unwrap();
+lt_fm_index.write_to(&mut buffer).unwrap();
 
 // (3) Read fm-index from buffer (or file path)
-let fm_index_pro = FmIndex::read_index_from(&buffer[..]).unwrap();
+let lt_fm_index_buf = LtFmIndexAll::read_from(&buffer[..]).unwrap();
 
-assert_eq!(fm_index_pre, fm_index_pro);
+assert_eq!(lt_fm_index, lt_fm_index_buf);
 ```
-## Future works
-- Support *SIMD* for BWT block compression.
-- Length of texts can be `32bit` integer
 ## Repository
 [https://github.com/baku4/lt-fm-index](https://github.com/baku4/lt-fm-index)
 ## Doc

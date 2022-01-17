@@ -1,4 +1,4 @@
-use super::{Text, Serialize, Deserialize};
+use super::{Text, Archive, Serialize, Deserialize};
 
 #[allow(dead_code)]
 mod bwt_transform;
@@ -6,13 +6,14 @@ mod bwt_transform;
 #[cfg(not(target_arch = "wasm32"))]
 use libdivsufsort_rs::{divsufsort64, bw_transform64};
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct SuffixArray {
+#[derive(Debug, Archive, Serialize, Deserialize)]
+#[archive(archived = "SuffixArray")]
+pub struct SuffixArrayPreBuild {
     pub sampling_ratio: u64,
     pub array: Vec<u64>,
 }
 
-impl SuffixArray {
+impl SuffixArrayPreBuild {
     #[cfg(not(target_arch = "wasm32"))]
     pub fn new_while_bwt(text: &mut Text, sa_sampling_ratio: u64) -> (Self, u64) {
         let suffix_array_i64 = divsufsort64(&text).unwrap();
@@ -56,6 +57,7 @@ mod tests {
     use crate::tests::random_text::*;
 
     #[test]
+    #[cfg(not(target_arch = "wasm32"))]
     fn test_built_in_bwt_transform() {
         let n_test = 1000;
 
@@ -71,6 +73,7 @@ mod tests {
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn assert_built_in_bwt_same_with_libdivsufsort_rs(text: &[u8]) {
         // Result from libdivsufsort_rs
         let mut bwt_answer = text.to_vec();

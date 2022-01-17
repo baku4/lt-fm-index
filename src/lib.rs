@@ -83,3 +83,6 @@ pub mod deprecated;
 #[doc(hidden)]
 pub mod tests;
 pub mod unarchived;
+
+pub mod core;
+pub mod structure;

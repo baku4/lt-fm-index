@@ -2,11 +2,21 @@ use crate::core::{
     Result, error_msg,
     Archive, Serialize, Deserialize,
     Text, Pattern,
+};
+use crate::core::{
     LtFmIndexConstructor, LtFmIndexInterface,
 };
 
 mod suffix_array;
+mod count_array;
+mod bwt;
+
+// Defined
 use suffix_array::SuffixArrayPreBuild;
+// To Define
+pub use count_array::TextEncoder;
+pub use bwt::{BwtBlockConstructor, BwtBlockInterface};
+
 
 // LtFmIndex Structure
 

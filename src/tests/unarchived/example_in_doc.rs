@@ -1,6 +1,6 @@
 #[test]
 fn example_1() {
-    use crate::{FmIndex, LtFmIndexConfig};
+    use super::{FmIndex, LtFmIndexConfig};
 
     // (1) Define configuration for lt-fm-index
     let config = LtFmIndexConfig::for_nucleotide()
@@ -25,7 +25,7 @@ fn example_1() {
 
 #[test]
 fn example_2() {
-    use crate::{LtFmIndexConfig, LtFmIndexAll, IO};
+    use super::{LtFmIndexConfig, LtFmIndexAll, IO};
 
     // (1) Generate `FmIndex`
     let config = LtFmIndexConfig::for_nucleotide();

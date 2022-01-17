@@ -1,7 +1,7 @@
-use crate::{Serialize, Deserialize};
-use crate::{Text};
+use super::{Serialize, Deserialize};
+use super::{Text};
 
-use crate::structure::Bwt;
+use super::Bwt;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct BwtProto<W: BwtBlock> {

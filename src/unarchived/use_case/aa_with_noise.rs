@@ -1,9 +1,9 @@
-use crate::{Deserialize, Serialize};
-use crate::{Text, Pattern};
+use super::{Deserialize, Serialize};
+use super::{Text, Pattern};
 
 use super::{CountArray, CountArrayProto, BwtBlock, POS_BIT_64, POS_BIT_128};
 
-const CHR_COUNT: usize = 20;
+const CHR_COUNT: usize = 21;
 const CHR_WITH_PIDX_COUNT: usize = CHR_COUNT + 1;
 
 const A_UTF8: u8 = 65;
@@ -25,7 +25,8 @@ const S_UTF8: u8 = 83;
 const T_UTF8: u8 = 84;
 const V_UTF8: u8 = 86;
 const W_UTF8: u8 = 87;
-const NOISE_UTF8: u8 = 89; // 'Y' in ASCII
+const Y_UTF8: u8 = 89;
+const NOISE_UTF8: u8 = 95; // '_' in ASCII
 
 const A_IDX: usize = 0;
 const C_IDX: usize = 1;
@@ -46,7 +47,8 @@ const S_IDX: usize = 15;
 const T_IDX: usize = 16;
 const V_IDX: usize = 17;
 const W_IDX: usize = 18;
-const NOISE_IDX: usize = 19;
+const Y_IDX: usize = 19;
+const NOISE_IDX: usize = 20;
 
 const A_IDX_WP: usize = A_IDX + 1;
 const C_IDX_WP: usize = C_IDX + 1;
@@ -67,6 +69,7 @@ const S_IDX_WP: usize = S_IDX + 1;
 const T_IDX_WP: usize = T_IDX + 1;
 const V_IDX_WP: usize = V_IDX + 1;
 const W_IDX_WP: usize = W_IDX + 1;
+const Y_IDX_WP: usize = Y_IDX + 1;
 const NOISE_IDX_WP: usize = NOISE_IDX + 1;
 
 // * Vector table for Bwt
@@ -79,16 +82,16 @@ const NOISE_IDX_WP: usize = NOISE_IDX + 1;
 // | 1 | 1 | - | A | C | D | E | F | G |
 // | 1 | 0 | - | H | I | K | L | M | N |
 // | 0 | 1 | - | P | Q | R | S | T | V |
-// | 0 | 0 | - | W | Y |               |
+// | 0 | 0 | - | W | Y | _ |           |
 // -------------------------------------
 
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct CountArrayAO {
+pub struct CountArrayAN {
     proto: CountArrayProto,
 }
 
-impl CountArray for CountArrayAO {
+impl CountArray for CountArrayAN {
     fn new_and_encode_text(text: &mut Text, kmer_size: usize) -> Self {
         let proto = CountArrayProto::new_and_encode_text(
             text,
@@ -113,7 +116,7 @@ impl CountArray for CountArrayAO {
     }
 }
 
-impl CountArrayAO {
+impl CountArrayAN {
     fn chridx_of_chr(chr: u8) -> usize {
         match chr {
             A_UTF8 => A_IDX,
@@ -135,6 +138,7 @@ impl CountArrayAO {
             T_UTF8 => T_IDX,
             V_UTF8 => V_IDX,
             W_UTF8 => W_IDX,
+            Y_UTF8 => Y_IDX,
             _ => NOISE_IDX,
         }
     }
@@ -159,6 +163,7 @@ impl CountArrayAO {
             T_UTF8 => T_IDX_WP,
             V_UTF8 => V_IDX_WP,
             W_UTF8 => W_IDX_WP,
+            Y_UTF8 => Y_IDX_WP,
             _ => NOISE_IDX_WP,
         }
     }
@@ -183,6 +188,7 @@ impl CountArrayAO {
             T_UTF8 => T_IDX,
             V_UTF8 => V_IDX,
             W_UTF8 => W_IDX,
+            Y_UTF8 => Y_IDX,
             _ => {
                 *chr = NOISE_UTF8;
                 NOISE_IDX
@@ -192,7 +198,7 @@ impl CountArrayAO {
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct BwtBlock64AO {
+pub struct BwtBlock64AN {
     rank_checkpoint: [u64; CHR_COUNT],
     first_bwt_vector: u64,
     second_bwt_vector: u64,
@@ -201,7 +207,7 @@ pub struct BwtBlock64AO {
     fifth_bwt_vector: u64,
 }
 
-impl BwtBlock for BwtBlock64AO {
+impl BwtBlock for BwtBlock64AN {
     const BLOCK_SEG_LEN: u64 = 64;
 
     fn new_with_bwt_text(bwt_text: Text) -> Vec<Self> {
@@ -342,9 +348,13 @@ impl BwtBlock for BwtBlock64AO {
                     W_UTF8 => {
                         rank_checkpoint[W_IDX] += 1;
                     },
+                    Y_UTF8 => {
+                        rank_checkpoint[Y_IDX] += 1;
+                        fifth_bwt_vector += 1;
+                    }
                     _ => { // NOISE
                         rank_checkpoint[NOISE_IDX] += 1;
-                        fifth_bwt_vector += 1;
+                        fourth_bwt_vector += 1;
                     }
                 }
             }
@@ -391,11 +401,16 @@ impl BwtBlock for BwtBlock64AO {
         let chridx = if self.first_bwt_vector & pos_bit == 0 {
             if self.second_bwt_vector & pos_bit == 0 {
                 // 00
-                if self.fifth_bwt_vector & pos_bit == 0 {
-                    // 00 ??0
-                    W_IDX
+                if self.fourth_bwt_vector & pos_bit == 0 {
+                    if self.fifth_bwt_vector & pos_bit == 0 {
+                        // 00 ?00
+                        W_IDX
+                    } else {
+                        // 00 ?01
+                        Y_IDX
+                    }
                 } else {
-                    // 00 ??1
+                    // 00 ?1?
                     NOISE_IDX
                 }
             } else {
@@ -610,12 +625,18 @@ impl BwtBlock for BwtBlock64AO {
                 W_IDX => {
                     !self.first_bwt_vector &
                     !self.second_bwt_vector &
+                    !self.fourth_bwt_vector &
                     !self.fifth_bwt_vector
                 },
-                _ => { // NOISE
+                Y_IDX => {
                     !self.first_bwt_vector &
                     !self.second_bwt_vector &
                     self.fifth_bwt_vector
+                }
+                _ => { // NOISE
+                    !self.first_bwt_vector &
+                    !self.second_bwt_vector &
+                    self.fourth_bwt_vector
                 }
             }  >> Self::BLOCK_SEG_LEN-rem;
             rank += count_bits.count_ones() as u64;
@@ -625,9 +646,8 @@ impl BwtBlock for BwtBlock64AO {
     }
 }
 
-
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct BwtBlock128AO {
+pub struct BwtBlock128AN {
     rank_checkpoint: [u64; CHR_COUNT],
     first_bwt_vector: u128,
     second_bwt_vector: u128,
@@ -636,7 +656,7 @@ pub struct BwtBlock128AO {
     fifth_bwt_vector: u128,
 }
 
-impl BwtBlock for BwtBlock128AO {
+impl BwtBlock for BwtBlock128AN {
     const BLOCK_SEG_LEN: u64 = 128;
 
     fn new_with_bwt_text(bwt_text: Text) -> Vec<Self> {
@@ -777,9 +797,13 @@ impl BwtBlock for BwtBlock128AO {
                     W_UTF8 => {
                         rank_checkpoint[W_IDX] += 1;
                     },
+                    Y_UTF8 => {
+                        rank_checkpoint[Y_IDX] += 1;
+                        fifth_bwt_vector += 1;
+                    }
                     _ => { // NOISE
                         rank_checkpoint[NOISE_IDX] += 1;
-                        fifth_bwt_vector += 1;
+                        fourth_bwt_vector += 1;
                     }
                 }
             }
@@ -826,11 +850,16 @@ impl BwtBlock for BwtBlock128AO {
         let chridx = if self.first_bwt_vector & pos_bit == 0 {
             if self.second_bwt_vector & pos_bit == 0 {
                 // 00
-                if self.fifth_bwt_vector & pos_bit == 0 {
-                    // 00 ??0
-                    W_IDX
+                if self.fourth_bwt_vector & pos_bit == 0 {
+                    if self.fifth_bwt_vector & pos_bit == 0 {
+                        // 00 ?00
+                        W_IDX
+                    } else {
+                        // 00 ?01
+                        Y_IDX
+                    }
                 } else {
-                    // 00 ??1
+                    // 00 ?1?
                     NOISE_IDX
                 }
             } else {
@@ -1045,12 +1074,18 @@ impl BwtBlock for BwtBlock128AO {
                 W_IDX => {
                     !self.first_bwt_vector &
                     !self.second_bwt_vector &
+                    !self.fourth_bwt_vector &
                     !self.fifth_bwt_vector
                 },
-                _ => { // NOISE
+                Y_IDX => {
                     !self.first_bwt_vector &
                     !self.second_bwt_vector &
                     self.fifth_bwt_vector
+                }
+                _ => { // NOISE
+                    !self.first_bwt_vector &
+                    !self.second_bwt_vector &
+                    self.fourth_bwt_vector
                 }
             }  >> Self::BLOCK_SEG_LEN-rem;
             rank += count_bits.count_ones() as u64;

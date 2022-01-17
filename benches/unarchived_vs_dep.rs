@@ -6,12 +6,12 @@ use criterion::{
 };
 
 use lt_fm_index::*;
-use lt_fm_index::use_case::*;
+use lt_fm_index::unarchived::*;
 use lt_fm_index::tests::random_text::*;
 
 // Bench performance version of new vs deprecated
 
-pub fn bench_generate_new_vs_dep(c: &mut Criterion) {
+pub fn bench_generate_unarchived_new_vs_dep(c: &mut Criterion) {
     let plot_config = PlotConfiguration::default()
         .summary_scale(AxisScale::Logarithmic);
 
@@ -59,7 +59,7 @@ pub fn bench_generate_new_vs_dep(c: &mut Criterion) {
     group.finish();
 }
 
-pub fn bench_locate_new_vs_dep(c: &mut Criterion) {
+pub fn bench_locate_unarchived_new_vs_dep(c: &mut Criterion) {
     let mut group = c.benchmark_group("locate_new_vs_dep");
 
     let text_len = 1000;

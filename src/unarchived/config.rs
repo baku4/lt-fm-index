@@ -1,5 +1,5 @@
-use crate::{Result, error_msg};
-use crate::{Text};
+use super::{Result, error_msg};
+use super::{Text};
 
 use super::use_case::*;
 

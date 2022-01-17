@@ -1,37 +1,41 @@
-use crate::{Deserialize, Serialize};
-use crate::{Text, Pattern};
+use super::{Deserialize, Serialize};
+use super::{Text, Pattern};
 
 use super::{CountArray, CountArrayProto, BwtBlock, POS_BIT_64, POS_BIT_128};
 
-const CHR_COUNT: usize = 4;
+const CHR_COUNT: usize = 5;
 const CHR_WITH_PIDX_COUNT: usize = CHR_COUNT + 1;
 
 const A_UTF8: u8 = 65;
 const C_UTF8: u8 = 67;
 const G_UTF8: u8 = 71;
-const NOISE_UTF8: u8 = 84; // 'T' in ASCII
+const T_UTF8: u8 = 84;
+const NOISE_UTF8: u8 = 95; // '_' in ASCII
 
 const A_IDX: usize = 0;
 const C_IDX: usize = 1;
 const G_IDX: usize = 2;
-const NOISE_IDX: usize = 3;
+const T_IDX: usize = 3;
+const NOISE_IDX: usize = 4;
 
 const A_IDX_WP: usize = A_IDX + 1;
 const C_IDX_WP: usize = C_IDX + 1;
 const G_IDX_WP: usize = G_IDX + 1;
+const T_IDX_WP: usize = T_IDX + 1;
 const NOISE_IDX_WP: usize = NOISE_IDX + 1;
 
 // * Vector table for Bwt
-// | A | C | G | T |
-// | 0 | 0 | 1 | 1 | first
-// | 0 | 1 | 0 | 1 | second
+// | A | C | G | T | _ |
+// | 0 | 0 | 1 | 1 | 0 | first
+// | 0 | 1 | 0 | 1 | 0 | second
+// | 1 | 0 | 1 | 0 | 0 | third
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct CountArrayNO {
+pub struct CountArrayNN {
     proto: CountArrayProto,
 }
 
-impl CountArray for CountArrayNO {
+impl CountArray for CountArrayNN {
     fn new_and_encode_text(text: &mut Text, kmer_size: usize) -> Self {
         let proto = CountArrayProto::new_and_encode_text(
             text,
@@ -56,12 +60,13 @@ impl CountArray for CountArrayNO {
     }
 }
 
-impl CountArrayNO {
+impl CountArrayNN {
     fn chridx_of_chr(chr: u8) -> usize {
         match chr {
             A_UTF8 => A_IDX,
             C_UTF8 => C_IDX,
             G_UTF8 => G_IDX,
+            T_UTF8 => T_IDX,
             _ => NOISE_IDX,
         }
     }
@@ -70,6 +75,7 @@ impl CountArrayNO {
             A_UTF8 => A_IDX_WP,
             C_UTF8 => C_IDX_WP,
             G_UTF8 => G_IDX_WP,
+            T_UTF8 => T_IDX_WP,
             _ => NOISE_IDX_WP,
         }
     }
@@ -78,6 +84,7 @@ impl CountArrayNO {
             A_UTF8 => A_IDX,
             C_UTF8 => C_IDX,
             G_UTF8 => G_IDX,
+            T_UTF8 => T_IDX,
             _ => {
                 *chr = NOISE_UTF8;
                 NOISE_IDX
@@ -87,13 +94,14 @@ impl CountArrayNO {
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct BwtBlock64NO {
+pub struct BwtBlock64NN {
     rank_checkpoint: [u64; CHR_COUNT],
     first_bwt_vector: u64,
     second_bwt_vector: u64,
+    third_bwt_vector: u64,
 }
 
-impl BwtBlock for BwtBlock64NO {
+impl BwtBlock for BwtBlock64NN {
     const BLOCK_SEG_LEN: u64 = 64;
 
     fn new_with_bwt_text(bwt_text: Text) -> Vec<Self> {
@@ -115,13 +123,16 @@ impl BwtBlock for BwtBlock64NO {
 
             let mut first_bwt_vector = 0;
             let mut second_bwt_vector = 0;
+            let mut third_bwt_vector = 0;
 
             for c in string_chunk {
                 first_bwt_vector <<= 1;
                 second_bwt_vector <<= 1;
+                third_bwt_vector <<= 1;
                 match *c {
                     A_UTF8 => {
                         rank_checkpoint[A_IDX] += 1;
+                        third_bwt_vector += 1;
                     },
                     C_UTF8 => {
                         rank_checkpoint[C_IDX] += 1;
@@ -130,11 +141,15 @@ impl BwtBlock for BwtBlock64NO {
                     G_UTF8 => {
                         rank_checkpoint[G_IDX] += 1;
                         first_bwt_vector += 1;
+                        third_bwt_vector += 1;
+                    },
+                    T_UTF8 => {
+                        rank_checkpoint[T_IDX] += 1;
+                        first_bwt_vector += 1;
+                        second_bwt_vector += 1;
                     },
                     _ => { // NOISE
                         rank_checkpoint[NOISE_IDX] += 1;
-                        first_bwt_vector += 1;
-                        second_bwt_vector += 1;
                     }
                 }
             }
@@ -142,6 +157,7 @@ impl BwtBlock for BwtBlock64NO {
                 rank_checkpoint: block_checkpoint,
                 first_bwt_vector: first_bwt_vector,
                 second_bwt_vector: second_bwt_vector,
+                third_bwt_vector,
             };
             
             blocks.push(block);
@@ -152,6 +168,7 @@ impl BwtBlock for BwtBlock64NO {
                 rank_checkpoint: rank_checkpoint,
                 first_bwt_vector: 0,
                 second_bwt_vector: 0,
+                third_bwt_vector: 0,
             };
             blocks.push(last_block);
         } else {
@@ -164,6 +181,7 @@ impl BwtBlock for BwtBlock64NO {
     fn add_offset(&mut self, offset: usize) {
         self.first_bwt_vector <<= offset;
         self.second_bwt_vector <<= offset;
+        self.third_bwt_vector <<= offset;
     }
     fn get_chridx_and_rank_of_rem(&self, rem: u64) -> (usize, u64) {
         let mut pos_bit = POS_BIT_64;
@@ -171,19 +189,24 @@ impl BwtBlock for BwtBlock64NO {
 
         let chridx = if self.first_bwt_vector & pos_bit == 0 {
             if self.second_bwt_vector & pos_bit == 0 {
-                // 00
-                A_IDX
+                if self.third_bwt_vector & pos_bit == 0 {
+                    // 000
+                    NOISE_IDX
+                } else {
+                    // 001
+                    A_IDX
+                }
             } else {
-                // 01
+                // 01?
                 C_IDX
             }
         } else {
             if self.second_bwt_vector & pos_bit == 0 {
-                // 10
+                // 10?
                 G_IDX
             } else {
-                // 11
-                NOISE_IDX
+                // 11?
+                T_IDX
             }
         };
 
@@ -197,16 +220,19 @@ impl BwtBlock for BwtBlock64NO {
         if rem != 0 {
             let count_bits = match chridx {
                 A_IDX => {
-                    (!self.first_bwt_vector & !self.second_bwt_vector) >> Self::BLOCK_SEG_LEN-rem
+                    (!self.first_bwt_vector & self.third_bwt_vector) >> Self::BLOCK_SEG_LEN-rem
                 },
                 C_IDX => {
-                    (!self.first_bwt_vector & self.second_bwt_vector)>> Self::BLOCK_SEG_LEN-rem
+                    (!self.first_bwt_vector & self.second_bwt_vector) >> Self::BLOCK_SEG_LEN-rem
                 },
                 G_IDX => {
-                    (self.first_bwt_vector & !self.second_bwt_vector) >> Self::BLOCK_SEG_LEN-rem
+                    (self.first_bwt_vector & self.third_bwt_vector) >> Self::BLOCK_SEG_LEN-rem
+                },
+                T_IDX => {
+                    (self.first_bwt_vector & self.second_bwt_vector) >> Self::BLOCK_SEG_LEN-rem
                 },
                 _ => { // NOISE
-                    (self.first_bwt_vector & self.second_bwt_vector) >> Self::BLOCK_SEG_LEN-rem
+                    (!self.second_bwt_vector & !self.third_bwt_vector) >> Self::BLOCK_SEG_LEN-rem
                 }
             };
             rank += count_bits.count_ones() as u64;
@@ -216,14 +242,17 @@ impl BwtBlock for BwtBlock64NO {
     }
 }
 
+
+
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct BwtBlock128NO {
+pub struct BwtBlock128NN {
     rank_checkpoint: [u64; CHR_COUNT],
     first_bwt_vector: u128,
     second_bwt_vector: u128,
+    third_bwt_vector: u128,
 }
 
-impl BwtBlock for BwtBlock128NO {
+impl BwtBlock for BwtBlock128NN {
     const BLOCK_SEG_LEN: u64 = 128;
 
     fn new_with_bwt_text(bwt_text: Text) -> Vec<Self> {
@@ -245,13 +274,16 @@ impl BwtBlock for BwtBlock128NO {
 
             let mut first_bwt_vector = 0;
             let mut second_bwt_vector = 0;
+            let mut third_bwt_vector = 0;
 
             for c in string_chunk {
                 first_bwt_vector <<= 1;
                 second_bwt_vector <<= 1;
+                third_bwt_vector <<= 1;
                 match *c {
                     A_UTF8 => {
                         rank_checkpoint[A_IDX] += 1;
+                        third_bwt_vector += 1;
                     },
                     C_UTF8 => {
                         rank_checkpoint[C_IDX] += 1;
@@ -260,11 +292,15 @@ impl BwtBlock for BwtBlock128NO {
                     G_UTF8 => {
                         rank_checkpoint[G_IDX] += 1;
                         first_bwt_vector += 1;
+                        third_bwt_vector += 1;
+                    },
+                    T_UTF8 => {
+                        rank_checkpoint[T_IDX] += 1;
+                        first_bwt_vector += 1;
+                        second_bwt_vector += 1;
                     },
                     _ => { // NOISE
                         rank_checkpoint[NOISE_IDX] += 1;
-                        first_bwt_vector += 1;
-                        second_bwt_vector += 1;
                     }
                 }
             }
@@ -272,6 +308,7 @@ impl BwtBlock for BwtBlock128NO {
                 rank_checkpoint: block_checkpoint,
                 first_bwt_vector: first_bwt_vector,
                 second_bwt_vector: second_bwt_vector,
+                third_bwt_vector,
             };
             
             blocks.push(block);
@@ -282,6 +319,7 @@ impl BwtBlock for BwtBlock128NO {
                 rank_checkpoint: rank_checkpoint,
                 first_bwt_vector: 0,
                 second_bwt_vector: 0,
+                third_bwt_vector: 0,
             };
             blocks.push(last_block);
         } else {
@@ -294,6 +332,7 @@ impl BwtBlock for BwtBlock128NO {
     fn add_offset(&mut self, offset: usize) {
         self.first_bwt_vector <<= offset;
         self.second_bwt_vector <<= offset;
+        self.third_bwt_vector <<= offset;
     }
     fn get_chridx_and_rank_of_rem(&self, rem: u64) -> (usize, u64) {
         let mut pos_bit = POS_BIT_128;
@@ -301,19 +340,19 @@ impl BwtBlock for BwtBlock128NO {
 
         let chridx = if self.first_bwt_vector & pos_bit == 0 {
             if self.second_bwt_vector & pos_bit == 0 {
-                // 00
-                A_IDX
+                if self.third_bwt_vector & pos_bit == 0 {
+                    NOISE_IDX
+                } else {
+                    A_IDX
+                }
             } else {
-                // 01
                 C_IDX
             }
         } else {
             if self.second_bwt_vector & pos_bit == 0 {
-                // 10
                 G_IDX
             } else {
-                // 11
-                NOISE_IDX
+                T_IDX
             }
         };
 
@@ -327,16 +366,19 @@ impl BwtBlock for BwtBlock128NO {
         if rem != 0 {
             let count_bits = match chridx {
                 A_IDX => {
-                    (!self.first_bwt_vector & !self.second_bwt_vector) >> Self::BLOCK_SEG_LEN-rem
+                    (!self.first_bwt_vector & self.third_bwt_vector) >> Self::BLOCK_SEG_LEN-rem
                 },
                 C_IDX => {
-                    (!self.first_bwt_vector & self.second_bwt_vector)>> Self::BLOCK_SEG_LEN-rem
+                    (!self.first_bwt_vector & self.second_bwt_vector) >> Self::BLOCK_SEG_LEN-rem
                 },
                 G_IDX => {
-                    (self.first_bwt_vector & !self.second_bwt_vector) >> Self::BLOCK_SEG_LEN-rem
+                    (self.first_bwt_vector & self.third_bwt_vector) >> Self::BLOCK_SEG_LEN-rem
+                },
+                T_IDX => {
+                    (self.first_bwt_vector & self.second_bwt_vector) >> Self::BLOCK_SEG_LEN-rem
                 },
                 _ => { // NOISE
-                    (self.first_bwt_vector & self.second_bwt_vector) >> Self::BLOCK_SEG_LEN-rem
+                    (!self.second_bwt_vector & !self.third_bwt_vector) >> Self::BLOCK_SEG_LEN-rem
                 }
             };
             rank += count_bits.count_ones() as u64;

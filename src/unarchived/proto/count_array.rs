@@ -1,5 +1,5 @@
-use crate::{Serialize, Deserialize};
-use crate::{Text, Pattern};
+use super::{Serialize, Deserialize};
+use super::{Text, Pattern};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct CountArrayProto {

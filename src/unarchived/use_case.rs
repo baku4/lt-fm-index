@@ -13,10 +13,10 @@ Using the struct implemented in this module directly can occur `panic!`.
     - 64
     - 128 */
 
-use crate::{FmIndex, Pattern};
-use crate::{Serialize, Deserialize};
-use crate::proto::{CountArray, CountArrayProto, BwtProto, BwtBlock};
-pub use crate::proto::LtFmIndex;
+use super::{FmIndex, Text, Pattern};
+use super::{Serialize, Deserialize};
+use super::proto::{CountArray, CountArrayProto, BwtProto, BwtBlock};
+pub use super::proto::LtFmIndex;
 
 const POS_BIT_64: u64 = 0b1000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;
 const POS_BIT_128: u128 = 0b1000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;

@@ -1,5 +1,5 @@
-use crate::{Serialize, Deserialize};
-use crate::{FmIndex, Text, Pattern};
+use super::{Serialize, Deserialize};
+use super::{FmIndex, Text, Pattern};
 
 pub mod suffix_array;
 

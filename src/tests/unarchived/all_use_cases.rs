@@ -1,6 +1,6 @@
-use crate::*;
-use crate::use_case::LtFmIndexAll;
-use crate::io::IO;
+use super::*;
+use super::LtFmIndexAll;
+use super::IO;
 use super::random_text::*;
 use super::other_crate::*;
 

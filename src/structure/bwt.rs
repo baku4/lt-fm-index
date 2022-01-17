@@ -7,6 +7,7 @@ use super::{
     BwtConstructor, BwtInterface,
 };
 
+mod bwt_block;
 
 // Bwt Structure
 
@@ -22,14 +23,55 @@ pub struct BwtPreBuild<W: BwtBlockConstructor> {
 
 impl<W> BwtConstructor for BwtPreBuild<W> where
     W: BwtBlockConstructor,
+    W::RankCheckPoint: Clone,
 {
     fn new(bwt_text: Text, pidx: u64) -> Self {
-        let blocks: Vec<W> = W::new_with_bwt_text(bwt_text);
+        let blocks: Vec<W> = Self::new_with_bwt_text(bwt_text);
 
         Self {
             primary_index: pidx,
             blocks: blocks,
         }
+    }
+}
+
+impl<W> BwtPreBuild<W> where
+    W: BwtBlockConstructor,
+    W::RankCheckPoint: Clone,
+{
+    fn new_with_bwt_text(bwt_text: Text) -> Vec<W> {
+        let mut chunk_count = bwt_text.len() / W::BLOCK_SEG_LEN as usize;
+        let rem = bwt_text.len() % W::BLOCK_SEG_LEN as usize;
+        
+        let last_offset = if rem == 0 {
+            chunk_count += 1;
+            rem
+        } else {
+            W::BLOCK_SEG_LEN as usize - rem
+        };
+
+        let mut rank_checkpoint = W::empty_rank_check_point();
+        let mut blocks: Vec<W> = Vec::with_capacity(chunk_count);
+
+        bwt_text.chunks(W::BLOCK_SEG_LEN as usize).for_each(|text_chunk| {
+            let block_rank_checkpoint = rank_checkpoint.clone();
+            
+            let bwt_vectors = W::encoding_text_chunk(text_chunk, &mut rank_checkpoint);
+
+            let block = W::new(block_rank_checkpoint, bwt_vectors);
+            
+            blocks.push(block);
+        });
+
+        if last_offset == 0 {
+            let last_block = W::new_last(rank_checkpoint);
+            blocks.push(last_block);
+        } else {
+            let last_block = blocks.last_mut().unwrap();
+            last_block.add_offset(last_offset);
+        }
+
+        blocks
     }
 }
 
@@ -65,8 +107,15 @@ impl<W> BwtInterface for Bwt<W> where
 
 pub trait BwtBlockConstructor {
     const BLOCK_SEG_LEN: u64;
+    
+    type RankCheckPoint;
+    type BwtVectors;
 
-    fn new_with_bwt_text(bwt_text: Text) -> Vec<Self> where Self: Sized;
+    fn empty_rank_check_point() -> Self::RankCheckPoint;
+    fn encoding_text_chunk(text_chunk: &[u8], rank_check_point: &mut Self::RankCheckPoint) -> Self::BwtVectors;
+    fn new(block_rank_check_point: Self::RankCheckPoint, bwt_vectors: Self::BwtVectors) -> Self;
+    fn new_last(rank_check_point: Self::RankCheckPoint) -> Self;
+    fn add_offset(&mut self, last_offset: usize);
 }
 
 pub trait BwtBlockInterface {

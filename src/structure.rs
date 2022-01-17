@@ -16,7 +16,10 @@ use suffix_array::SuffixArrayPreBuild;
 // To Define
 pub use count_array::TextEncoder;
 pub use bwt::{BwtBlockConstructor, BwtBlockInterface};
-
+// Type alias
+use count_array::CountArrayPreBuild;
+use bwt::BwtPreBuild;
+pub type LtFmIndexShortPreBuild<E: TextEncoder, W: BwtBlockConstructor> = LtFmIndexPreBuild<CountArrayPreBuild<E>, BwtPreBuild<W>>;
 
 // LtFmIndex Structure
 

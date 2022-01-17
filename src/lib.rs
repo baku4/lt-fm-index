@@ -84,5 +84,9 @@ pub mod deprecated;
 pub mod tests;
 pub mod unarchived;
 
-pub mod core;
-pub mod structure;
+// Core types and requirements
+mod core;
+// Basic data structures
+mod structure;
+// Implementations by text type
+mod text_type;

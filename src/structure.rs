@@ -19,7 +19,7 @@ pub use bwt::{BwtBlockConstructor, BwtBlockInterface};
 // Type alias
 use count_array::CountArrayPreBuild;
 use bwt::BwtPreBuild;
-pub type LtFmIndexShortPreBuild<E: TextEncoder, W: BwtBlockConstructor> = LtFmIndexPreBuild<CountArrayPreBuild<E>, BwtPreBuild<W>>;
+pub type LtFmIndexShortPreBuild<E, W> = LtFmIndexPreBuild<CountArrayPreBuild<E>, BwtPreBuild<W>>;
 
 // LtFmIndex Structure
 

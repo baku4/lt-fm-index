@@ -56,9 +56,9 @@ impl<W> BwtPreBuild<W> where
         bwt_text.chunks(W::BLOCK_SEG_LEN as usize).for_each(|text_chunk| {
             let block_rank_checkpoint = rank_checkpoint.clone();
             
-            let bwt_vectors = W::encoding_text_chunk(text_chunk, &mut rank_checkpoint);
+            let bwt_vector = W::encoding_text_chunk(text_chunk, &mut rank_checkpoint);
 
-            let block = W::new(block_rank_checkpoint, bwt_vectors);
+            let block = W::new(block_rank_checkpoint, bwt_vector);
             
             blocks.push(block);
         });
@@ -109,11 +109,11 @@ pub trait BwtBlockConstructor {
     const BLOCK_SEG_LEN: u64;
     
     type RankCheckPoint;
-    type BwtVectors;
+    type BwtVector;
 
     fn empty_rank_check_point() -> Self::RankCheckPoint;
-    fn encoding_text_chunk(text_chunk: &[u8], rank_check_point: &mut Self::RankCheckPoint) -> Self::BwtVectors;
-    fn new(block_rank_check_point: Self::RankCheckPoint, bwt_vectors: Self::BwtVectors) -> Self;
+    fn encoding_text_chunk(text_chunk: &[u8], rank_check_point: &mut Self::RankCheckPoint) -> Self::BwtVector;
+    fn new(block_rank_check_point: Self::RankCheckPoint, bwt_vectors: Self::BwtVector) -> Self;
     fn new_last(rank_check_point: Self::RankCheckPoint) -> Self;
     fn add_offset(&mut self, last_offset: usize);
 }

@@ -90,3 +90,5 @@ mod core;
 mod structure;
 // Implementations by text type
 mod text_type;
+// Serializing and wrapping
+mod serialize;

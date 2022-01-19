@@ -8,36 +8,33 @@ use super::{
     POS_BIT_64, POS_BIT_128,
 };
 
-const CHR_COUNT: usize = 5;
-const BITS_COUNT: usize = 3;
+const CHR_COUNT: usize = 4;
+const BITS_COUNT: usize = 2;
 
 const A_UTF8: u8 = 65;
 const C_UTF8: u8 = 67;
 const G_UTF8: u8 = 71;
-const T_UTF8: u8 = 84;
-const NOISE_UTF8: u8 = 95; // '_' in ASCII
+const NOISE_UTF8: u8 = 84; // 'T' in ASCII
 
 const A_IDX: usize = 0;
 const C_IDX: usize = 1;
 const G_IDX: usize = 2;
-const T_IDX: usize = 3;
-const NOISE_IDX: usize = 4;
+const NOISE_IDX: usize = 3;
 
 const A_IDX_WP: u32 = 1;
 const C_IDX_WP: u32 = 2;
 const G_IDX_WP: u32 = 3;
-const T_IDX_WP: u32 = 4;
-const NOISE_IDX_WP: u32 = 5;
+const NOISE_IDX_WP: u32 = 4;
 
 // * Vector table for Bwt
-// | A | C | G | T | _ |
-// | 0 | 0 | 1 | 1 | 0 | first
-// | 0 | 1 | 0 | 1 | 0 | second
-// | 1 | 0 | 1 | 0 | 0 | third
+// | A | C | G | T |
+// | 0 | 0 | 1 | 1 | first
+// | 0 | 1 | 0 | 1 | second
 
-pub struct TextEncoderNN;
+#[derive(Clone)]
+pub struct TextEncoderNO;
 
-impl TextEncoder for TextEncoderNN {
+impl TextEncoder for TextEncoderNO {
     const CHR_COUNT: usize = CHR_COUNT;
 
     fn get_chridx_with_encoding_chr(unencoded_chr_utf8: &mut u8) -> usize {
@@ -45,7 +42,6 @@ impl TextEncoder for TextEncoderNN {
             A_UTF8 => A_IDX,
             C_UTF8 => C_IDX,
             G_UTF8 => G_IDX,
-            T_UTF8 => T_IDX,
             _ => {
                 *unencoded_chr_utf8 = NOISE_UTF8;
                 NOISE_IDX
@@ -57,7 +53,6 @@ impl TextEncoder for TextEncoderNN {
             A_UTF8 => A_IDX,
             C_UTF8 => C_IDX,
             G_UTF8 => G_IDX,
-            T_UTF8 => T_IDX,
             _ => NOISE_IDX,
         }
     }
@@ -66,7 +61,6 @@ impl TextEncoder for TextEncoderNN {
             A_UTF8 => A_IDX_WP,
             C_UTF8 => C_IDX_WP,
             G_UTF8 => G_IDX_WP,
-            T_UTF8 => T_IDX_WP,
             _ => NOISE_IDX_WP,
         }
     }
@@ -75,14 +69,14 @@ impl TextEncoder for TextEncoderNN {
 
 // To use Rust type inference, copy the code without specifying trait for u64, u128 primitive.
 
-#[derive(Archive, Serialize, Deserialize)]
-#[archive(archived = "BwtBlock64NN")]
-pub struct BwtBlock64NNPreBuild {
+#[derive(Archive, Serialize, Deserialize, Clone)]
+#[archive(archived = "BwtBlock64NO")]
+pub struct BwtBlock64NOPreBuild {
     rank_check_point: [u64; CHR_COUNT],
     bwt_vector: [u64; BITS_COUNT],
 }
 
-impl BwtBlockConstructor for BwtBlock64NNPreBuild {
+impl BwtBlockConstructor for BwtBlock64NOPreBuild {
     const BLOCK_SEG_LEN: u64 = 64; // TO CHANGE
     
     type RankCheckPoint = [u64; CHR_COUNT];
@@ -99,7 +93,6 @@ impl BwtBlockConstructor for BwtBlock64NNPreBuild {
             match *c {
                 A_UTF8 => {
                     rank_check_point[A_IDX] += 1;
-                    bwt_vector[2] += 1;
                 },
                 C_UTF8 => {
                     rank_check_point[C_IDX] += 1;
@@ -108,15 +101,11 @@ impl BwtBlockConstructor for BwtBlock64NNPreBuild {
                 G_UTF8 => {
                     rank_check_point[G_IDX] += 1;
                     bwt_vector[0] += 1;
-                    bwt_vector[2] += 1;
-                },
-                T_UTF8 => {
-                    rank_check_point[T_IDX] += 1;
-                    bwt_vector[0] += 1;
-                    bwt_vector[1] += 1;
                 },
                 _ => { // NOISE
                     rank_check_point[NOISE_IDX] += 1;
+                    bwt_vector[0] += 1;
+                    bwt_vector[1] += 1;
                 }
             }
         });
@@ -140,31 +129,26 @@ impl BwtBlockConstructor for BwtBlock64NNPreBuild {
     }
 }
 
-impl BwtBlockInterface for BwtBlock64NN {
+impl BwtBlockInterface for BwtBlock64NO {
     fn get_chridx_and_rank_of_rem(&self, rem: u64) -> (usize, u64) {
         let mut pos_bit = POS_BIT_64; // TO CHANGE
         pos_bit >>= rem;
 
         let chridx = if self.bwt_vector[0] & pos_bit == 0 {
             if self.bwt_vector[1] & pos_bit == 0 {
-                if self.bwt_vector[2] & pos_bit == 0 {
-                    // 000
-                    NOISE_IDX
-                } else {
-                    // 001
-                    A_IDX
-                }
+                // 00
+                A_IDX
             } else {
-                // 01?
+                // 01
                 C_IDX
             }
         } else {
             if self.bwt_vector[1] & pos_bit == 0 {
-                // 10?
+                // 10
                 G_IDX
             } else {
-                // 11?
-                T_IDX
+                // 11
+                NOISE_IDX
             }
         };
 
@@ -178,19 +162,16 @@ impl BwtBlockInterface for BwtBlock64NN {
         if rem != 0 {
             let count_bits = match chridx {
                 A_IDX => {
-                    (!self.bwt_vector[0] & self.bwt_vector[2]) >> BwtBlock64NNPreBuild::BLOCK_SEG_LEN-rem // TO CHANGE
+                    (!self.bwt_vector[0] & !self.bwt_vector[1]) >> BwtBlock64NOPreBuild::BLOCK_SEG_LEN-rem // TO CHANGE
                 },
                 C_IDX => {
-                    (!self.bwt_vector[0] & self.bwt_vector[1]) >> BwtBlock64NNPreBuild::BLOCK_SEG_LEN-rem // TO CHANGE
+                    (!self.bwt_vector[0] & self.bwt_vector[1]) >> BwtBlock64NOPreBuild::BLOCK_SEG_LEN-rem // TO CHANGE
                 },
                 G_IDX => {
-                    (self.bwt_vector[0] & self.bwt_vector[2]) >> BwtBlock64NNPreBuild::BLOCK_SEG_LEN-rem // TO CHANGE
-                },
-                T_IDX => {
-                    (self.bwt_vector[0] & self.bwt_vector[1]) >> BwtBlock64NNPreBuild::BLOCK_SEG_LEN-rem // TO CHANGE
+                    (self.bwt_vector[0] & !self.bwt_vector[1]) >> BwtBlock64NOPreBuild::BLOCK_SEG_LEN-rem // TO CHANGE
                 },
                 _ => { // NOISE
-                    (!self.bwt_vector[1] & !self.bwt_vector[2]) >> BwtBlock64NNPreBuild::BLOCK_SEG_LEN-rem // TO CHANGE
+                    (self.bwt_vector[0] & self.bwt_vector[1]) >> BwtBlock64NOPreBuild::BLOCK_SEG_LEN-rem // TO CHANGE
                 }
             };
             rank += count_bits.count_ones() as u64;
@@ -200,14 +181,14 @@ impl BwtBlockInterface for BwtBlock64NN {
     }
 }
 
-#[derive(Archive, Serialize, Deserialize)]
-#[archive(archived = "BwtBlock128NN")]
-pub struct BwtBlock128NNPreBuild {
+#[derive(Archive, Serialize, Deserialize, Clone)]
+#[archive(archived = "BwtBlock128NO")]
+pub struct BwtBlock128NOPreBuild {
     rank_check_point: [u64; CHR_COUNT],
     bwt_vector: [u128; BITS_COUNT],
 }
 
-impl BwtBlockConstructor for BwtBlock128NNPreBuild {
+impl BwtBlockConstructor for BwtBlock128NOPreBuild {
     const BLOCK_SEG_LEN: u64 = 128; // TO CHANGE
     
     type RankCheckPoint = [u64; CHR_COUNT];
@@ -224,7 +205,6 @@ impl BwtBlockConstructor for BwtBlock128NNPreBuild {
             match *c {
                 A_UTF8 => {
                     rank_check_point[A_IDX] += 1;
-                    bwt_vector[2] += 1;
                 },
                 C_UTF8 => {
                     rank_check_point[C_IDX] += 1;
@@ -233,15 +213,11 @@ impl BwtBlockConstructor for BwtBlock128NNPreBuild {
                 G_UTF8 => {
                     rank_check_point[G_IDX] += 1;
                     bwt_vector[0] += 1;
-                    bwt_vector[2] += 1;
-                },
-                T_UTF8 => {
-                    rank_check_point[T_IDX] += 1;
-                    bwt_vector[0] += 1;
-                    bwt_vector[1] += 1;
                 },
                 _ => { // NOISE
                     rank_check_point[NOISE_IDX] += 1;
+                    bwt_vector[0] += 1;
+                    bwt_vector[1] += 1;
                 }
             }
         });
@@ -265,31 +241,26 @@ impl BwtBlockConstructor for BwtBlock128NNPreBuild {
     }
 }
 
-impl BwtBlockInterface for BwtBlock128NN {
+impl BwtBlockInterface for BwtBlock128NO {
     fn get_chridx_and_rank_of_rem(&self, rem: u64) -> (usize, u64) {
         let mut pos_bit = POS_BIT_128; // TO CHANGE
         pos_bit >>= rem;
 
         let chridx = if self.bwt_vector[0] & pos_bit == 0 {
             if self.bwt_vector[1] & pos_bit == 0 {
-                if self.bwt_vector[2] & pos_bit == 0 {
-                    // 000
-                    NOISE_IDX
-                } else {
-                    // 001
-                    A_IDX
-                }
+                // 00
+                A_IDX
             } else {
-                // 01?
+                // 01
                 C_IDX
             }
         } else {
             if self.bwt_vector[1] & pos_bit == 0 {
-                // 10?
+                // 10
                 G_IDX
             } else {
-                // 11?
-                T_IDX
+                // 11
+                NOISE_IDX
             }
         };
 
@@ -303,19 +274,16 @@ impl BwtBlockInterface for BwtBlock128NN {
         if rem != 0 {
             let count_bits = match chridx {
                 A_IDX => {
-                    (!self.bwt_vector[0] & self.bwt_vector[2]) >> BwtBlock128NNPreBuild::BLOCK_SEG_LEN-rem // TO CHANGE
+                    (!self.bwt_vector[0] & !self.bwt_vector[1]) >> BwtBlock128NOPreBuild::BLOCK_SEG_LEN-rem // TO CHANGE
                 },
                 C_IDX => {
-                    (!self.bwt_vector[0] & self.bwt_vector[1]) >> BwtBlock128NNPreBuild::BLOCK_SEG_LEN-rem // TO CHANGE
+                    (!self.bwt_vector[0] & self.bwt_vector[1]) >> BwtBlock128NOPreBuild::BLOCK_SEG_LEN-rem // TO CHANGE
                 },
                 G_IDX => {
-                    (self.bwt_vector[0] & self.bwt_vector[2]) >> BwtBlock128NNPreBuild::BLOCK_SEG_LEN-rem // TO CHANGE
-                },
-                T_IDX => {
-                    (self.bwt_vector[0] & self.bwt_vector[1]) >> BwtBlock128NNPreBuild::BLOCK_SEG_LEN-rem // TO CHANGE
+                    (self.bwt_vector[0] & !self.bwt_vector[1]) >> BwtBlock128NOPreBuild::BLOCK_SEG_LEN-rem // TO CHANGE
                 },
                 _ => { // NOISE
-                    (!self.bwt_vector[1] & !self.bwt_vector[2]) >> BwtBlock128NNPreBuild::BLOCK_SEG_LEN-rem // TO CHANGE
+                    (self.bwt_vector[0] & self.bwt_vector[1]) >> BwtBlock128NOPreBuild::BLOCK_SEG_LEN-rem // TO CHANGE
                 }
             };
             rank += count_bits.count_ones() as u64;

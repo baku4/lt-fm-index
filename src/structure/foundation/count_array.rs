@@ -12,7 +12,7 @@ use std::marker::PhantomData;
 
 // CountArray Structure
 
-#[derive(Archive, Serialize, Deserialize)]
+#[derive(Archive, Serialize, Deserialize, Clone)]
 #[archive(archived = "CountArray")]
 pub struct CountArrayPreBuild<E: TextEncoder> {
     kmer_size: usize,

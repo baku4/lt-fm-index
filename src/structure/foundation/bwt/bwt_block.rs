@@ -11,7 +11,7 @@ use std::marker::PhantomData;
 
 // BwtBlock Structure
 
-// #[derive(Archive, Serialize, Deserialize)]
+// #[derive(Archive, Serialize, Deserialize, Clone)]
 // #[archive(archived = "BwtBlock")]
 // pub struct BwtBlockPreBuild<B, T, const R: usize, const V: usize, const N: usize> where
 //     B: BwtBits,

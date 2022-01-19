@@ -11,7 +11,7 @@ mod bwt_block;
 
 // Bwt Structure
 
-#[derive(Archive, Serialize, Deserialize)]
+#[derive(Archive, Serialize, Deserialize, Clone)]
 #[archive(archived = "Bwt")]
 pub struct BwtPreBuild<W: BwtBlockConstructor> {
     primary_index: u64,

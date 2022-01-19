@@ -84,11 +84,25 @@ pub mod deprecated;
 pub mod tests;
 pub mod unarchived;
 
-// Core types and requirements
+// Core types and requirements for lt-fm-index
 mod core;
-// Basic data structures
+// Data structure
 mod structure;
-// Implementations by text type
-mod text_type;
+// Integration of data structure
+pub mod composition;
+// Encoded wrapper
+mod encoded;
+// Builder
+mod builder;
+
+// Definition for basic data structures
+// mod basic_structure;
+// Implementation for structures requirement
+// mod implementation;
+
+
 // Serializing and wrapping
-mod serialize;
+// mod serialize;
+
+//
+// mod wrapper;

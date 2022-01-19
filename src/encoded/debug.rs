@@ -1,5 +1,3 @@
-use std::fmt::{Debug, Formatter};
-
 use super::{
     Result, error_msg,
     Archive, Serialize, Deserialize,
@@ -9,6 +7,8 @@ use super::{
     TextType, BwtCompressionSize,
     LtFmIndex,
 };
+
+use std::fmt::{Debug, Formatter};
 
 impl LtFmIndex {
     pub fn text_type(&self) -> TextType {

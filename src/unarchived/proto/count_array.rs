@@ -1,7 +1,7 @@
 use super::{Serialize, Deserialize};
 use super::{Text, Pattern};
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct CountArrayProto {
     kmer_size: usize,
     count_table: Vec<u64>,

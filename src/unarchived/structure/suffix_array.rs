@@ -6,7 +6,7 @@ mod bwt_transform;
 #[cfg(not(target_arch = "wasm32"))]
 use libdivsufsort_rs::{divsufsort64, bw_transform64};
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct SuffixArray {
     pub sampling_ratio: u64,
     pub array: Vec<u64>,

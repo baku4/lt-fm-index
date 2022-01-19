@@ -5,7 +5,7 @@ pub mod suffix_array;
 
 use suffix_array::SuffixArray;
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct LtFmIndex<C: CountArray, B: Bwt> {
     text_len: u64,
     suffix_array: SuffixArray,

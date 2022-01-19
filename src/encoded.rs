@@ -22,6 +22,7 @@ pub use builder::LtFmIndexBuilder;
 // Additional features
 mod io;
 mod debug;
+mod clone;
 
 pub struct LtFmIndex {
     bytes: Pin<Box<Vec<u8>>>,
@@ -30,9 +31,11 @@ pub struct LtFmIndex {
 }
 
 impl LtFmIndex {
+    #[inline]
     pub fn count(&self, pattern: Pattern) -> u64 {
         unsafe{ &*self.casted_pointer }.count(pattern)
     }
+    #[inline]
     pub fn locate(&self, pattern: Pattern) -> Vec<u64> {
         unsafe{ &*self.casted_pointer }.locate(pattern)
     }

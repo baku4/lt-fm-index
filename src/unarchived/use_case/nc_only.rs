@@ -26,7 +26,7 @@ const NOISE_IDX_WP: usize = NOISE_IDX + 1;
 // | 0 | 0 | 1 | 1 | first
 // | 0 | 1 | 0 | 1 | second
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct CountArrayNO {
     proto: CountArrayProto,
 }
@@ -86,7 +86,7 @@ impl CountArrayNO {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct BwtBlock64NO {
     rank_checkpoint: [u64; CHR_COUNT],
     first_bwt_vector: u64,
@@ -216,7 +216,7 @@ impl BwtBlock for BwtBlock64NO {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct BwtBlock128NO {
     rank_checkpoint: [u64; CHR_COUNT],
     first_bwt_vector: u128,

@@ -49,7 +49,7 @@ pub type LtFmIndexAN64 = LtFmIndex<CountArrayAN, BwtProto<BwtBlock64AN>>;
 pub type LtFmIndexAN128 = LtFmIndex<CountArrayAN, BwtProto<BwtBlock128AN>>;
 
 /// Wrapper for [LtFmIndex] to be generated safely from [crate::LtFmIndexConfig]
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub enum LtFmIndexAll {
     NO64(LtFmIndexNO64),
     NO128(LtFmIndexNO128),

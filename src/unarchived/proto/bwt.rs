@@ -3,7 +3,7 @@ use super::{Text};
 
 use super::Bwt;
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct BwtProto<W: BwtBlock> {
     primary_index: u64,
     blocks: Vec<W>,

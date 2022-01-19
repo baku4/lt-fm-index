@@ -5,6 +5,7 @@ use criterion::{
 mod unarchived_vs_dep;
 mod counting_bit;
 mod serializer;
+mod archived_vs_unarchived;
 
 // Bench performance version of new vs deprecated
 use unarchived_vs_dep::{
@@ -20,8 +21,19 @@ use serializer::{
     bench_serialization_btw_serializer,
 };
 
+// Bench Archived vs Unarchived
+use archived_vs_unarchived::{
+    bench_build_arc_vs_unarc,
+    bench_save_arc_vs_unarc,
+    bench_load_arc_vs_unarc,
+    bench_locate_arc_vs_unarc,
+};
+
 criterion_group!(
     benches,
-    bench_serialization_btw_serializer,
+    bench_build_arc_vs_unarc,
+    bench_save_arc_vs_unarc,
+    bench_load_arc_vs_unarc,
+    bench_locate_arc_vs_unarc,,
 );
 criterion_main!(benches);

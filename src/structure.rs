@@ -1,6 +1,6 @@
 use crate::core::{
     Result, error_msg,
-    Archive, Serialize, Deserialize,
+    Archive, Serialize, Deserialize, CheckBytes,
     Text, Pattern,
     LtFmIndexConstructor, LtFmIndexInterface,
 };

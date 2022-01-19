@@ -3,3 +3,4 @@ pub mod random_text;
 pub mod other_crate;
 
 pub mod unarchived;
+pub mod archived;

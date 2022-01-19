@@ -1,6 +1,6 @@
 use super::{
     Result, error_msg,
-    Archive, Serialize, Deserialize,
+    Archive, Serialize, Deserialize, CheckBytes,
     Text, Pattern,
     LtFmIndexConstructor, LtFmIndexInterface,
 };
@@ -23,6 +23,7 @@ pub type RawLtFmIndexShort<E, W> = RawLtFmIndex<CountArrayPreBuild<E>, BwtPreBui
 // LtFmIndex Structure
 
 #[derive(Archive, Serialize, Deserialize, Clone)]
+#[archive_attr(derive(CheckBytes))]
 #[archive(archived = "RawLtFmIndex")]
 pub struct RawLtFmIndexPreBuild<C: CountArrayConstructor, B: BwtConstructor> {
     text_len: u64,

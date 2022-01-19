@@ -1,6 +1,6 @@
 use super::{
     Result, error_msg,
-    Archive, Serialize, Deserialize,
+    Archive, Serialize, Deserialize, CheckBytes,
     Text, Pattern,
 };
 use super::{
@@ -70,6 +70,7 @@ impl TextEncoder for TextEncoderNO {
 // To use Rust type inference, copy the code without specifying trait for u64, u128 primitive.
 
 #[derive(Archive, Serialize, Deserialize, Clone)]
+#[archive_attr(derive(CheckBytes))]
 #[archive(archived = "BwtBlock64NO")]
 pub struct BwtBlock64NOPreBuild {
     rank_check_point: [u64; CHR_COUNT],
@@ -182,6 +183,7 @@ impl BwtBlockInterface for BwtBlock64NO {
 }
 
 #[derive(Archive, Serialize, Deserialize, Clone)]
+#[archive_attr(derive(CheckBytes))]
 #[archive(archived = "BwtBlock128NO")]
 pub struct BwtBlock128NOPreBuild {
     rank_check_point: [u64; CHR_COUNT],

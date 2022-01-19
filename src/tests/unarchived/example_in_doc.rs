@@ -1,5 +1,5 @@
 #[test]
-fn example_1() {
+fn unarchived_example_1() {
     use super::{FmIndex, LtFmIndexConfig};
 
     // (1) Define configuration for lt-fm-index
@@ -24,7 +24,7 @@ fn example_1() {
 }
 
 #[test]
-fn example_2() {
+fn unarchived_example_2() {
     use super::{LtFmIndexConfig, LtFmIndexAll, IO};
 
     // (1) Generate `FmIndex`

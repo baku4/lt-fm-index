@@ -1,17 +1,16 @@
 use super::{
     Result, error_msg,
-    Archive, Serialize, Deserialize,
+    Archive, Serialize, Deserialize, CheckBytes,
     Text, Pattern,
 };
 use super::{
     BwtConstructor, BwtInterface,
 };
 
-mod bwt_block;
-
 // Bwt Structure
 
 #[derive(Archive, Serialize, Deserialize, Clone)]
+#[archive_attr(derive(CheckBytes))]
 #[archive(archived = "Bwt")]
 pub struct BwtPreBuild<W: BwtBlockConstructor> {
     primary_index: u64,

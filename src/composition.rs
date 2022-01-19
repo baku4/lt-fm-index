@@ -1,6 +1,6 @@
 use crate::core::{
     Result, error_msg,
-    Archive, Serialize, Deserialize,
+    Archive, Serialize, Deserialize, CheckBytes,
     Text, Pattern,
     LtFmIndexConstructor, LtFmIndexInterface,
 };
@@ -12,9 +12,10 @@ use crate::structure::{
 
 // Additional features
 mod attachment;
-use attachment::OptionPrint;
+pub use attachment::OptionPrint;
 // Serializer
 mod serializer;
+use serializer::serialize_with_default_serializer;
 
 // Text type marker
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -34,6 +35,7 @@ pub enum BwtCompressionSize {
 
 // Self-descriptive structure wrapper
 #[derive(Archive, Serialize, Deserialize, Clone)]
+#[archive_attr(derive(CheckBytes))]
 #[archive(archived = "SelfDescLtFmIndex")]
 pub enum SelfDescLtFmIndexPreBuild {
     NO64(LtFmIndexPreBuild64NO),
@@ -112,6 +114,9 @@ impl SelfDescLtFmIndexPreBuild {
                 }
             },
         }
+    }
+    pub fn encode_to_bytes(&self) -> Vec<u8> {
+        serialize_with_default_serializer(self)
     }
 }
 

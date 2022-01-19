@@ -1,6 +1,6 @@
 use super::{
     Result, error_msg,
-    Archive, Serialize, Deserialize,
+    Archive, Serialize, Deserialize, CheckBytes,
     Text, Pattern,
 };
 use super::{
@@ -13,6 +13,7 @@ use std::marker::PhantomData;
 // CountArray Structure
 
 #[derive(Archive, Serialize, Deserialize, Clone)]
+#[archive_attr(derive(CheckBytes))]
 #[archive(archived = "CountArray")]
 pub struct CountArrayPreBuild<E: TextEncoder> {
     kmer_size: usize,

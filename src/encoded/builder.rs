@@ -1,16 +1,20 @@
-use crate::core::{
+use super::{
     Result, error_msg,
     Archive, Serialize, Deserialize,
     Text, Pattern,
     LtFmIndexConstructor, LtFmIndexInterface,
-};
-
-use crate::composition::{
     SelfDescLtFmIndexPreBuild, SelfDescLtFmIndex,
     TextType, BwtCompressionSize,
+    LtFmIndex,
 };
 
-struct LtFmIndexBuilder {
+#[cfg(target_pointer_width = "32")]
+const POINTER_WIDTH: usize = 32;
+#[cfg(target_pointer_width = "64")]
+const POINTER_WIDTH: usize = 64;
+
+#[derive(Debug, Clone)]
+pub struct LtFmIndexBuilder {
     text_type: TextType,
     bwt_compression: BwtCompressionSize,
     suffix_array_sampling_ratio: u64,
@@ -18,7 +22,7 @@ struct LtFmIndexBuilder {
 }
 
 impl TextType {
-    fn recommended_kmer_size(&self) -> usize {
+    pub fn recommended_kmer_size(&self) -> usize {
         match self {
             Self::NucleotideOnly => 8, // About 64 Kb for kmer count array
             Self::NucleotideWithNoise => 7, // About 76 Kb for kmer count array
@@ -43,6 +47,23 @@ impl LtFmIndexBuilder {
     // New builder with default option
     pub fn new() -> Self {
         Default::default()
+    }
+    // Build LtFmIndex
+    pub fn build(self, text: Text) -> LtFmIndex {
+        let lookup_table_kmer_size = match self.lookup_table_kmer_size {
+            Some(value) => value,
+            None => self.text_type.recommended_kmer_size(),
+        };
+
+        let self_desc_lt_fm_index_pre_build = SelfDescLtFmIndexPreBuild::new(
+            text,
+            self.suffix_array_sampling_ratio,
+            lookup_table_kmer_size,
+            self.text_type,
+            self.bwt_compression,
+        );
+
+        LtFmIndex::unchecked_new_from_bytes(self_desc_lt_fm_index_pre_build.encode_to_bytes())
     }
     // Change text type
     pub fn use_nucleotide_only(mut self) -> Self {
@@ -69,5 +90,33 @@ impl LtFmIndexBuilder {
     pub fn compress_bwt_128(mut self) -> Self {
         self.bwt_compression = BwtCompressionSize::_128;
         self
+    }
+    // Change suffix array sampling ratio
+    pub fn set_suffix_array_sampling_ratio(
+        mut self,
+        sr: u64,
+    ) -> Result<Self> {
+        if sr > 0 {
+            self.suffix_array_sampling_ratio = sr;
+            Ok(self)
+        } else {
+            error_msg!("Sampling ratio accept positive integer.")
+        }
+    }
+    // Set lookup table kmer size
+    pub fn set_lookup_table_kmer_size(
+        mut self,
+        kmer_size: usize,
+    ) -> Result<Self> {
+        let max_kmer = POINTER_WIDTH / 2;
+        
+        if kmer_size < 2 {
+            error_msg!("The size of the kmer cannot be less than 2")
+        } else if kmer_size > max_kmer {
+            error_msg!("The size of the kmer cannot be greater than {} which is limited to half of pointer width({} bits) of target system", max_kmer, POINTER_WIDTH);
+        } else {
+            self.lookup_table_kmer_size = Some(kmer_size);
+            Ok(self)
+        }
     }
 }

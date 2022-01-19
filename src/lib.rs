@@ -82,6 +82,7 @@ assert_eq!(lt_fm_index, lt_fm_index_buf);
 pub mod deprecated;
 #[doc(hidden)]
 pub mod tests;
+#[doc(hidden)] // Unarchived version will be deprecated.
 pub mod unarchived;
 
 // Core types and requirements for lt-fm-index
@@ -89,20 +90,10 @@ mod core;
 // Data structure
 mod structure;
 // Integration of data structure
+#[doc(hidden)] // Make public for benchmark, not assumed to be used by end-users.
 pub mod composition;
 // Encoded wrapper
 mod encoded;
-// Builder
-mod builder;
 
-// Definition for basic data structures
-// mod basic_structure;
-// Implementation for structures requirement
-// mod implementation;
-
-
-// Serializing and wrapping
-// mod serialize;
-
-//
-// mod wrapper;
+pub use encoded::{LtFmIndex, LtFmIndexBuilder};
+pub use composition::{TextType, BwtCompressionSize};

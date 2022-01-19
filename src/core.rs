@@ -1,5 +1,6 @@
 pub use anyhow::{Result, bail as error_msg};
 pub use rkyv::{Archive, Serialize, Deserialize};
+pub use bytecheck::CheckBytes;
 
 // Text & Pattern
 pub type Text = Vec<u8>;

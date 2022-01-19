@@ -15,4 +15,12 @@ use rkyv::ser::{
     serializers::AllocSerializer,
 };
 
-type DefaultSerializer = AllocSerializer::<0>;
+type DefaultSerializer = AllocSerializer::<256>;
+
+pub fn serialize_with_default_serializer<V>(value: &V) -> Vec<u8> where
+    V: Archive + Serialize<DefaultSerializer>
+{
+    let mut serializer = DefaultSerializer::default();
+    serializer.serialize_value(value).unwrap();
+    serializer.into_serializer().into_inner().to_vec()
+}

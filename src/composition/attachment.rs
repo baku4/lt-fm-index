@@ -12,7 +12,7 @@ use super::{
 
 pub trait OptionPrint {
     fn text_type(&self) -> TextType;
-    fn bwt_compression(&self) -> BwtCompressionSize;
+    fn bwt_compression_size(&self) -> BwtCompressionSize;
     fn suffix_array_sampling_ratio(&self) -> u64;
     fn lookup_table_kmer_size(&self) -> usize;
     fn supported_utf8_letters(&self) ->  &[u8];
@@ -27,7 +27,7 @@ impl OptionPrint for SelfDescLtFmIndex {
             Self::AN64(_) | Self::AN128(_) => TextType::AminoAcidWithNoise,
         }
     }
-    fn bwt_compression(&self) -> BwtCompressionSize {
+    fn bwt_compression_size(&self) -> BwtCompressionSize {
         match self {
             Self::NO64(_) | Self::NN64(_) | Self::AO64(_) | Self::AN64(_) => BwtCompressionSize::_64,
             Self::NO128(_) | Self::NN128(_) | Self::AO128(_) | Self::AN128(_) => BwtCompressionSize::_128,
@@ -65,23 +65,4 @@ impl OptionPrint for SelfDescLtFmIndex {
             Self::AN64(_) | Self::AN128(_) => b"ACDEFGHIKLMNPQRSTVWY_",
         }
     }
-}
-
-
-
-
-//FIXME: to del
-
-use std::io::{Read, Write};
-use std::path::Path;
-
-use std::{fs::File};
-
-pub trait Save {
-    fn save_to<W>(&self, writer: W) -> Result<()> where W: Write;
-    fn save_to_file<P>(&self, file_path: P) -> Result<()> where P: AsRef<Path>;
-}
-pub trait Load {
-    fn load_from<R>(&self, reader: R) -> Result<Self> where R: Read, Self: Sized;
-    fn load_from_file<P>(&self, file_path: P) -> Result<Self> where P: AsRef<Path>, Self: Sized;
 }

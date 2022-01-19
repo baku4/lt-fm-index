@@ -1,4 +1,4 @@
-use super::{Text, Archive, Serialize, Deserialize};
+use super::{Text, Archive, Serialize, Deserialize, CheckBytes};
 
 #[allow(dead_code)]
 mod bwt_transform;
@@ -7,6 +7,7 @@ mod bwt_transform;
 use libdivsufsort_rs::{divsufsort64, bw_transform64};
 
 #[derive(Debug, Archive, Serialize, Deserialize, Clone)]
+#[archive_attr(derive(CheckBytes))]
 #[archive(archived = "SuffixArray")]
 pub struct SuffixArrayPreBuild {
     pub sampling_ratio: u64,

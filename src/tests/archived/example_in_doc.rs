@@ -35,7 +35,10 @@ fn example_in_doc_2() {
     lt_fm_index_to_save.save_to(&mut buffer).unwrap();
 
     // (3) Load lt-fm-index from buffer
-    let lt_fm_index_loaded = LtFmIndex::load_from(&buffer[..]).unwrap();
+    let lt_fm_index_loaded_checked = LtFmIndex::load_from(&buffer[..]).unwrap();
+    //   - If you are sure that this buffer is LtFmIndex.
+    let lt_fm_index_loaded_unchecked = LtFmIndex::unchecked_load_from(&buffer[..]).unwrap();
 
-    assert_eq!(lt_fm_index_to_save, lt_fm_index_loaded);
+    assert_eq!(lt_fm_index_to_save, lt_fm_index_loaded_checked);
+    assert_eq!(lt_fm_index_to_save, lt_fm_index_loaded_unchecked);
 }

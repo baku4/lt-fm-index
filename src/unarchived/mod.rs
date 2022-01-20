@@ -4,6 +4,11 @@ use anyhow::bail as error_msg;
 // Serialization
 use serde::{Serialize, Deserialize, de::DeserializeOwned};
 
+#[doc(hidden)]
+#[cfg(not(target_arch = "wasm32"))]
+#[allow(dead_code)]
+pub mod deprecated;
+
 pub mod structure;
 pub mod proto;
 pub mod use_case;

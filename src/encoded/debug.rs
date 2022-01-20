@@ -40,3 +40,15 @@ impl Debug for LtFmIndex {
             .finish()
     }
 }
+
+use crate::LtFmIndexBuilder;
+use crate::tests::random_text::*;
+#[test]
+fn test_print_new() {
+    
+    let text = rand_text_with_length(&UTF8_OF_NO, 10_000_000);
+
+    let lt_fm_index = LtFmIndexBuilder::new().build(text);
+
+    println!("{:#?}", lt_fm_index);
+}

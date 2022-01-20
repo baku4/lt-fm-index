@@ -25,18 +25,17 @@
 ## Examples
 ### 1. Use `LtFmIndex` to count and locate pattern.
 ```rust
-use lt_fm_index::{FmIndex, LtFmIndexConfig};
+use lt_fm_index::LtFmIndexBuilder;
 
-// (1) Define configuration for lt-fm-index
-let config = LtFmIndexConfig::for_nucleotide()
-    .with_noise()
-    .change_kmer_size(4).unwrap()
-    .change_sampling_ratio(4).unwrap()
-    .change_bwt_interval_to_128();
+// (1) Define builder for lt-fm-index
+let builder = LtFmIndexBuilder::new()
+    .use_nucleotide_with_noise()
+    .set_lookup_table_kmer_size(4).unwrap()
+    .set_suffix_array_sampling_ratio(2).unwrap();
 
-// (2) Generate fm-index with text
+// (2) Generate lt-fm-index with text
 let text = b"CTCCGTACACCTGTTTCGTATCGGANNNN".to_vec();
-let lt_fm_index = config.generate(text).unwrap(); // text is consumed
+let lt_fm_index = builder.build(text); // text is consumed
 
 // (3) Match with pattern
 let pattern = b"TA".to_vec();
@@ -47,23 +46,22 @@ assert_eq!(count, 2);
 let locations = lt_fm_index.locate(&pattern);
 assert_eq!(locations, vec![5,18]);
 ```
-### 2. Write and read `LtFmIndex`
+### 2. Save and load `LtFmIndex`
 ```rust
-use lt_fm_index::{LtFmIndexConfig, LtFmIndexAll, IO};
+use lt_fm_index::{LtFmIndex, LtFmIndexBuilder};
 
-// (1) Generate `FmIndex`
-let config = LtFmIndexConfig::for_nucleotide();
+// (1) Generate lt-fm-index
 let text = b"CTCCGTACACCTGTTTCGTATCGGA".to_vec();
-let lt_fm_index = config.generate(text).unwrap(); // text is consumed
+let lt_fm_index_to_save = LtFmIndexBuilder::new().build(text);
 
-// (2) Write fm-index to buffer (or file path)
+// (2) Save lt-fm-index to buffer
 let mut buffer = Vec::new();
-lt_fm_index.write_to(&mut buffer).unwrap();
+lt_fm_index_to_save.save_to(&mut buffer).unwrap();
 
-// (3) Read fm-index from buffer (or file path)
-let lt_fm_index_buf = LtFmIndexAll::read_from(&buffer[..]).unwrap();
+// (3) Load lt-fm-index from buffer
+let lt_fm_index_loaded = LtFmIndex::load_from(&buffer[..]).unwrap();
 
-assert_eq!(lt_fm_index, lt_fm_index_buf);
+assert_eq!(lt_fm_index_to_save, lt_fm_index_loaded);
 ```
 ## Repository
 [https://github.com/baku4/lt-fm-index](https://github.com/baku4/lt-fm-index)
@@ -76,15 +74,17 @@ assert_eq!(lt_fm_index, lt_fm_index_buf);
 - Yuta Mori. [`libdivsufsort`](https://github.com/y-256/libdivsufsort)
 */
 
-#[doc(hidden)]
-#[cfg(not(target_arch = "wasm32"))]
-#[allow(dead_code)]
-pub mod deprecated;
+// # Modules
+
+// ## Supplement
 #[doc(hidden)]
 pub mod tests;
-#[doc(hidden)] // Unarchived version will be deprecated.
+#[doc(hidden)]
+#[allow(dead_code)]
+// Unarchived version will be deprecated.
 pub mod unarchived;
 
+// ## Main
 // Core types and requirements for lt-fm-index
 mod core;
 // Data structure
@@ -95,5 +95,10 @@ pub mod composition;
 // Encoded wrapper
 mod encoded;
 
+// # API
+// Public Struct
 pub use encoded::{LtFmIndex, LtFmIndexBuilder};
+// Public Enum
 pub use composition::{TextType, BwtCompressionSize};
+// Public Type
+pub use self::core::{Text, Pattern};

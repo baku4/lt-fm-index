@@ -5,7 +5,6 @@ use criterion::{
     PlotConfiguration, AxisScale,
 };
 
-use lt_fm_index::*;
 use lt_fm_index::unarchived::*;
 use lt_fm_index::tests::random_text::*;
 

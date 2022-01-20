@@ -39,7 +39,7 @@ impl LtFmIndex {
     pub fn locate(&self, pattern: Pattern) -> Vec<u64> {
         unsafe{ &*self.casted_pointer }.locate(pattern)
     }
-    fn checked_new_from_bytes(bytes: Vec<u8>) -> Result<Self> {
+    pub fn new_from_bytes_checked(bytes: Vec<u8>) -> Result<Self> {
         let pinned_boxed_bytes = Box::pin(bytes);
 
         let mut casted_pointer = std::ptr::null();
@@ -58,7 +58,7 @@ impl LtFmIndex {
             _pinned: PhantomPinned,
         })
     }
-    fn unchecked_new_from_bytes(bytes: Vec<u8>) -> Self {
+    pub fn new_from_bytes_unchecked(bytes: Vec<u8>) -> Self {
         let pinned_boxed_bytes = Box::pin(bytes);
 
         let mut casted_pointer = std::ptr::null();

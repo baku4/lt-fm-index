@@ -63,7 +63,7 @@ impl LtFmIndexBuilder {
             self.bwt_compression,
         );
 
-        LtFmIndex::unchecked_new_from_bytes(self_desc_lt_fm_index_pre_build.encode_to_bytes())
+        LtFmIndex::new_from_bytes_unchecked(self_desc_lt_fm_index_pre_build.encode_to_bytes())
     }
     // Change text type
     pub fn use_nucleotide_only(mut self) -> Self {

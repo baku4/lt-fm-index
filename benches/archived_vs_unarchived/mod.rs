@@ -54,18 +54,26 @@ fn build_unarc_64an(text: Vec<u8>) -> LtFmIndexAll {
 
 // Functions for Save
 #[inline]
-fn save_arc(lt_fm_index: LtFmIndex, buffer: &mut Vec<u8>) {
-    let _ = lt_fm_index.save_to(buffer);
+fn save_arc(lt_fm_index: LtFmIndex) -> Vec<u8> {
+    let mut buffer = Vec::new();
+    let _ = lt_fm_index.save_to(&mut buffer);
+    buffer
 }
 #[inline]
-fn save_unarc(lt_fm_index: LtFmIndexAll, buffer: &mut Vec<u8>) {
-    let _ = lt_fm_index.write_to(buffer);
+fn save_unarc(lt_fm_index: LtFmIndexAll) -> Vec<u8>{
+    let mut buffer = Vec::new();
+    let _ = lt_fm_index.write_to(&mut buffer);
+    buffer
 }
 
 // Functions for Load
 #[inline]
-fn load_arc(buffer: Vec<u8>) -> LtFmIndex {
+fn load_arc_checked(buffer: Vec<u8>) -> LtFmIndex {
     LtFmIndex::load_from(&buffer[..]).unwrap()
+}
+#[inline]
+fn load_arc_unchecked(buffer: Vec<u8>) -> LtFmIndex {
+    LtFmIndex::unchecked_load_from(&buffer[..]).unwrap()
 }
 #[inline]
 fn load_unarc(buffer: Vec<u8>) -> LtFmIndexAll {
@@ -140,8 +148,6 @@ pub fn bench_save_arc_vs_unarc(c: &mut Criterion) {
         let text_an = rand_text_with_length(&UTF8_OF_AN, text_len);
         // NO_Arc
         {
-            let mut buffer = Vec::new();
-
             let lf_fm_index = build_arc_64no(text_no.clone());
 
             // Save
@@ -149,14 +155,12 @@ pub fn bench_save_arc_vs_unarc(c: &mut Criterion) {
                 BenchmarkId::new("no_arc", text_len),
                 &text_len,
                 |b, i| b.iter(|| {
-                    save_arc(black_box(lf_fm_index.clone()), black_box(&mut buffer));
+                    save_arc(black_box(lf_fm_index.clone()));
                 }
             ));
         }
         // NO_Unarc
         {
-            let mut buffer = Vec::new();
-
             let lf_fm_index = build_unarc_64no(text_no.clone());
 
             // Save
@@ -164,14 +168,12 @@ pub fn bench_save_arc_vs_unarc(c: &mut Criterion) {
                 BenchmarkId::new("no_unarc", text_len),
                 &text_len,
                 |b, i| b.iter(|| {
-                    save_unarc(black_box(lf_fm_index.clone()), black_box(&mut buffer));
+                    save_unarc(black_box(lf_fm_index.clone()));
                 }
             ));
         }
         // AN_Arc
         {
-            let mut buffer = Vec::new();
-
             let lf_fm_index = build_arc_64an(text_an.clone());
 
             // Save
@@ -179,14 +181,12 @@ pub fn bench_save_arc_vs_unarc(c: &mut Criterion) {
                 BenchmarkId::new("an_arc", text_len),
                 &text_len,
                 |b, i| b.iter(|| {
-                    save_arc(black_box(lf_fm_index.clone()), black_box(&mut buffer));
+                    save_arc(black_box(lf_fm_index.clone()));
                 }
             ));
         }
         // AN_Unarc
         {
-            let mut buffer = Vec::new();
-
             let lf_fm_index = build_unarc_64an(text_an.clone());
 
             // Save
@@ -194,7 +194,7 @@ pub fn bench_save_arc_vs_unarc(c: &mut Criterion) {
                 BenchmarkId::new("an_unarc", text_len),
                 &text_len,
                 |b, i| b.iter(|| {
-                    save_unarc(black_box(lf_fm_index.clone()), black_box(&mut buffer));
+                    save_unarc(black_box(lf_fm_index.clone()));
                 }
             ));
         }
@@ -219,28 +219,32 @@ pub fn bench_load_arc_vs_unarc(c: &mut Criterion) {
         let text_an = rand_text_with_length(&UTF8_OF_AN, text_len);
         // NO_Arc
         {
-            let mut buffer = Vec::new();
-
             let lf_fm_index = build_arc_64no(text_no.clone());
 
-            save_arc(lf_fm_index, &mut buffer);
+            let buffer = save_arc(lf_fm_index);
 
             // Load
             group.bench_with_input(
-                BenchmarkId::new("no_arc", text_len),
+                BenchmarkId::new("no_arc_chk", text_len),
                 &text_len,
                 |b, i| b.iter(|| {
-                    load_arc(black_box(buffer.clone()));
+                    load_arc_checked(black_box(buffer.clone()));
+                }
+            ));
+
+            group.bench_with_input(
+                BenchmarkId::new("no_arc_unchk", text_len),
+                &text_len,
+                |b, i| b.iter(|| {
+                    load_arc_unchecked(black_box(buffer.clone()));
                 }
             ));
         }
         // NO_Unarc
         {
-            let mut buffer = Vec::new();
-
             let lf_fm_index = build_unarc_64no(text_no.clone());
 
-            save_unarc(lf_fm_index, &mut buffer);
+            let buffer = save_unarc(lf_fm_index);
 
             // Load
             group.bench_with_input(
@@ -253,27 +257,31 @@ pub fn bench_load_arc_vs_unarc(c: &mut Criterion) {
         }
         // AN_Arc
         {
-            let mut buffer = Vec::new();
-
             let lf_fm_index = build_arc_64an(text_an.clone());
 
-            save_arc(lf_fm_index, &mut buffer);
+            let buffer = save_arc(lf_fm_index);
             // Load
             group.bench_with_input(
-                BenchmarkId::new("an_arc", text_len),
+                BenchmarkId::new("an_arc_chk", text_len),
                 &text_len,
                 |b, i| b.iter(|| {
-                    load_arc(black_box(buffer.clone()));
+                    load_arc_checked(black_box(buffer.clone()));
+                }
+            ));
+
+            group.bench_with_input(
+                BenchmarkId::new("an_arc_unchk", text_len),
+                &text_len,
+                |b, i| b.iter(|| {
+                    load_arc_unchecked(black_box(buffer.clone()));
                 }
             ));
         }
         // AN_Unarc
         {
-            let mut buffer = Vec::new();
-
             let lf_fm_index = build_unarc_64an(text_an.clone());
 
-            save_unarc(lf_fm_index, &mut buffer);
+            let buffer = save_unarc(lf_fm_index);
             // Load
             group.bench_with_input(
                 BenchmarkId::new("an_unarc", text_len),
@@ -287,7 +295,7 @@ pub fn bench_load_arc_vs_unarc(c: &mut Criterion) {
     group.finish();
 }
 
-// 3
+// 4
 // Locate Bench
 pub fn bench_locate_arc_vs_unarc(c: &mut Criterion) {
     let mut group = c.benchmark_group("locate_arc_vs_unarc");
@@ -296,7 +304,7 @@ pub fn bench_locate_arc_vs_unarc(c: &mut Criterion) {
         .summary_scale(AxisScale::Logarithmic);
     group.plot_config(plot_config.clone());
 
-    let text_len = 1_000_000;
+    let text_len = 100_000_000;
     let text_no = rand_text_with_length(&UTF8_OF_NO, text_len);
     let text_an = rand_text_with_length(&UTF8_OF_AN, text_len);
 
@@ -305,7 +313,7 @@ pub fn bench_locate_arc_vs_unarc(c: &mut Criterion) {
     let lt_fm_index_an_arc = build_arc_64an(text_an.clone());
     let lt_fm_index_an_unarc = build_unarc_64an(text_an.clone());
 
-    let pattern_len_list: Vec<usize> = (1..=5).map(|v| 10_usize.pow(v)).collect();
+    let pattern_len_list: Vec<usize> = (1..=6).map(|v| 10_usize.pow(v)).collect();
 
     for pattern_len in pattern_len_list {
         let pattern_no = &text_no[..pattern_len];

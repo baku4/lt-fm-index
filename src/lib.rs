@@ -1,12 +1,10 @@
 /*! # LT FM-Index
 `lt-fm-index` is library for locate and count nucleotide and amino acid sequence string.  
 `lt-fm-index` use lookup table (LT) in count table
-
-**CAVEAT!** This `crate` is not stable. Functions can be changed without notification.
 ## Description
-- Fm-index is a data structure used for pattern matching.
+- Fm-index is a data structure for exact pattern matching.
 - `LT` is precalculated count table containing all kmer occurrences.
-- With `LT`, you can find the first k-mer pattern at once.
+- `LT` allows you to find the first k-mer pattern at once.
 ## Features
 - `LtFmIndex` is generated from `Text`
 - `LtFmIndex` have two functions for `Pattern`

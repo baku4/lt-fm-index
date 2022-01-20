@@ -11,6 +11,7 @@ use super::{
 use std::io::{Write, Read};
 use std::path::Path;
 use std::fs::File;
+use std::pin::Pin;
 
 impl LtFmIndex {
     pub fn save_to<W>(&self, mut writer: W) -> Result<usize> where W: Write {

@@ -95,7 +95,7 @@ mod encoded;
 
 // # API
 // Public Struct
-pub use encoded::{LtFmIndex, LtFmIndexBuilder};
+pub use encoded::{LtFmIndex, LtFmIndexBuilder, CastedLtFmIndex};
 // Public Enum
 pub use composition::{TextType, BwtCompressionSize};
 // Public Type

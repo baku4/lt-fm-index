@@ -6,6 +6,7 @@ mod unarchived_vs_dep;
 mod counting_bit;
 mod serializer;
 mod archived_vs_unarchived;
+mod casting_vs_including;
 
 // Bench performance version of new vs deprecated
 use unarchived_vs_dep::{
@@ -29,11 +30,15 @@ use archived_vs_unarchived::{
     bench_locate_arc_vs_unarc,
 };
 
+// Bench Casting vs Including
+use casting_vs_including::{
+    bench_save_taking_vs_writing,
+    bench_load_casting_vs_including,
+};
+
 criterion_group!(
     benches,
-    bench_build_arc_vs_unarc,
-    bench_save_arc_vs_unarc,
-    bench_load_arc_vs_unarc,
-    bench_locate_arc_vs_unarc,,
+    bench_save_taking_vs_writing,
+    bench_load_casting_vs_including,
 );
 criterion_main!(benches);

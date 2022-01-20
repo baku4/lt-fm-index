@@ -18,6 +18,8 @@ use rkyv::{
 mod builder;
 pub use builder::LtFmIndexBuilder;
 
+mod zero_copy;
+pub use zero_copy::CastedLtFmIndex;
 
 // Additional features
 mod io;
@@ -69,6 +71,9 @@ impl LtFmIndex {
             casted_pointer: casted_pointer,
             _pinned: PhantomPinned,
         }
+    }
+    pub fn take_inner_bytes(self) -> Vec<u8> {
+        *Pin::into_inner(self.bytes)
     }
 }
 

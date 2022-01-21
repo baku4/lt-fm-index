@@ -50,4 +50,7 @@ impl LtFmIndex {
     pub fn take_inner_bytes(self) -> Vec<u8> {
         *Pin::into_inner(self.bytes)
     }
+    pub fn inner_bytes_size(&self) -> usize {
+        self.bytes.len()
+    }
 }

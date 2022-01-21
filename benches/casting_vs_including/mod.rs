@@ -83,7 +83,7 @@ pub fn bench_load_casting_vs_including(c: &mut Criterion) {
         .summary_scale(AxisScale::Logarithmic);
     group.plot_config(plot_config.clone());
 
-    let text_len_list: Vec<usize> = (4..=8).map(|v| 10_usize.pow(v)).collect();
+    let text_len_list: Vec<usize> = (4..=6).map(|v| 10_usize.pow(v)).collect();
 
     for text_len in text_len_list {
         let text_no = rand_text_with_length(&UTF8_OF_NO, text_len);

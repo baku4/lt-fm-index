@@ -1,6 +1,6 @@
 [package]
 name = "lt-fm-index"
-version = "0.5.0-beta.1"
+version = "0.5.0-beta.2"
 authors = ["baku4 <bahkhun@gmail.com>"]
 edition = "2018"
 description = "Fm-index using k-mer lookup table for exact pattern matching"
@@ -28,6 +28,7 @@ getrandom = { version = "0.2", features = ["js"] }
 [dev-dependencies]
 crate_fm_index = { package = "fm-index", version = "0.1" }
 criterion = "0.3.5"
+pprof = { version = "0.6.2", features = ["flamegraph"] }
 
 [[bench]]
 name = "benchmark"

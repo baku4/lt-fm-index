@@ -1,5 +1,5 @@
 use criterion::{
-    criterion_group, criterion_main,
+    criterion_group, criterion_main, Criterion,
 };
 
 mod unarchived_vs_dep;
@@ -36,9 +36,17 @@ use casting_vs_including::{
     bench_load_casting_vs_including,
 };
 
+// Profiler
+mod profiler;
+use profiler::FlamegraphProfiler;
+
+fn custom_profiler() -> Criterion {
+    Criterion::default().with_profiler(FlamegraphProfiler::new(100))
+}
+
 criterion_group!(
-    benches,
-    bench_save_taking_vs_writing,
-    bench_load_casting_vs_including,
+    name = benches;
+    config = custom_profiler();
+    targets = bench_load_casting_vs_including,
 );
 criterion_main!(benches);

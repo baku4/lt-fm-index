@@ -22,6 +22,7 @@ mod zero_copy;
 pub use zero_copy::CastedLtFmIndex;
 
 // Additional features
+mod raw;
 mod io;
 mod debug;
 mod clone;
@@ -40,40 +41,6 @@ impl LtFmIndex {
     #[inline]
     pub fn locate(&self, pattern: Pattern) -> Vec<u64> {
         unsafe{ &*self.casted_pointer }.locate(pattern)
-    }
-    pub fn new_from_bytes_checked(bytes: Vec<u8>) -> Result<Self> {
-        let pinned_boxed_bytes = Box::pin(bytes);
-
-        let mut casted_pointer = std::ptr::null();
-        casted_pointer = match check_archived_root::<SelfDescLtFmIndexPreBuild>(&pinned_boxed_bytes) {
-            Ok(v) => {
-                v
-            },
-            Err(_) => {
-                error_msg!("Invalid lt-fm-index formatted bytes.")
-            },
-        };
-        
-        Ok(Self {
-            bytes: pinned_boxed_bytes,
-            casted_pointer: casted_pointer,
-            _pinned: PhantomPinned,
-        })
-    }
-    pub fn new_from_bytes_unchecked(bytes: Vec<u8>) -> Self {
-        let pinned_boxed_bytes = Box::pin(bytes);
-
-        let mut casted_pointer = std::ptr::null();
-        casted_pointer = unsafe { archived_root::<SelfDescLtFmIndexPreBuild>(&pinned_boxed_bytes) };
-
-        Self {
-            bytes: pinned_boxed_bytes,
-            casted_pointer: casted_pointer,
-            _pinned: PhantomPinned,
-        }
-    }
-    pub fn take_inner_bytes(self) -> Vec<u8> {
-        *Pin::into_inner(self.bytes)
     }
 }
 

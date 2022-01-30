@@ -109,7 +109,7 @@ impl<E> CountArrayInterface for CountArray<E> where
         if pattern_len < self.kmer_size as usize {
             let start_idx = self.get_idx_of_kmer_count_table(pattern);
             let gap_btw_unsearched_kmer = self.multiplier[pattern_len - 1] - 1;
-            let end_idx = start_idx + gap_btw_unsearched_kmer;
+            let end_idx = start_idx + gap_btw_unsearched_kmer as u32;
 
             let pos_range = (self.kmer_count_table[start_idx as usize -1], self.kmer_count_table[end_idx as usize]);
             (pos_range, 0)
@@ -132,7 +132,7 @@ impl<E> CountArray<E> where
     fn get_idx_of_kmer_count_table(&self, sliced_pattern: Pattern) -> u32 {
         sliced_pattern.iter().zip(self.multiplier.iter())
             .map(|(&chr, &mul_of_pos)| {
-                E::chrwpidx_of_chr(chr) * mul_of_pos
+                E::chrwpidx_of_chr(chr) * mul_of_pos as u32
             }).sum()
     }
 }

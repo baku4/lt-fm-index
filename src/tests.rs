@@ -4,3 +4,6 @@ pub mod other_crate;
 
 pub mod unarchived;
 pub mod archived;
+
+#[cfg(test)]
+pub mod large;

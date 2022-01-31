@@ -2,8 +2,7 @@ use crate::*;
 use super::random_text::*;
 use std::time::Instant;
 
-#[test]
-fn test_generate_large_index_no() {
+fn print_generate_large_index_no() {
     for i in 30..33 {
         println!("# {}", i);
         let n = 1usize << i;

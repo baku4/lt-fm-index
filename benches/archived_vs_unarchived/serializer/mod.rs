@@ -3,7 +3,7 @@ use criterion::{
     PlotConfiguration, AxisScale,
 };
 
-use lt_fm_index::archived::composition::{
+use lt_fm_index::deprecated::archived::composition::{
     SelfDescLtFmIndexPreBuild,
     TextType,
     BwtCompressionSize,

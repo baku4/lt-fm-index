@@ -77,12 +77,8 @@ assert_eq!(lt_fm_index_to_save, lt_fm_index_loaded);
 // ## Supplement
 #[doc(hidden)]
 pub mod tests;
-#[doc(hidden)]
 #[allow(dead_code)]
-// Unarchived version will be deprecated.
-pub mod unarchived;
-// Archived version
-pub mod archived;
+pub mod deprecated;
 
 // ## Main
 // Core types and requirements for lt-fm-index

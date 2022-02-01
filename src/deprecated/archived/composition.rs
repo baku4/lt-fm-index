@@ -1,11 +1,11 @@
-use crate::archived::core::{
+use super::core::{
     Result, error_msg,
     Archive, Serialize, Deserialize, CheckBytes,
     Text, Pattern,
     LtFmIndexConstructor, LtFmIndexInterface,
 };
 
-use crate::archived::structure::{
+use super::structure::{
     LtFmIndexPreBuild64NO, LtFmIndexPreBuild128NO, LtFmIndexPreBuild64NN, LtFmIndexPreBuild128NN,
     LtFmIndexPreBuild64AO, LtFmIndexPreBuild128AO, LtFmIndexPreBuild64AN, LtFmIndexPreBuild128AN,
 };

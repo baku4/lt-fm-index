@@ -3,7 +3,7 @@ use criterion::{
     PlotConfiguration, AxisScale,
 };
 
-use lt_fm_index::archived::*;
+use lt_fm_index::deprecated::archived::*;
 use lt_fm_index::tests::random_text::*;
 
 const KMER_SIZE_NO: usize = 6;

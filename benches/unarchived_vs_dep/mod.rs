@@ -5,7 +5,7 @@ use criterion::{
     PlotConfiguration, AxisScale,
 };
 
-use lt_fm_index::unarchived::*;
+use lt_fm_index::deprecated::unarchived::*;
 use lt_fm_index::tests::random_text::*;
 
 // Bench performance version of new vs deprecated

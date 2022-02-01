@@ -14,6 +14,7 @@ categories = ["science", "algorithms"]
 anyhow = "1.0.44"
 byteorder = "1.4.3"
 capwriter = "0.1.0"
+bytemuck = { version = "1.7.3", features = [ "derive" ] }
 rkyv = { version = "0.7.29", default-features = false, features = ["std", "validation", "size_64"] }
 bytecheck = "0.6.7"
 serde = { version = "1.0.127", features = ["derive"] }

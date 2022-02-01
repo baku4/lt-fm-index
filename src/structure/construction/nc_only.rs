@@ -66,7 +66,8 @@ impl TextEncoder for TextEncoderNO {
 
 // To use Rust type inference, copy the code without specifying trait for u64, u128 primitive.
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[repr(C)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct BwtBlock64NO {
     rank_check_point: [u64; CHR_COUNT],
     bwt_vector: [u64; BITS_COUNT],
@@ -175,8 +176,33 @@ impl BwtBlockInterface for BwtBlock64NO {
     }
 }
 
+impl Serializable for BwtBlock64NO {
+    fn save_to<W>(&self, mut writer: W) -> Result<()> where
+        W: std::io::Write,
+    {
+        let casted: &[u64; CHR_COUNT + BITS_COUNT] = bytemuck::cast_ref(self);
+        casted.iter().for_each(|v| {
+            writer.write_u64::<EndianType>(*v);
+        });
+        
+        Ok(())
+    }
+    fn load_from<R>(mut reader: R) -> Result<Self> where
+        R: std::io::Read,
+        Self: Sized,
+    {
+        let mut raw_array: [u64; CHR_COUNT + BITS_COUNT] = [0; CHR_COUNT + BITS_COUNT];
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+        reader.read_u64_into::<EndianType>(&mut raw_array)?;
+
+        let casted = bytemuck::cast(raw_array);
+        
+        Ok(casted)
+    }
+}
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct BwtBlock128NO {
     rank_check_point: [u64; CHR_COUNT],
     bwt_vector: [u128; BITS_COUNT],
@@ -282,5 +308,30 @@ impl BwtBlockInterface for BwtBlock128NO {
         };
 
         rank
+    }
+}
+
+impl Serializable for BwtBlock128NO {
+    fn save_to<W>(&self, mut writer: W) -> Result<()> where
+        W: std::io::Write,
+    {
+        let casted: &[u64; CHR_COUNT + (2 * BITS_COUNT)] = bytemuck::cast_ref(self);
+        casted.iter().for_each(|v| {
+            writer.write_u64::<EndianType>(*v);
+        });
+        
+        Ok(())
+    }
+    fn load_from<R>(mut reader: R) -> Result<Self> where
+        R: std::io::Read,
+        Self: Sized,
+    {
+        let mut raw_array: [u64; CHR_COUNT + (2 * BITS_COUNT)] = [0; CHR_COUNT + (2 * BITS_COUNT)];
+
+        reader.read_u64_into::<EndianType>(&mut raw_array)?;
+
+        let casted = bytemuck::cast(raw_array);
+        
+        Ok(casted)
     }
 }

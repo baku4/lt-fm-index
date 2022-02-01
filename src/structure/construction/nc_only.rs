@@ -1,4 +1,6 @@
 use super::{
+    Result, error_msg,
+    EndianType, ReadBytesExt, WriteBytesExt, Serializable,
     TextEncoder, BwtBlockInterface,
     POS_BIT_64, POS_BIT_128,
 };

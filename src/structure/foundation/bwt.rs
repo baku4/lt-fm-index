@@ -1,8 +1,7 @@
 use super::{
     Result, error_msg,
     Text, Pattern,
-};
-use super::{
+    EndianType, ReadBytesExt, WriteBytesExt, Serializable,
     BwtInterface,
 };
 
@@ -91,6 +90,44 @@ impl<W> Bwt<W> where
         }
 
         blocks
+    }
+}
+
+impl<B> Serializable for Bwt<B> where
+    B: BwtBlockInterface + Serializable,
+{
+    fn save_to<W>(&self, mut writer: W) -> Result<()> where
+        W: std::io::Write,
+    {
+        // primary_index
+        writer.write_u64::<EndianType>(self.primary_index)?;
+
+        // blocks
+        let block_len = self.blocks.len() as u64;
+        writer.write_u64::<EndianType>(block_len)?;
+        self.blocks.iter().for_each(|bwt_block| {
+            bwt_block.save_to(&mut writer);
+        });
+
+        Ok(())
+    }
+    fn load_from<R>(mut reader: R) -> Result<Self> where
+        R: std::io::Read,
+        Self: Sized,
+    {
+        // primary_index
+        let primary_index = reader.read_u64::<EndianType>()?;
+
+        // blocks
+        let block_len = reader.read_u64::<EndianType>()? as usize;
+        let blocks = (0..block_len).map(|_| {
+            B::load_from(&mut reader).unwrap()
+        }).collect();
+
+        Ok(Self {
+            primary_index,
+            blocks,
+        })
     }
 }
 

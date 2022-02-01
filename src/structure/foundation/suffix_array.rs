@@ -48,19 +48,15 @@ impl SuffixArray {
     }
 }
 
+use capwriter::{Saveable, Loadable};
+
 impl Serializable for SuffixArray {
-    #[allow(unused_must_use)]
     fn save_to<W>(&self, mut writer: W) -> Result<()> where
         W: std::io::Write,
     {
         writer.write_u64::<EndianType>(self.sampling_ratio)?;
-        
-        let array_len = self.array.len() as u64;
-        writer.write_u64::<EndianType>(array_len)?;
 
-        self.array.iter().for_each(|v| {
-            writer.write_u64::<EndianType>(*v);
-        });
+        self.array.save_to(writer)?;
 
         Ok(())
     }
@@ -70,10 +66,7 @@ impl Serializable for SuffixArray {
     {
         let sampling_ratio = reader.read_u64::<EndianType>()?;
 
-        let array_len = reader.read_u64::<EndianType>()? as usize;
-
-        let mut array = vec![0_u64; array_len];
-        reader.read_u64_into::<EndianType>(&mut array)?;
+        let array = Vec::<u64>::load_from(reader)?;
 
         Ok(Self{
             sampling_ratio,

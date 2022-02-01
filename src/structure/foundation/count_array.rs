@@ -123,6 +123,54 @@ impl<E> CountArray<E> where
     }
 }
 
+use capwriter::{Saveable, Loadable};
+
+impl<E> Serializable for CountArray<E> where
+    E: TextEncoder,
+{
+    fn save_to<W>(&self, mut writer: W) -> Result<()> where
+        W: std::io::Write,
+    {
+        // kmer_size
+        writer.write_u64::<EndianType>(self.kmer_size as u64)?;
+
+        // count_table
+        self.count_table.save_to(&mut writer)?;
+
+        // kmer_count_table
+        self.kmer_count_table.save_to(&mut writer)?;
+
+        // multiplier
+        self.multiplier.save_to(&mut writer)?;
+
+        Ok(())
+    }
+    fn load_from<R>(mut reader: R) -> Result<Self> where
+        R: std::io::Read,
+        Self: Sized,
+    {
+        // kmer_size
+        let kmer_size = reader.read_u64::<EndianType>()? as usize;
+
+        // count_table
+        let count_table = Vec::<u64>::load_from(&mut reader)?;
+
+        // kmer_count_table
+        let kmer_count_table = Vec::<u64>::load_from(&mut reader)?;
+
+        // multiplier
+        let multiplier = Vec::<usize>::load_from(&mut reader)?;
+
+        Ok(Self {
+            kmer_size,
+            count_table,
+            kmer_count_table,
+            multiplier,
+            text_encoder: PhantomData,
+        })
+    }
+}
+
 // TextEncoder Requirements
 
 pub trait TextEncoder {

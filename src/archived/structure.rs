@@ -1,4 +1,4 @@
-use crate::core::{
+use crate::archived::core::{
     Result, error_msg,
     Archive, Serialize, Deserialize, CheckBytes,
     Text, Pattern,

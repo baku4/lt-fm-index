@@ -1,10 +1,10 @@
-use crate::core::{
+use crate::archived::core::{
     Result, error_msg,
     Archive, Serialize, Deserialize,
     Text, Pattern,
     LtFmIndexConstructor, LtFmIndexInterface,
 };
-use crate::composition::{
+use crate::archived::composition::{
     SelfDescLtFmIndexPreBuild, SelfDescLtFmIndex, OptionPrint,
     TextType, BwtCompressionSize,
 };

@@ -1,6 +1,8 @@
 use crate::core::{
+    Result, error_msg,
     Text, Pattern,
     LtFmIndexConstructor, LtFmIndexInterface,
+    EndianType, ReadBytesExt, WriteBytesExt, Serializable,
 };
 
 use crate::structure::{
@@ -11,6 +13,7 @@ use crate::structure::{
 // Additional features
 // mod attachment;
 // pub use attachment::OptionPrint;
+mod feature;
 
 // Text type marker
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]

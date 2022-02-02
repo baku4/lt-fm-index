@@ -1,6 +1,5 @@
-#[test]
 fn example_in_doc_1() {
-    use crate::LtFmIndexBuilder;
+    use crate::deprecated::archived::LtFmIndexBuilder;
 
     // (1) Define builder for lt-fm-index
     let builder = LtFmIndexBuilder::new()
@@ -22,9 +21,8 @@ fn example_in_doc_1() {
     assert_eq!(locations, vec![5,18]);
 }
 
-#[test]
 fn example_in_doc_2() {
-    use crate::{LtFmIndex, LtFmIndexBuilder};
+    use crate::deprecated::archived::{LtFmIndex, LtFmIndexBuilder};
 
     // (1) Generate lt-fm-index
     let text = b"CTCCGTACACCTGTTTCGTATCGGA".to_vec();

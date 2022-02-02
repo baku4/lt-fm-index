@@ -1,4 +1,3 @@
-#[test]
 fn unarchived_example_1() {
     use super::{FmIndex, LtFmIndexConfig};
 
@@ -23,7 +22,6 @@ fn unarchived_example_1() {
     assert_eq!(locations, vec![5,18]);
 }
 
-#[test]
 fn unarchived_example_2() {
     use super::{LtFmIndexConfig, LtFmIndexAll, IO};
 

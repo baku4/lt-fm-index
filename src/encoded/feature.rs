@@ -1,7 +1,11 @@
 use super::{
     Result, error_msg,
     Text, Pattern,
-    LtFmIndexConstructor, LtFmIndexInterface,
+    LtFmIndexConstructor, LtFmIndexInterface, Serializable,
+};
+use super::{
+    SelfDescLtFmIndex,
+    TextType, BwtCompressionSize,
 };
 use super::{
     LtFmIndex,

@@ -1,7 +1,7 @@
 use crate::core::{
     Result, error_msg,
     Text, Pattern,
-    LtFmIndexConstructor, LtFmIndexInterface,
+    LtFmIndexConstructor, LtFmIndexInterface, Serializable,
 };
 use crate::composition::{
     SelfDescLtFmIndex,
@@ -15,6 +15,7 @@ pub use builder::LtFmIndexBuilder;
 // Features
 mod feature;
 
+#[derive(Clone, PartialEq, Eq)]
 pub struct LtFmIndex {
     self_desc_lt_fm_index: SelfDescLtFmIndex,
 }

@@ -4,7 +4,6 @@ use super::IO;
 use super::random_text::*;
 use super::other_crate::*;
 
-#[test]
 fn test_all_use_cases_are_accurate() {
     let kmer_size = 4;
     let sa_sampling_ratio = 4;
@@ -101,7 +100,6 @@ fn test_all_use_cases_are_accurate() {
     }
 }
 
-#[test]
 fn test_all_use_cases_are_io_able_to_buffer() {
     let kmer_size = 4;
     let sa_sampling_ratio = 4;

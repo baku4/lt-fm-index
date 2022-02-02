@@ -16,6 +16,12 @@ use unarchived_vs_dep::{
 
 // Bench Archived vs Unarchived
 use archived_vs_unarchived::{
+    bench_serialization_btw_serializer,
+    bench_build_arc_vs_unarc,
+    bench_save_arc_vs_unarc,
+    bench_load_arc_vs_unarc,
+    bench_locate_arc_vs_unarc,
+    bench_save_taking_vs_writing,
     bench_load_casting_vs_including,
 };
 

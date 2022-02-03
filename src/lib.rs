@@ -1,25 +1,21 @@
-/*! # LT FM-Index
-`lt-fm-index` is library for locate and count nucleotide and amino acid sequence string.  
-`lt-fm-index` use lookup table (LT) in count table
+/*! # LtFmIndex
+`lt-fm-index` is library for locate and count nucleotide and amino acid sequence string.
 ## Description
 - Fm-index is a data structure for exact pattern matching.
-- `LT` is precalculated count table containing all kmer occurrences.
-- `LT` allows you to find the first k-mer pattern at once.
+- LtFmIndex have precalculated count lookup table for *kmer* occurrences.
+    - The lookup table can locate first k-mer pattern at once.
 ## Features
 - `LtFmIndex` is generated from `Text`
 - `LtFmIndex` have two functions for `Pattern`
     - count: Count the number of times the `Pattern` appears in `Text`.
     - locate: Locate the start index in which the `Pattern` appears in `Text`.
 - Supports **four** types of text.
-    - `NucleotideOnly` supports a text with only genetic nucleotide sequence (ACGT).
-    - `NucleotideWithNoise` supports a text containing non-nucleotide sequence.
-    - `AminoacidOnly` supports a text with only amino acid sequence.
-    - `AminoacidWithNoise` supports a text containing non-amino acid sequence.
-- The last character of each text type is treated as a wildcard.
-    - The last characters of each text type are *T*, *_*, *Y* and *_*.
-    - Wildcard is assigned to all non-supported characters.
+    - `NucleotideOnly`: ACGT
+    - `NucleotideWithNoise`: ACGT_
+    - `AminoacidOnly`: ACDEFGHIKLMNPQRSTVWY
+    - `AminoacidWithNoise`: ACDEFGHIKLMNPQRSTVWY_
+- The last character of each text type (T, _, Y, _) is treated as a wildcard that can be assigned to all non-supported characters.
     - For example, in `NucleotideOnly`, pattern of *ACGTXYZ* can be matched with *ACGTTTT*. Because *X*, *Y* and *Z* are not in *ACG* (nucleotide except *T*). And `lt-fm-index` generated with text of *ACGTXYZ* indexes the text as *ACGTTTT*.
-- BWT is stored with rank count tables in every 64 or 128 intervals.
 ## Examples
 ### 1. Use `LtFmIndex` to count and locate pattern.
 ```rust

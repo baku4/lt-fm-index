@@ -1,42 +1,35 @@
-# LT FM-Index
-`lt-fm-index` is library for locate and count nucleotide and amino acid sequence string.  
-`lt-fm-index` use lookup table (LT) in count table
-
-**CAVEAT!** This `crate` is not stable. Functions can be changed without notification.
+# LtFmIndex
+`lt-fm-index` is library for locate and count nucleotide and amino acid sequence string.
 ## Description
-- Fm-index is a data structure used for pattern matching.
-- `LT` is precalculated count table containing all kmer occurrences.
-- With `LT`, you can find the first k-mer pattern at once.
+- Fm-index is a data structure for exact pattern matching.
+- LtFmIndex have precalculated count lookup table for *kmer* occurrences.
+    - The lookup table can locate first k-mer pattern at once.
 ## Features
 - `LtFmIndex` is generated from `Text`
 - `LtFmIndex` have two functions for `Pattern`
     - count: Count the number of times the `Pattern` appears in `Text`.
     - locate: Locate the start index in which the `Pattern` appears in `Text`.
 - Supports **four** types of text.
-    - `NucleotideOnly` supports a text with only genetic nucleotide sequence (ACGT).
-    - `NucleotideWithNoise` supports a text containing non-nucleotide sequence.
-    - `AminoacidOnly` supports a text with only amino acid sequence.
-    - `AminoacidWithNoise` supports a text containing non-amino acid sequence.
-- The last character of each text type is treated as a wildcard.
-    - The last characters of each text type are *T*, *_*, *Y* and *_*.
-    - Wildcard is assigned to all non-supported characters.
+    - `NucleotideOnly`: ACGT
+    - `NucleotideWithNoise`: ACGT_
+    - `AminoacidOnly`: ACDEFGHIKLMNPQRSTVWY
+    - `AminoacidWithNoise`: ACDEFGHIKLMNPQRSTVWY_
+- The last character of each text type (T, _, Y, _) is treated as a wildcard that can be assigned to all non-supported characters.
     - For example, in `NucleotideOnly`, pattern of *ACGTXYZ* can be matched with *ACGTTTT*. Because *X*, *Y* and *Z* are not in *ACG* (nucleotide except *T*). And `lt-fm-index` generated with text of *ACGTXYZ* indexes the text as *ACGTTTT*.
-- BWT is stored with rank count tables in every 64 or 128 intervals.
 ## Examples
 ### 1. Use `LtFmIndex` to count and locate pattern.
 ```rust
-use lt_fm_index::{FmIndex, LtFmIndexConfig};
+use lt_fm_index::LtFmIndexBuilder;
 
-// (1) Define configuration for lt-fm-index
-let config = LtFmIndexConfig::for_nucleotide()
-    .with_noise()
-    .change_kmer_size(4).unwrap()
-    .change_sampling_ratio(4).unwrap()
-    .change_bwt_interval_to_128();
+// (1) Define builder for lt-fm-index
+let builder = LtFmIndexBuilder::new()
+    .use_nucleotide_with_noise()
+    .set_lookup_table_kmer_size(4).unwrap()
+    .set_suffix_array_sampling_ratio(2).unwrap();
 
-// (2) Generate fm-index with text
+// (2) Generate lt-fm-index with text
 let text = b"CTCCGTACACCTGTTTCGTATCGGANNNN".to_vec();
-let lt_fm_index = config.generate(text).unwrap(); // text is consumed
+let lt_fm_index = builder.build(text); // text is consumed
 
 // (3) Match with pattern
 let pattern = b"TA".to_vec();
@@ -47,23 +40,22 @@ assert_eq!(count, 2);
 let locations = lt_fm_index.locate(&pattern);
 assert_eq!(locations, vec![5,18]);
 ```
-### 2. Write and read `LtFmIndex`
+### 2. Save and load `LtFmIndex`
 ```rust
-use lt_fm_index::{LtFmIndexConfig, LtFmIndexAll, IO};
+use lt_fm_index::{LtFmIndex, LtFmIndexBuilder};
 
-// (1) Generate `FmIndex`
-let config = LtFmIndexConfig::for_nucleotide();
+// (1) Generate lt-fm-index
 let text = b"CTCCGTACACCTGTTTCGTATCGGA".to_vec();
-let lt_fm_index = config.generate(text).unwrap(); // text is consumed
+let lt_fm_index_to_save = LtFmIndexBuilder::new().build(text);
 
-// (2) Write fm-index to buffer (or file path)
+// (2) Save lt-fm-index to buffer
 let mut buffer = Vec::new();
-lt_fm_index.write_to(&mut buffer).unwrap();
+lt_fm_index_to_save.save_to(&mut buffer).unwrap();
 
-// (3) Read fm-index from buffer (or file path)
-let lt_fm_index_buf = LtFmIndexAll::read_from(&buffer[..]).unwrap();
+// (3) Load lt-fm-index from buffer
+let lt_fm_index_loaded = LtFmIndex::load_from(&buffer[..]).unwrap();
 
-assert_eq!(lt_fm_index, lt_fm_index_buf);
+assert_eq!(lt_fm_index_to_save, lt_fm_index_loaded);
 ```
 ## Repository
 [https://github.com/baku4/lt-fm-index](https://github.com/baku4/lt-fm-index)

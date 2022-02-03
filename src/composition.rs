@@ -11,8 +11,6 @@ use crate::structure::{
 };
 
 // Additional features
-// mod attachment;
-// pub use attachment::OptionPrint;
 mod feature;
 
 // Text type marker

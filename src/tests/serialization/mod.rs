@@ -1,5 +1,4 @@
 use crate::*;
-use crate::core::Serializable;
 use crate::tests::random_text::*;
 
 use std::io::Cursor;

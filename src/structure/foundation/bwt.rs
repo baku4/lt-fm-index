@@ -1,6 +1,6 @@
 use super::{
-    Result, error_msg,
-    Text, Pattern,
+    Result,
+    Text,
     EndianType, ReadBytesExt, WriteBytesExt, Serializable,
     BwtInterface,
 };
@@ -96,6 +96,7 @@ impl<W> Bwt<W> where
 impl<B> Serializable for Bwt<B> where
     B: BwtBlockInterface + Serializable,
 {
+    #[allow(unused_must_use)]
     fn save_to<W>(&self, mut writer: W) -> Result<()> where
         W: std::io::Write,
     {

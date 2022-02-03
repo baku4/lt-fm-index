@@ -1,5 +1,5 @@
 use super::{
-    Result, error_msg,
+    Result,
     EndianType, ReadBytesExt, WriteBytesExt, Serializable,
     RawLtFmIndexShort,
     TextEncoder, BwtBlockInterface,

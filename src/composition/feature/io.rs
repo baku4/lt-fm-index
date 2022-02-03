@@ -1,8 +1,6 @@
 use super::{
     Result, error_msg,
-    Text, Pattern,
-    LtFmIndexConstructor, LtFmIndexInterface,
-    EndianType, ReadBytesExt, WriteBytesExt, Serializable,
+    Serializable,
 };
 use super::{
     LtFmIndex64NO, LtFmIndex128NO, LtFmIndex64NN, LtFmIndex128NN,

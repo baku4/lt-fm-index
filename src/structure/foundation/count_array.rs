@@ -1,5 +1,5 @@
 use super::{
-    Result, error_msg,
+    Result,
     Text, Pattern,
     EndianType, ReadBytesExt, WriteBytesExt, Serializable,
     CountArrayInterface,

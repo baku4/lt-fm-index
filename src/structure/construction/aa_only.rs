@@ -1,5 +1,5 @@
 use super::{
-    Result, error_msg,
+    Result,
     EndianType, ReadBytesExt, WriteBytesExt, Serializable,
     TextEncoder, BwtBlockInterface,
     POS_BIT_64, POS_BIT_128,
@@ -567,6 +567,7 @@ impl BwtBlockInterface for BwtBlock64AO {
 }
 
 impl Serializable for BwtBlock64AO {
+    #[allow(unused_must_use)]
     fn save_to<W>(&self, mut writer: W) -> Result<()> where
         W: std::io::Write,
     {
@@ -988,6 +989,7 @@ impl BwtBlockInterface for BwtBlock128AO {
 }
 
 impl Serializable for BwtBlock128AO {
+    #[allow(unused_must_use)]
     fn save_to<W>(&self, mut writer: W) -> Result<()> where
         W: std::io::Write,
     {

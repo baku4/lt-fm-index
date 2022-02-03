@@ -1,18 +1,9 @@
-use std::fmt::Debug;
-
 use super::{
-    Result, error_msg,
-    Text, Pattern,
-    LtFmIndexConstructor, LtFmIndexInterface, Serializable,
-};
-use super::{
-    SelfDescLtFmIndex,
     TextType, BwtCompressionSize,
-};
-use super::{
     LtFmIndex,
 };
 
+use std::fmt::Debug;
 
 impl LtFmIndex {
     pub fn text_type(&self) -> TextType {

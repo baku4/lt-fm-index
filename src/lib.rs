@@ -72,6 +72,7 @@ assert_eq!(lt_fm_index_to_save, lt_fm_index_loaded);
 
 // ## Supplement
 #[doc(hidden)]
+#[allow(dead_code)]
 pub mod tests;
 #[doc(hidden)]
 #[allow(dead_code)]

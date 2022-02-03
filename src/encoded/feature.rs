@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 use super::{
     Result, error_msg,
     Text, Pattern,

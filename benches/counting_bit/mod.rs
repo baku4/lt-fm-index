@@ -1,5 +1,5 @@
 use criterion::{
-    black_box, criterion_group, criterion_main, Criterion, BenchmarkId
+    black_box, Criterion, BenchmarkId
 };
 
 /*

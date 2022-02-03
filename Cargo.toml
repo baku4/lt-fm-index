@@ -2,7 +2,7 @@
 name = "lt-fm-index"
 version = "0.5.0"
 authors = ["baku4 <bahkhun@gmail.com>"]
-edition = "2018"
+edition = "2021"
 description = "Fm-index using k-mer lookup table for exact pattern matching"
 readme = "README.md"
 repository = "https://github.com/baku4/lt-fm-index/"

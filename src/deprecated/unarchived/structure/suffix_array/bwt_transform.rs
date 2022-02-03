@@ -27,8 +27,3 @@ fn get_pidx_from_bwt(bwt: &[u8]) -> usize {
     }
     0
 }
-
-#[test]
-fn print_bwt_test() {
-    
-}

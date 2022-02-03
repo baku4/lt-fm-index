@@ -218,7 +218,6 @@ mod tests {
         config
     }
     // test with random seq
-    #[test]
     fn test_with_random_text() {
         let ssa = 8;
         let kmer = 4;
@@ -255,7 +254,6 @@ mod tests {
     }
 
     // FmIndexOn
-    #[test]
     fn test_fmindex_on_count() {
         let config = config_on(8, 4);
         let text = text_on();
@@ -266,7 +264,6 @@ mod tests {
             assert_eq!(count_res, count_ans);
         };
     }
-    #[test]
     fn test_fmindex_on_locate_wo_klt() {
         let config = config_on(8, 4);
         let text = text_on();
@@ -279,7 +276,6 @@ mod tests {
             assert_eq!(locations_res, locations_ans);
         };
     }
-    #[test]
     fn test_fmindex_on_locate_w_klt() {
         let config = config_on(8, 4);
         let text = text_on();
@@ -293,7 +289,6 @@ mod tests {
         };
     }
     // FmIndexNn
-    #[test]
     fn test_fmindex_nn_count() {
         let config = config_nn(8, 4);
         let text = text_nn();
@@ -304,7 +299,6 @@ mod tests {
             assert_eq!(count_res, count_ans);
         };
     }
-    #[test]
     fn test_fmindex_nn_locate_wo_klt() {
         let config = config_nn(8, 4);
         let text = text_nn();
@@ -317,7 +311,6 @@ mod tests {
             assert_eq!(locations_res, locations_ans);
         };
     }
-    #[test]
     fn test_fmindex_nn_locate_w_klt() {
         let config = config_nn(8, 4);
         let text = text_nn();
@@ -332,7 +325,6 @@ mod tests {
     }
 
     // KLT check
-    #[test]
     fn test_klt_is_matched() {
         let ssa = 8;
         let kmer = 3;
@@ -361,7 +353,6 @@ mod tests {
         assert_eq!(klt_nn_truncated, klt_on);
     }
 
-    #[test]
     // for examples
     fn test_examples() {
         // 1. Use [FmIndex] to locate pattern.

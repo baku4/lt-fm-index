@@ -1,4 +1,3 @@
-// Unarchived version will be deprecated.
-pub mod unarchived;
 // Archived version
+#[cfg(target_feature = "zero_copy")]
 pub mod archived;

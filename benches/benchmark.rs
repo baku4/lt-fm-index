@@ -3,18 +3,10 @@ use criterion::{
 };
 
 // Deprecated versions
-mod unarchived_vs_dep;
-mod archived_vs_unarchived;
-
-mod counting_bit;
-
-// Bench performance version of new vs deprecated
-use unarchived_vs_dep::{
-    bench_generate_unarchived_new_vs_dep,
-    bench_locate_unarchived_new_vs_dep,
-};
-
 // Bench Archived vs Unarchived
+#[cfg(target_feature = "zero_copy")]
+mod archived_vs_unarchived;
+#[cfg(target_feature = "zero_copy")]
 use archived_vs_unarchived::{
     bench_serialization_btw_serializer,
     bench_build_arc_vs_unarc,
@@ -26,8 +18,8 @@ use archived_vs_unarchived::{
 };
 
 // Bench counting bits
+mod counting_bit;
 use counting_bit::bench_counting_bits_of_u64;
-
 
 // Profiler
 mod profiler;
@@ -40,6 +32,6 @@ fn custom_profiler() -> Criterion {
 criterion_group!(
     name = benches;
     config = custom_profiler();
-    targets = bench_load_casting_vs_including,
+    targets = bench_counting_bits_of_u64,
 );
 criterion_main!(benches);

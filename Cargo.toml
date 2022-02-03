@@ -15,10 +15,6 @@ anyhow = "1.0.44"
 byteorder = "1.4.3"
 capwriter = "0.1.0"
 bytemuck = { version = "1.7.3", features = [ "derive" ] }
-rkyv = { version = "0.7.29", default-features = false, features = ["std", "validation", "size_64"] }
-bytecheck = "0.6.7"
-serde = { version = "1.0.127", features = ["derive"] }
-bincode = "1.3.3"
 rand = "0.8.0"
 bio = "0.39.0"
 
@@ -28,6 +24,10 @@ libdivsufsort-rs = "0.1.1"
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 getrandom = { version = "0.2", features = ["js"] }
 
+[target.'cfg(features = "zero_copy")'.dependencies]
+rkyv = { version = "0.7.29", default-features = false, features = ["std", "validation", "size_64"] }
+bytecheck = "0.6.7"
+
 [dev-dependencies]
 crate_fm_index = { package = "fm-index", version = "0.1" }
 criterion = "0.3.5"
@@ -36,3 +36,7 @@ pprof = { version = "0.6.2", features = ["flamegraph"] }
 [[bench]]
 name = "benchmark"
 harness = false
+
+[features]
+default = []
+zero_copy = []

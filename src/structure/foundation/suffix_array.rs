@@ -73,6 +73,10 @@ impl Serializable for SuffixArray {
             array,
         })
     }
+    fn size_of(&self) -> usize {
+        8 // sampling_ratio
+        + self.array.size_of() // array
+    }
 }
 
 #[cfg(test)]

@@ -28,4 +28,7 @@ impl LtFmIndex {
             self_desc_lt_fm_index,
         })
     }
+    pub fn size_of(&self) -> usize {
+        self.self_desc_lt_fm_index.size_of()
+    }
 }

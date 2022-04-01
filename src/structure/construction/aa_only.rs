@@ -590,6 +590,9 @@ impl Serializable for BwtBlock64AO {
         
         Ok(casted)
     }
+    fn size_of(&self) -> usize {
+        8 * (CHR_COUNT + BITS_COUNT)
+    }
 }
 
 #[repr(C)]
@@ -1011,5 +1014,8 @@ impl Serializable for BwtBlock128AO {
         let casted = bytemuck::cast(raw_array);
         
         Ok(casted)
+    }
+    fn size_of(&self) -> usize {
+        8 * (CHR_COUNT + (2 * BITS_COUNT))
     }
 }

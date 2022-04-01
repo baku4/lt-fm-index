@@ -169,6 +169,12 @@ impl<E> Serializable for CountArray<E> where
             text_encoder: PhantomData,
         })
     }
+    fn size_of(&self) -> usize {
+        8 // kmer_size
+        + self.count_table.size_of() // count_table
+        + self.kmer_count_table.size_of() // kmer_count_table
+        + self.multiplier.size_of() // multiplier
+    }
 }
 
 // TextEncoder Requirements

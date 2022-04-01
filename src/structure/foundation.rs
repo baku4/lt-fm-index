@@ -162,6 +162,12 @@ impl<S, C, B> Serializable for RawLtFmIndex<S, C, B> where
             bwt,
         })
     }
+    fn size_of(&self) -> usize {
+        8 // text_len
+        + self.suffix_array.size_of() // suffix_array
+        + self.count_array.size_of() // count_array
+        + self.bwt.size_of() // bwt
+    }
 }
 
 

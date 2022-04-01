@@ -40,4 +40,5 @@ pub trait Serializable {
     fn load_from<R>(reader: R) -> Result<Self> where
         R: std::io::Read,
         Self: Sized;
+    fn size_of(&self) -> usize;
 }

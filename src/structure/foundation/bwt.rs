@@ -130,6 +130,10 @@ impl<B> Serializable for Bwt<B> where
             blocks,
         })
     }
+    fn size_of(&self) -> usize {
+        16 // primary_index(8) + block_len(8)
+        + self.blocks.len() * self.blocks[0].size_of() // blocks
+    }
 }
 
 

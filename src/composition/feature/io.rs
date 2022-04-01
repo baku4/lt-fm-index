@@ -97,4 +97,33 @@ impl Serializable for SelfDescLtFmIndex {
 
         Ok(self_desc_lt_fm_index)
     }
+    fn size_of(&self) -> usize {
+        1 // Magic number
+        + match self {
+            Self::NO64(raw_lt_fm_index) => {
+                raw_lt_fm_index.size_of()
+            },
+            Self::NO128(raw_lt_fm_index) => {
+                raw_lt_fm_index.size_of()
+            },
+            Self::NN64(raw_lt_fm_index) => {
+                raw_lt_fm_index.size_of()
+            },
+            Self::NN128(raw_lt_fm_index) => {
+                raw_lt_fm_index.size_of()
+            },
+            Self::AO64(raw_lt_fm_index) => {
+                raw_lt_fm_index.size_of()
+            },
+            Self::AO128(raw_lt_fm_index) => {
+                raw_lt_fm_index.size_of()
+            },
+            Self::AN64(raw_lt_fm_index) => {
+                raw_lt_fm_index.size_of()
+            },
+            Self::AN128(raw_lt_fm_index) => {
+                raw_lt_fm_index.size_of()
+            },
+        }
+    }
 }

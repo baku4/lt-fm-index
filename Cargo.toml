@@ -1,6 +1,6 @@
 [package]
 name = "lt-fm-index"
-version = "0.5.1"
+version = "0.5.3"
 authors = ["baku4 <bahkhun@gmail.com>"]
 edition = "2021"
 description = "Fm-index using k-mer lookup table for exact pattern matching"
@@ -13,7 +13,7 @@ categories = ["science", "algorithms"]
 [dependencies]
 anyhow = "1.0.44"
 byteorder = "1.4.3"
-capwriter = "0.1.1"
+capwriter = "0.1.2"
 bytemuck = { version = "1.7.3", features = [ "derive" ] }
 rand = "0.8.0"
 bio = "0.39.0"

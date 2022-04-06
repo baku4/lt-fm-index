@@ -1,6 +1,4 @@
 use super::{
-    Result,
-    EndianType, ReadBytesExt, WriteBytesExt, Serializable,
     TextEncoder, BwtBlockInterface,
     POS_BIT_64, POS_BIT_128,
 };
@@ -588,36 +586,6 @@ impl BwtBlockInterface for BwtBlock64AN {
 }
 
 
-impl Serializable for BwtBlock64AN {
-    #[allow(unused_must_use)]
-    fn save_to<W>(&self, mut writer: W) -> Result<()> where
-        W: std::io::Write,
-    {
-        let casted: &[u64; CHR_COUNT + BITS_COUNT] = bytemuck::cast_ref(self);
-        casted.iter().for_each(|v| {
-            writer.write_u64::<EndianType>(*v);
-        });
-        
-        Ok(())
-    }
-    fn load_from<R>(mut reader: R) -> Result<Self> where
-        R: std::io::Read,
-        Self: Sized,
-    {
-        let mut raw_array: [u64; CHR_COUNT + BITS_COUNT] = [0; CHR_COUNT + BITS_COUNT];
-
-        reader.read_u64_into::<EndianType>(&mut raw_array)?;
-
-        let casted = bytemuck::cast(raw_array);
-        
-        Ok(casted)
-    }
-    fn size_of(&self) -> usize {
-        8 * (CHR_COUNT + BITS_COUNT)
-    }
-}
-
-
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct BwtBlock128AN {
@@ -1026,34 +994,5 @@ impl BwtBlockInterface for BwtBlock128AN {
         };
 
         rank
-    }
-}
-
-impl Serializable for BwtBlock128AN {
-    #[allow(unused_must_use)]
-    fn save_to<W>(&self, mut writer: W) -> Result<()> where
-        W: std::io::Write,
-    {
-        let casted: &[u64; CHR_COUNT + (2 * BITS_COUNT)] = bytemuck::cast_ref(self);
-        casted.iter().for_each(|v| {
-            writer.write_u64::<EndianType>(*v);
-        });
-        
-        Ok(())
-    }
-    fn load_from<R>(mut reader: R) -> Result<Self> where
-        R: std::io::Read,
-        Self: Sized,
-    {
-        let mut raw_array: [u64; CHR_COUNT + (2 * BITS_COUNT)] = [0; CHR_COUNT + (2 * BITS_COUNT)];
-
-        reader.read_u64_into::<EndianType>(&mut raw_array)?;
-
-        let casted = bytemuck::cast(raw_array);
-        
-        Ok(casted)
-    }
-    fn size_of(&self) -> usize {
-        8 * (CHR_COUNT + (2 * BITS_COUNT))
     }
 }

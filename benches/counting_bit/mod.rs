@@ -21,7 +21,7 @@ pub fn bench_counting_bits_of_u64(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("with_func", i),
             &i,
-            |b, i| b.iter(|| {
+            |b, _i| b.iter(|| {
                 count_with_count_bits_method(black_box(bit_to_count));
             }
         ));
@@ -29,7 +29,7 @@ pub fn bench_counting_bits_of_u64(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("table_mut_var", i),
             &i,
-            |b, i| b.iter(|| {
+            |b, _i| b.iter(|| {
                 count_with_bit_count_table_8_mut_var(black_box(bit_to_count));
             }
         ));
@@ -37,7 +37,7 @@ pub fn bench_counting_bits_of_u64(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("table_map", i),
             &i,
-            |b, i| b.iter(|| {
+            |b, _i| b.iter(|| {
                 count_with_bit_count_table_8_map(black_box(bit_to_count));
             }
         ));
@@ -47,7 +47,7 @@ pub fn bench_counting_bits_of_u64(c: &mut Criterion) {
 
 #[inline]
 pub fn count_with_count_bits_method(bits_to_count: u64) {
-    let rank = bits_to_count.count_ones();
+    let _rank = bits_to_count.count_ones();
 }
 #[inline]
 pub fn count_with_bit_count_table_8_mut_var(bits_to_count: u64) {
@@ -56,7 +56,7 @@ pub fn count_with_bit_count_table_8_mut_var(bits_to_count: u64) {
 }
 #[inline]
 pub fn count_with_bit_count_table_8_map(bits_to_count: u64) {
-    let rank: u64 = bits_to_count.to_ne_bytes().iter()
+    let _rank: u64 = bits_to_count.to_ne_bytes().iter()
         .map(|&byte| BIT_COUNT_TABLE_8[byte as usize]).sum::<u64>();
 }
 pub const BIT_COUNT_TABLE_8: [u64; 256] = [

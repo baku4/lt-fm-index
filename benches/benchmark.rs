@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+#![allow(unused_imports)]
 use criterion::{
     criterion_group, criterion_main, Criterion,
 };
@@ -21,6 +23,10 @@ use archived_vs_unarchived::{
 mod counting_bit;
 use counting_bit::bench_counting_bits_of_u64;
 
+// Sort algorithm
+mod sorting;
+use sorting::bench_burrow_wheeler_transform;
+
 // Profiler
 mod profiler;
 use profiler::FlamegraphProfiler;
@@ -32,6 +38,6 @@ fn custom_profiler() -> Criterion {
 criterion_group!(
     name = benches;
     config = custom_profiler();
-    targets = bench_counting_bits_of_u64,
+    targets = bench_burrow_wheeler_transform,
 );
 criterion_main!(benches);

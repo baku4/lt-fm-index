@@ -3,7 +3,12 @@ use super::{
     POS_BIT_64, POS_BIT_128,
 };
 
-const CHR_COUNT: usize = 21;
+// TODO: Delete padding
+const CHR_COUNT: usize = if cfg!(all(target_arch = "aarch64", target_env = "gnu")) {
+    22
+} else {
+    21
+};
 const BITS_COUNT: usize = 5;
 
 const A_UTF8: u8 = 65;

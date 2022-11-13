@@ -27,17 +27,8 @@ use counting_bit::bench_counting_bits_of_u64;
 mod sorting;
 use sorting::bench_burrow_wheeler_transform;
 
-// Profiler
-mod profiler;
-use profiler::FlamegraphProfiler;
-
-fn custom_profiler() -> Criterion {
-    Criterion::default().with_profiler(FlamegraphProfiler::new(100))
-}
-
 criterion_group!(
-    name = benches;
-    config = custom_profiler();
-    targets = bench_burrow_wheeler_transform,
+    benches,
+    bench_burrow_wheeler_transform,
 );
 criterion_main!(benches);

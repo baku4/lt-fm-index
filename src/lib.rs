@@ -1,23 +1,28 @@
 /*! # LtFmIndex
-`lt-fm-index` is library for locate and count nucleotide and amino acid sequence string.
+[![CI](https://github.com/baku4/lt-fm-index/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/baku4/lt-fm-index/actions/workflows/rust.yml)
+![crates.io](https://img.shields.io/crates/v/lt-fm-index.svg)
+
+`lt-fm-index` is a library to (1) locate or (2) count the pattern in the large text of nucleotide and amino acid sequences.
 ## Description
-- Fm-index is a data structure for exact pattern matching.
-- LtFmIndex have precalculated count lookup table for *kmer* occurrences.
-    - The lookup table can locate first k-mer pattern at once.
+- *Fm-Index* is a data structure for exact pattern matching.
+- `LtFmIndex` is *Fm-Index* using lookup table, the precalculated count of *k-mer* occurrences.
+  - The lookup table can locate the first *k-mer* pattern at once.
 ## Features
-- `LtFmIndex` is generated from `Text`
-- `LtFmIndex` have two functions for `Pattern`
-    - count: Count the number of times the `Pattern` appears in `Text`.
-    - locate: Locate the start index in which the `Pattern` appears in `Text`.
-- Supports **four** types of text.
-    - `NucleotideOnly`: ACGT
-    - `NucleotideWithNoise`: ACGT_
-    - `AminoacidOnly`: ACDEFGHIKLMNPQRSTVWY
-    - `AminoacidWithNoise`: ACDEFGHIKLMNPQRSTVWY_
-- The last character of each text type (T, _, Y, _) is treated as a wildcard that can be assigned to all non-supported characters.
-    - For example, in `NucleotideOnly`, pattern of *ACGTXYZ* can be matched with *ACGTTTT*. Because *X*, *Y* and *Z* are not in *ACG* (nucleotide except *T*). And `lt-fm-index` generated with text of *ACGTXYZ* indexes the text as *ACGTTTT*.
+- `LtFmIndex` is made from UTF-8–encoded `Text`.
+- `LtFmIndex` have two functions.
+    1. `count`: Count the number of times the UTF-8–encoded `Pattern` appears in the `Text`.
+    2. `locate`: Locate the start index in which the `Pattern` appears in the `Text`.
+- **Four** types of `Text` are supported.
+    - `NucleotideOnly`: consists of  {ACGT}
+    - `NucleotideWithNoise`: consists of  {ACGT_}
+    - `AminoacidOnly`: consists of {ACDEFGHIKLMNPQRSTVWY}
+    - `AminoacidWithNoise`: consists of {ACDEFGHIKLMNPQRSTVWY_}
+- The last character of each text type (T, _, Y, _) is treated as a *wildcard* representing all unsupported characters.
+    - For example, in `NucleotideOnly`:
+        - `LtFmIndex` stores the text of *ACGTXYZ* as *ACGTTTT*, transforming the unsupported characters (X, Y, Z) to wildcard (T).
+        - The patterns of *ACGTXXX*, *ACGXXXX*, and *ACGXYZZ* are matched with *ACGTTTT*.
 ## Examples
-### 1. Use `LtFmIndex` to count and locate pattern.
+### 1. Use `LtFmIndex` to count and locate a pattern.
 ```rust
 use lt_fm_index::LtFmIndexBuilder;
 
@@ -27,11 +32,11 @@ let builder = LtFmIndexBuilder::new()
     .set_lookup_table_kmer_size(4).unwrap()
     .set_suffix_array_sampling_ratio(2).unwrap();
 
-// (2) Generate lt-fm-index with text
+// (2) Generate lt-fm-index from text
 let text = b"CTCCGTACACCTGTTTCGTATCGGANNNN".to_vec();
 let lt_fm_index = builder.build(text); // text is consumed
 
-// (3) Match with pattern
+// (3) Match with a pattern
 let pattern = b"TA".to_vec();
 //   - count
 let count = lt_fm_index.count(&pattern);

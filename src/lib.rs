@@ -79,9 +79,6 @@ assert_eq!(lt_fm_index_to_save, lt_fm_index_loaded);
 #[doc(hidden)]
 #[allow(dead_code)]
 pub mod tests;
-#[doc(hidden)]
-#[allow(dead_code)]
-pub mod deprecated;
 
 // ## Main
 // Core types and requirements for lt-fm-index

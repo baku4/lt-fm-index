@@ -74,7 +74,7 @@ pub fn bench_burrow_wheeler_transform(c: &mut Criterion) {
     let mut group = c.benchmark_group("bw_transform");
     group.plot_config(plot_config);
 
-    let text_lengths: Vec<usize> = (1..=6_u32).map(|x| {
+    let text_lengths: Vec<usize> = (2..=7_u32).map(|x| {
         10_usize.pow(x)
     }).collect();
 

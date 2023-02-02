@@ -2,8 +2,6 @@ pub mod random_text;
 #[cfg(test)]
 pub mod other_crate;
 
-pub mod deprecated;
-
 #[cfg(test)]
 pub mod examples;
 #[cfg(test)]

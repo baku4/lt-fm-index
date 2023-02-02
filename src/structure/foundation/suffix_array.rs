@@ -7,6 +7,7 @@ use super::{
 
 #[allow(dead_code)]
 mod burrow_wheeler_transform;
+use burrow_wheeler_transform::get_suffix_array_and_pidx_while_bwt;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SuffixArray {
@@ -16,10 +17,7 @@ pub struct SuffixArray {
 
 impl SuffixArrayInterface for SuffixArray {
     fn new_while_bwt(text: &mut Text, sa_sampling_ratio: u64) -> (Self, u64) {
-        #[cfg(not(target_arch = "wasm32"))]
-        let (suffix_array_i64, pidx) = burrow_wheeler_transform::get_suffix_array_and_pidx_while_bwt_not_for_wasm(text);
-        #[cfg(target_arch = "wasm32")]
-        let (suffix_array_i64, pidx) = burrow_wheeler_transform::get_suffix_array_and_pidx_while_bwt_for_wasm(text);
+        let (suffix_array_i64, pidx) = get_suffix_array_and_pidx_while_bwt(text);
 
         let compressed_array = Self::compress_suffix_array(suffix_array_i64, sa_sampling_ratio);
 

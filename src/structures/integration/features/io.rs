@@ -1,13 +1,20 @@
-use super::{
+use crate::core::{
     Serializable,
 };
 use super::{
     LtFmIndex64NO, LtFmIndex128NO, LtFmIndex64NN, LtFmIndex128NN,
     LtFmIndex64AO, LtFmIndex128AO, LtFmIndex64AN, LtFmIndex128AN,
-};
-use super::{
     SelfDescLtFmIndex,
 };
+
+use thiserror::Error;
+#[derive(Error, Debug)]
+pub enum SerializeError {
+    #[error("data store disconnected")]
+    IoError(#[from] std::io::Error),
+    #[error("not a valid lt-fm-index")]
+    UnknownFile,
+}
 
 const MAGIC_NUMBER_NO64: u8 = 11;
 const MAGIC_NUMBER_NO128: u8 = 22;
@@ -18,7 +25,7 @@ const MAGIC_NUMBER_AO128: u8 = 66;
 const MAGIC_NUMBER_AN64: u8 = 77;
 const MAGIC_NUMBER_AN128: u8 = 88;
 
-impl Serializable for SelfDescLtFmIndex {
+impl SelfDescLtFmIndex {
     fn save_to<W>(&self, mut writer: W) -> Result<(), std::io::Error> where
         W: std::io::Write,
     {

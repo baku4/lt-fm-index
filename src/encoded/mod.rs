@@ -1,7 +1,7 @@
 use crate::core::{
     Result, error_msg,
     Text, Pattern,
-    LtFmIndexConstructor, LtFmIndexInterface, Serializable,
+    LtFmIndexInterface, FmIndexInterface, Serializable,
 };
 use crate::composition::{
     SelfDescLtFmIndex,

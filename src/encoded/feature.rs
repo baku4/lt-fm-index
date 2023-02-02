@@ -2,7 +2,7 @@
 use super::{
     Result, error_msg,
     Text, Pattern,
-    LtFmIndexConstructor, LtFmIndexInterface, Serializable,
+    LtFmIndexInterface, FmIndexInterface, Serializable,
 };
 use super::{
     SelfDescLtFmIndex,

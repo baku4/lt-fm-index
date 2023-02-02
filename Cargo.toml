@@ -11,9 +11,10 @@ keywords = ["fm-index", "bwt", "pattern_matching", "bio"]
 categories = ["science", "algorithms"]
 
 [dependencies]
+thiserror = "1.0.38"
 anyhow = "1.0.44"
 byteorder = "1.4.3"
-capwriter = "0.1.3"
+capwriter = "0.1.4"
 bytemuck = { version = "1.7.3", features = [ "derive" ] }
 rand = "0.8.0"
 bio = "1.1.0"

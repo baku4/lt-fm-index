@@ -2,7 +2,7 @@
 use super::{
     Result, error_msg,
     Text, Pattern,
-    LtFmIndexConstructor, LtFmIndexInterface,
+    LtFmIndexInterface, FmIndexInterface,
     SelfDescLtFmIndex,
     TextType, BwtCompressionSize,
     LtFmIndex,

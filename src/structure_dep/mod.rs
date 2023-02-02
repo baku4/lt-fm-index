@@ -1,24 +1,22 @@
 use crate::core::{
     Result, error_msg,
     Text, Pattern,
-    LtFmIndexConstructor, LtFmIndexInterface,
+    LtFmIndexInterface, FmIndexInterface,
     EndianType, ReadBytesExt, WriteBytesExt, Serializable,
 };
 
 
-// Foundation for basic structure
-
-mod foundation;
-use foundation::{
+// Common structures
+mod commons;
+use commons::{
     // Requirements
-    TextEncoder, BwtBlockInterface,
+    TextEncoder,
+    BwtBlockInterface,
     // Type alias
     RawLtFmIndexShort,
 };
 
-
 // Construction of structure
-
 mod construction;
 pub use construction::{
     // LtFmIndex by use case

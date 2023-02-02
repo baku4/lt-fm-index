@@ -1,11 +1,10 @@
 use crate::core::{
-    Result, error_msg,
     Text, Pattern,
-    LtFmIndexConstructor, LtFmIndexInterface,
-    EndianType, ReadBytesExt, WriteBytesExt, Serializable,
+    LtFmIndexInterface, FmIndexInterface, Serializable,
+    EndianType, ReadBytesExt, WriteBytesExt,
 };
 
-use crate::structure::{
+use crate::structures::{
     LtFmIndex64NO, LtFmIndex128NO, LtFmIndex64NN, LtFmIndex128NN,
     LtFmIndex64AO, LtFmIndex128AO, LtFmIndex64AN, LtFmIndex128AN,
 };
@@ -111,7 +110,7 @@ impl SelfDescLtFmIndex {
     }
 }
 
-impl LtFmIndexInterface for SelfDescLtFmIndex {
+impl FmIndexInterface for SelfDescLtFmIndex {
     #[inline]
     fn count(&self, pattern: Pattern) -> u64 {
         match self {

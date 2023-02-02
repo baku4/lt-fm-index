@@ -73,28 +73,30 @@ assert_eq!(lt_fm_index_to_save, lt_fm_index_loaded);
 - Yuta Mori. [`libdivsufsort`](https://github.com/y-256/libdivsufsort)
 */
 
+// Core types and requirements
+mod core;
+// Data structures
+mod structures;
+// Integration for multiple structures
+// #[doc(hidden)] // Make public for benchmark, not assumed to be used by end-users.
+// pub mod composition;
+
 // # Modules
 
 // ## Supplement
-#[doc(hidden)]
-#[allow(dead_code)]
-pub mod tests;
+// #[doc(hidden)]
+// #[allow(dead_code)]
+// pub mod tests;
 
 // ## Main
-// Core types and requirements for lt-fm-index
-mod core;
-// Data structure
-mod structure;
-// Integration of data structure
-#[doc(hidden)] // Make public for benchmark, not assumed to be used by end-users.
-pub mod composition;
+
 // Encoded wrapper
-mod encoded;
+// mod encoded;
 
 // # API
 // Public Struct
-pub use encoded::{LtFmIndex, LtFmIndexBuilder};
+// pub use encoded::{LtFmIndex, LtFmIndexBuilder};
 // Public Enum
-pub use composition::{TextType, BwtCompressionSize};
+// pub use composition::{TextType, BwtCompressionSize};
 // Public Type
-pub use self::core::{Text, Pattern};
+// pub use self::core::{Text, Pattern};

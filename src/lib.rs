@@ -77,6 +77,20 @@ assert_eq!(lt_fm_index_to_save, lt_fm_index_loaded);
 mod core;
 // Data structures
 mod structures;
+use structures::{
+    IoError,
+};
+pub use structures::{
+    LtFmIndex,
+    TextType,
+    BwtBlockSize,
+};
+// Builder
+mod builder;
+pub use builder::{
+    LtFmIndexBuilder
+};
+
 // Integration for multiple structures
 // #[doc(hidden)] // Make public for benchmark, not assumed to be used by end-users.
 // pub mod composition;

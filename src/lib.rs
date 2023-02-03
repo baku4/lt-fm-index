@@ -22,46 +22,6 @@
         - `LtFmIndex` stores the text of *ACGTXYZ* as *ACGTTTT*, transforming the unsupported characters (X, Y, Z) to wildcard (T).
         - The patterns of *ACGTXXX*, *ACGXXXX*, and *ACGXYZZ* are matched with *ACGTTTT*.
 ## Examples
-### 1. Use `LtFmIndex` to count and locate a pattern.
-```rust
-use lt_fm_index::LtFmIndexBuilder;
-
-// (1) Define builder for lt-fm-index
-let builder = LtFmIndexBuilder::new()
-    .use_nucleotide_with_noise()
-    .set_lookup_table_kmer_size(4).unwrap()
-    .set_suffix_array_sampling_ratio(2).unwrap();
-
-// (2) Generate lt-fm-index from text
-let text = b"CTCCGTACACCTGTTTCGTATCGGANNNN".to_vec();
-let lt_fm_index = builder.build(text); // text is consumed
-
-// (3) Match with a pattern
-let pattern = b"TA".to_vec();
-//   - count
-let count = lt_fm_index.count(&pattern);
-assert_eq!(count, 2);
-//   - locate
-let locations = lt_fm_index.locate(&pattern);
-assert_eq!(locations, vec![5,18]);
-```
-### 2. Save and load `LtFmIndex`
-```rust
-use lt_fm_index::{LtFmIndex, LtFmIndexBuilder};
-
-// (1) Generate lt-fm-index
-let text = b"CTCCGTACACCTGTTTCGTATCGGA".to_vec();
-let lt_fm_index_to_save = LtFmIndexBuilder::new().build(text);
-
-// (2) Save lt-fm-index to buffer
-let mut buffer = Vec::new();
-lt_fm_index_to_save.save_to(&mut buffer).unwrap();
-
-// (3) Load lt-fm-index from buffer
-let lt_fm_index_loaded = LtFmIndex::load_from(&buffer[..]).unwrap();
-
-assert_eq!(lt_fm_index_to_save, lt_fm_index_loaded);
-```
 ## Repository
 [https://github.com/baku4/lt-fm-index](https://github.com/baku4/lt-fm-index)
 ## Doc
@@ -87,8 +47,11 @@ pub use structures::{
 };
 // Builder
 mod builder;
+use builder::{
+    BuildError,
+};
 pub use builder::{
-    LtFmIndexBuilder
+    LtFmIndexBuilder,
 };
 
 // Integration for multiple structures

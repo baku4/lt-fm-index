@@ -4,7 +4,6 @@ use crate::core::{
 use super::{
     LtFmIndex,
     LtFmIndexBuilder,
-    BwtBlockSize,
     TextType,
     BuildError,
 };
@@ -46,23 +45,23 @@ impl TextType {
     // Use bitwise-flag
     // 0_0000_0000_0000_0000
     // D_EFHI_KLMN_PQRS_TVWY
-    const D_FLAG: u32 = 0b1_0000_0000_0000_0000;
-    const E_FLAG: u32 = 0b0_1000_0000_0000_0000;
-    const F_FLAG: u32 = 0b0_0100_0000_0000_0000;
-    const H_FLAG: u32 = 0b0_0010_0000_0000_0000;
-    const I_FLAG: u32 = 0b0_0001_0000_0000_0000;
-    const K_FLAG: u32 = 0b0_0000_1000_0000_0000;
-    const L_FLAG: u32 = 0b0_0000_0100_0000_0000;
-    const M_FLAG: u32 = 0b0_0000_0010_0000_0000;
-    const N_FLAG: u32 = 0b0_0000_0001_0000_0000;
-    const P_FLAG: u32 = 0b0_0000_0000_1000_0000;
-    const Q_FLAG: u32 = 0b0_0000_0000_0100_0000;
-    const R_FLAG: u32 = 0b0_0000_0000_0010_0000;
-    const S_FLAG: u32 = 0b0_0000_0000_0001_0000;
-    const T_FLAG: u32 = 0b0_0000_0000_0000_1000;
-    const V_FLAG: u32 = 0b0_0000_0000_0000_0100;
-    const W_FLAG: u32 = 0b0_0000_0000_0000_0010;
-    const Y_FLAG: u32 = 0b0_0000_0000_0000_0001;
+    const D_FLAG: u32 = 1 << 16;
+    const E_FLAG: u32 = 1 << 15;
+    const F_FLAG: u32 = 1 << 14;
+    const H_FLAG: u32 = 1 << 13;
+    const I_FLAG: u32 = 1 << 12;
+    const K_FLAG: u32 = 1 << 11;
+    const L_FLAG: u32 = 1 << 10;
+    const M_FLAG: u32 = 1 << 9;
+    const N_FLAG: u32 = 1 << 8;
+    const P_FLAG: u32 = 1 << 7;
+    const Q_FLAG: u32 = 1 << 6;
+    const R_FLAG: u32 = 1 << 5;
+    const S_FLAG: u32 = 1 << 4;
+    const T_FLAG: u32 = 1 << 3;
+    const V_FLAG: u32 = 1 << 2;
+    const W_FLAG: u32 = 1 << 1;
+    const Y_FLAG: u32 = 1;
 
     pub fn new_inferred(text: &Text) -> Result<Self, BuildError> {
         let mut bit_flag: u32 = 0;
@@ -107,29 +106,109 @@ impl TextType {
         
         match errored_chr {
             ControlFlow::Continue(_) => {
-                // FIXME: Write logic
-                panic!()
+                let addt_chr_count = if addt_chr == None { 0 } else { 1 };
+                let case_1_noise_cand_count = bit_flag.count_ones() + addt_chr_count;
+                if case_1_noise_cand_count <= 1 {
+                    return Ok(TextType::NucleotideOnly)
+                }
+                let case_2_noise_cand_count = (bit_flag & 0b1_1111_1111_1111_0111).count_ones() + addt_chr_count;
+                if case_2_noise_cand_count <= 1 {
+                    return Ok(TextType::NucleotideWithNoise)
+                }
+                let case_3_noise_cand_count = (bit_flag & 0b0_0000_0000_0000_0001).count_ones() + addt_chr_count;
+                if case_3_noise_cand_count <= 1 {
+                    return Ok(TextType::AminoAcidOnly)
+                }
+                Ok(TextType::AminoAcidWithNoise) // Case 4
             },
             ControlFlow::Break(chr) => {
-                // FIXME: Write logic
-                panic!()
+                Err(BuildError::TextTypeError(char::from(addt_chr.unwrap()), char::from(chr)))
             },
         }
     }
     pub fn recommend_kmer_size(&self) -> usize {
         match self {
-            Self::NucleotideOnly => 8, // About 64 Kb for kmer count array
-            Self::NucleotideWithNoise => 7, // About 76 Kb for kmer count array
-            Self::AminoAcidOnly => 4, // About 156 Kb for kmer count array
-            Self::AminoAcidWithNoise => 4, // About 190 Kb for kmer count array
+            // The size of kmer count table is about:
+            Self::NucleotideOnly => 7, // 610 KiB (8*5^7)
+            Self::NucleotideWithNoise => 6, // 364 KiB (8*6^6)
+            Self::AminoAcidOnly => 4, // 1.48 MiB (8*21^4)
+            Self::AminoAcidWithNoise => 4, // 1.79 MiB (8*22^4)
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::{
+        TextType,
+    };
+    use std::ops::Range;
+    use rand::{Rng, seq::SliceRandom};
+
+    const NO_STEMS: [u8; 3] = [b'A', b'C', b'G'];
+    const NN_STEMS: [u8; 4] = [b'A', b'C', b'G', b'T'];
+    const AO_STEMS: [u8; 19] = [b'A', b'C', b'D', b'E', b'F', b'G', b'H', b'I', b'K', b'L', b'M', b'N', b'P', b'Q', b'R', b'S', b'T', b'V', b'W'];
+    const AN_STEMS: [u8; 20] = [b'A', b'C', b'D', b'E', b'F', b'G', b'H', b'I', b'K', b'L', b'M', b'N', b'P', b'Q', b'R', b'S', b'T', b'V', b'W', b'Y'];
+    const TEXT_LENGTH_RANGE: Range<usize> = 50..200;
+    fn rand_text_of_list(chr_stem: &[u8]) -> Vec<u8> {
+        let mut rng = rand::thread_rng();
+        // chr list
+        let mut chr_list = chr_stem.to_vec();
+        loop {
+            let addt: u8 = rng.gen();
+            if !chr_list.contains(&addt) {
+                chr_list.push(addt);
+                break;
+            }
+        }
+        // make text
+        let chr_count = chr_list.len();
+        let mut text = chr_list.clone();
+        let text_len: usize = rng.gen_range(TEXT_LENGTH_RANGE);
+        if text_len > chr_list.len() {
+            let remain = text_len - chr_count;
+            for _ in 0..remain {
+                let chr = chr_list[rng.gen_range(0..chr_count)];
+                text.push(chr);
+            }
+        }
+        // shuffle
+        text.shuffle(&mut rng);
+        
+        text
+    }
+    fn get_no_text() -> Vec<u8> {
+        rand_text_of_list(&NO_STEMS)
+    }
+    fn get_nn_text() -> Vec<u8> {
+        rand_text_of_list(&NN_STEMS)
+    }
+    fn get_ao_text() -> Vec<u8> {
+        rand_text_of_list(&AO_STEMS)
+    }
+    fn get_an_text() -> Vec<u8> {
+        rand_text_of_list(&AN_STEMS)
+    }
+
     #[test]
     fn infer_text_type() {
-        // TODO: Write
+        let n = 100;
+        for _ in 0..n {
+            let no_text = get_no_text();
+            let type_ = TextType::new_inferred(&no_text).unwrap();
+            assert_eq!(type_, TextType::NucleotideOnly);
+
+            let nn_text = get_nn_text();
+            let type_ = TextType::new_inferred(&nn_text).unwrap();
+            assert_eq!(type_, TextType::NucleotideWithNoise);
+
+            let ao_text = get_ao_text();
+            let type_ = TextType::new_inferred(&ao_text).unwrap();
+            assert_eq!(type_, TextType::AminoAcidOnly);
+
+            let an_text = get_an_text();
+            let type_ = TextType::new_inferred(&an_text).unwrap();
+            assert_eq!(type_, TextType::AminoAcidWithNoise)
+        }
     }
 }

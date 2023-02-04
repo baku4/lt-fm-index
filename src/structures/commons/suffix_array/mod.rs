@@ -1,9 +1,8 @@
-use super::{
-    Result,
+use crate::core::{
     Text,
     EndianType, ReadBytesExt, WriteBytesExt, Serializable,
-    SuffixArrayInterface,
 };
+use super::SuffixArrayInterface;
 
 #[allow(dead_code)]
 mod burrow_wheeler_transform;
@@ -49,7 +48,7 @@ impl SuffixArray {
 use capwriter::{Saveable, Loadable};
 
 impl Serializable for SuffixArray {
-    fn save_to<W>(&self, mut writer: W) -> Result<()> where
+    fn save_to<W>(&self, mut writer: W) -> Result<(), std::io::Error> where
         W: std::io::Write,
     {
         writer.write_u64::<EndianType>(self.sampling_ratio)?;
@@ -58,7 +57,7 @@ impl Serializable for SuffixArray {
 
         Ok(())
     }
-    fn load_from<R>(mut reader: R) -> Result<Self> where
+    fn load_from<R>(mut reader: R) -> Result<Self, std::io::Error> where
         R: std::io::Read,
         Self: Sized,
     {

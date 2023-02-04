@@ -1,10 +1,8 @@
-use super::{
-    Result,
+use crate::core::{
     Text, Pattern,
     EndianType, ReadBytesExt, WriteBytesExt, Serializable,
-    CountArrayInterface,
 };
-
+use super::CountArrayInterface;
 use std::marker::PhantomData;
 
 // CountArray Structure
@@ -128,7 +126,7 @@ use capwriter::{Saveable, Loadable};
 impl<E> Serializable for CountArray<E> where
     E: TextEncoder,
 {
-    fn save_to<W>(&self, mut writer: W) -> Result<()> where
+    fn save_to<W>(&self, mut writer: W) -> Result<(), std::io::Error> where
         W: std::io::Write,
     {
         // kmer_size
@@ -145,7 +143,7 @@ impl<E> Serializable for CountArray<E> where
 
         Ok(())
     }
-    fn load_from<R>(mut reader: R) -> Result<Self> where
+    fn load_from<R>(mut reader: R) -> Result<Self, std::io::Error> where
         R: std::io::Read,
         Self: Sized,
     {

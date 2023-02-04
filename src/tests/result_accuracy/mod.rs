@@ -3,7 +3,7 @@ use crate::tests::random_text::*;
 use crate::tests::other_crate::*;
 
 #[test]
-fn test_all_types_of_structures_are_accurate() {
+fn results_are_accurate() {
     let kmer_size = 4;
     let sa_sampling_ratio = 4;
 
@@ -16,17 +16,17 @@ fn test_all_types_of_structures_are_accurate() {
         {
             let text = rand_text_of_no();
             let lt_fm_index_64 = LtFmIndexBuilder::new()
-                .use_nucleotide_only()
-                .compress_bwt_64()
+                .text_type_is_nucleotide_only()
+                .bwt_block_size_is_64()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
                 .set_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
-                .build(text.clone());
+                .build(text.clone()).unwrap();
             let lt_fm_index_128 = LtFmIndexBuilder::new()
-                .use_nucleotide_only()
-                .compress_bwt_128()
+                .text_type_is_nucleotide_only()
+                .bwt_block_size_is_128()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
                 .set_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
-                .build(text.clone());
+                .build(text.clone()).unwrap();
 
             let fm_index_other = get_fmindex_of_other_crate(&text);
 
@@ -47,17 +47,17 @@ fn test_all_types_of_structures_are_accurate() {
         {
             let text = rand_text_of_nn();
             let lt_fm_index_64 = LtFmIndexBuilder::new()
-                .use_nucleotide_with_noise()
-                .compress_bwt_64()
+                .text_type_is_nucleotide_with_noise()
+                .bwt_block_size_is_64()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
                 .set_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
-                .build(text.clone());
+                .build(text.clone()).unwrap();
             let lt_fm_index_128 = LtFmIndexBuilder::new()
-                .use_nucleotide_with_noise()
-                .compress_bwt_128()
+                .text_type_is_nucleotide_with_noise()
+                .bwt_block_size_is_128()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
                 .set_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
-                .build(text.clone());
+                .build(text.clone()).unwrap();
 
             let fm_index_other = get_fmindex_of_other_crate(&text);
 
@@ -78,17 +78,17 @@ fn test_all_types_of_structures_are_accurate() {
         {
             let text = rand_text_of_ao();
             let lt_fm_index_64 = LtFmIndexBuilder::new()
-                .use_amino_acid_only()
-                .compress_bwt_64()
+                .text_type_is_amino_acid_only()
+                .bwt_block_size_is_64()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
                 .set_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
-                .build(text.clone());
+                .build(text.clone()).unwrap();
             let lt_fm_index_128 = LtFmIndexBuilder::new()
-                .use_amino_acid_only()
-                .compress_bwt_128()
+                .text_type_is_amino_acid_only()
+                .bwt_block_size_is_128()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
                 .set_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
-                .build(text.clone());
+                .build(text.clone()).unwrap();
 
             let fm_index_other = get_fmindex_of_other_crate(&text);
 
@@ -109,17 +109,17 @@ fn test_all_types_of_structures_are_accurate() {
         {
             let text = rand_text_of_an();
             let lt_fm_index_64 = LtFmIndexBuilder::new()
-                .use_amino_acid_with_noise()
-                .compress_bwt_64()
+                .text_type_is_amino_acid_with_noise()
+                .bwt_block_size_is_64()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
                 .set_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
-                .build(text.clone());
+                .build(text.clone()).unwrap();
             let lt_fm_index_128 = LtFmIndexBuilder::new()
-                .use_amino_acid_with_noise()
-                .compress_bwt_128()
+                .text_type_is_amino_acid_with_noise()
+                .bwt_block_size_is_128()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
                 .set_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
-                .build(text.clone());
+                .build(text.clone()).unwrap();
 
             let fm_index_other = get_fmindex_of_other_crate(&text);
 

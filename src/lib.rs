@@ -1,26 +1,28 @@
-/*! # LtFmIndex
+/*!# LtFmIndex
 [![CI](https://github.com/baku4/lt-fm-index/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/baku4/lt-fm-index/actions/workflows/rust.yml)
-![crates.io](https://img.shields.io/crates/v/lt-fm-index.svg)
+[![crates.io](https://img.shields.io/crates/v/lt-fm-index.svg)](https://crates.io/crates/lt-fm-index)
 
 `lt-fm-index` is a library to (1) locate or (2) count the pattern in the large text of nucleotide and amino acid sequences.
 ## Description
-- *Fm-Index* is a data structure for exact pattern matching.
-- `LtFmIndex` is *Fm-Index* using lookup table, the precalculated count of *k-mer* occurrences.
-  - The lookup table can locate the first *k-mer* pattern at once.
+- *FmIndex* is a data structure for exact pattern matching.
+- `LtFmIndex` is *FmIndex* using lookup table, the precalculated count of *k-mer* occurrences.
+  - The lookup table can locate the first *k-mer* of pattern at once.
 ## Features
-- `LtFmIndex` is made from UTF-8–encoded `Text`.
+- `LtFmIndex` is built from `Text` (`Vec<u8>`).
 - `LtFmIndex` have two functions.
-    1. `count`: Count the number of times the UTF-8–encoded `Pattern` appears in the `Text`.
+    1. `count`: Count the number of times the `Pattern` (`&[u8]`) appears in the `Text`.
     2. `locate`: Locate the start index in which the `Pattern` appears in the `Text`.
 - **Four** types of `Text` are supported.
-    - `NucleotideOnly`: consists of  {ACGT}
-    - `NucleotideWithNoise`: consists of  {ACGT_}
-    - `AminoacidOnly`: consists of {ACDEFGHIKLMNPQRSTVWY}
-    - `AminoacidWithNoise`: consists of {ACDEFGHIKLMNPQRSTVWY_}
-- The last character of each text type (T, _, Y, _) is treated as a *wildcard* representing all unsupported characters.
-    - For example, in `NucleotideOnly`:
-        - `LtFmIndex` stores the text of *ACGTXYZ* as *ACGTTTT*, transforming the unsupported characters (X, Y, Z) to wildcard (T).
-        - The patterns of *ACGTXXX*, *ACGXXXX*, and *ACGXYZZ* are matched with *ACGTTTT*.
+    - `NucleotideOnly`: consists of {ACG*}
+    - `NucleotideWithNoise`: consists of {ACGT*}
+    - `AminoacidOnly`: consists of {ACDEFGHIKLMNPQRSTVW*}
+    - `AminoacidWithNoise`: consists of {ACDEFGHIKLMNPQRSTVWY*}
+- The `*` of each type is treated as a *wildcard* that can be matched with any characters.
+    - For example,
+        - If the TextType is `NucleotideOnly`, `LtFmIndex` stores the text of *ACGTXYZ* as <i>ACG****</i>.
+        - If the TextType is `NucleotideWithNoise`, `LtFmIndex` stores the same text (*ACGTXYZ*) as <i>ACGT***</i>
+        - If the indexed text is <i>ACGT***</i>, the patterns of *ACGTXXX*, *ACGT@@@*, and *ACGTX@#* give the same result.
+- Using `fastbwt` feature can accelerate the indexing, but needs `cmake` to build `libdivsufsort` and cannot be built as WASM.
 ## Examples
 ### 1. Use `LtFmIndex` to count and locate a pattern.
 ```rust
@@ -28,15 +30,15 @@ use lt_fm_index::LtFmIndexBuilder;
 
 // (1) Define builder for lt-fm-index
 let builder = LtFmIndexBuilder::new()
-    .use_nucleotide_with_noise()
-    .set_lookup_table_kmer_size(4).unwrap()
-    .set_suffix_array_sampling_ratio(2).unwrap();
+    .text_type_is_inferred()
+    .set_suffix_array_sampling_ratio(2).unwrap()
+    .set_lookup_table_kmer_size(4).unwrap();
 
-// (2) Generate lt-fm-index from text
+// (2) Generate lt-fm-index with text
 let text = b"CTCCGTACACCTGTTTCGTATCGGANNNN".to_vec();
-let lt_fm_index = builder.build(text); // text is consumed
+let lt_fm_index = builder.build(text).unwrap(); // text is consumed
 
-// (3) Match with a pattern
+// (3) Match with pattern
 let pattern = b"TA".to_vec();
 //   - count
 let count = lt_fm_index.count(&pattern);
@@ -51,7 +53,7 @@ use lt_fm_index::{LtFmIndex, LtFmIndexBuilder};
 
 // (1) Generate lt-fm-index
 let text = b"CTCCGTACACCTGTTTCGTATCGGA".to_vec();
-let lt_fm_index_to_save = LtFmIndexBuilder::new().build(text);
+let lt_fm_index_to_save = LtFmIndexBuilder::new().build(text).unwrap();
 
 // (2) Save lt-fm-index to buffer
 let mut buffer = Vec::new();
@@ -73,28 +75,24 @@ assert_eq!(lt_fm_index_to_save, lt_fm_index_loaded);
 - Yuta Mori. [`libdivsufsort`](https://github.com/y-256/libdivsufsort)
 */
 
-// # Modules
+// Core types and requirements
+mod core;
+// Data structures
+mod structures;
+pub use structures::{
+    LtFmIndex,
+    TextType,
+    BwtBlockSize,
+};
+// Builder
+mod builder;
+pub use builder::{
+    LtFmIndexBuilder,
+};
+/// Errors
+pub mod errors;
 
 // ## Supplement
 #[doc(hidden)]
 #[allow(dead_code)]
 pub mod tests;
-
-// ## Main
-// Core types and requirements for lt-fm-index
-mod core;
-// Data structure
-mod structure;
-// Integration of data structure
-#[doc(hidden)] // Make public for benchmark, not assumed to be used by end-users.
-pub mod composition;
-// Encoded wrapper
-mod encoded;
-
-// # API
-// Public Struct
-pub use encoded::{LtFmIndex, LtFmIndexBuilder};
-// Public Enum
-pub use composition::{TextType, BwtCompressionSize};
-// Public Type
-pub use self::core::{Text, Pattern};

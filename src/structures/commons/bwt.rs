@@ -1,9 +1,8 @@
-use super::{
-    Result,
+use crate::core::{
     Text,
     EndianType, ReadBytesExt, WriteBytesExt, Serializable,
-    BwtInterface,
 };
+use super::BwtInterface;
 
 
 // Bwt Structure
@@ -97,7 +96,7 @@ impl<B> Serializable for Bwt<B> where
     B: BwtBlockInterface + bytemuck::Pod,
 {
     #[allow(unused_must_use)]
-    fn save_to<W>(&self, mut writer: W) -> Result<()> where
+    fn save_to<W>(&self, mut writer: W) -> Result<(), std::io::Error> where
         W: std::io::Write,
     {
         // primary_index
@@ -111,7 +110,7 @@ impl<B> Serializable for Bwt<B> where
 
         Ok(())
     }
-    fn load_from<R>(mut reader: R) -> Result<Self> where
+    fn load_from<R>(mut reader: R) -> Result<Self, std::io::Error> where
         R: std::io::Read,
         Self: Sized,
     {

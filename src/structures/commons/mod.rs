@@ -1,26 +1,22 @@
-#[allow(unused_imports)]
-use super::{
-    Result, error_msg,
+use crate::core::{
     Text, Pattern,
-    LtFmIndexConstructor, LtFmIndexInterface,
-    EndianType, ReadBytesExt, WriteBytesExt, Serializable,
+    LtFmIndexInterface, FmIndexInterface, Serializable,
+    EndianType, ReadBytesExt, WriteBytesExt,
 };
 
 mod suffix_array;
 mod count_array;
 mod bwt;
 
-// Requirements
 pub use count_array::TextEncoder;
 pub use bwt::BwtBlockInterface;
-// Type alias
+
 use suffix_array::SuffixArray;
 use count_array::CountArray;
 use bwt::Bwt;
 pub type RawLtFmIndexShort<E, W> = RawLtFmIndex<SuffixArray, CountArray<E>, Bwt<W>>;
 
-// LtFmIndex Structure
-
+// LtFmIndex raw structure
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RawLtFmIndex<S, C, B> where
     S: SuffixArrayInterface,
@@ -33,9 +29,8 @@ pub struct RawLtFmIndex<S, C, B> where
     bwt: B,
 }
 
-// LtFmIndex Implementations
-
-impl<S, C, B> LtFmIndexConstructor for RawLtFmIndex<S, C, B> where
+// Implementations
+impl<S, C, B> LtFmIndexInterface for RawLtFmIndex<S, C, B> where
     S: SuffixArrayInterface,
     C: CountArrayInterface,
     B: BwtInterface,
@@ -58,7 +53,7 @@ impl<S, C, B> LtFmIndexConstructor for RawLtFmIndex<S, C, B> where
     }
 }
 
-impl<S, C, B> LtFmIndexInterface for RawLtFmIndex<S, C, B> where
+impl<S, C, B> FmIndexInterface for RawLtFmIndex<S, C, B> where
     S: SuffixArrayInterface,
     C: CountArrayInterface,
     B: BwtInterface,
@@ -134,7 +129,7 @@ impl<S, C, B> Serializable for RawLtFmIndex<S, C, B> where
     C: CountArrayInterface + Serializable,
     B: BwtInterface + Serializable,
 {
-    fn save_to<W>(&self, mut writer: W) -> Result<()> where
+    fn save_to<W>(&self, mut writer: W) -> Result<(), std::io::Error> where
         W: std::io::Write,
     {
         writer.write_u64::<EndianType>(self.text_len)?;
@@ -145,7 +140,7 @@ impl<S, C, B> Serializable for RawLtFmIndex<S, C, B> where
 
         Ok(())
     }
-    fn load_from<R>(mut reader: R) -> Result<Self> where
+    fn load_from<R>(mut reader: R) -> Result<Self, std::io::Error> where
         R: std::io::Read,
         Self: Sized,
     {
@@ -170,18 +165,13 @@ impl<S, C, B> Serializable for RawLtFmIndex<S, C, B> where
     }
 }
 
-
 // Requirements
-
-// SuffixArray Requirements
 pub trait SuffixArrayInterface where Self: Sized {
     fn new_while_bwt(text: &mut Text, sa_sampling_ratio: u64) -> (Self, u64);
 
     fn sampling_ratio(&self) -> u64;
     fn get_location_of_position(&self, position: u64) -> u64;
 }
-
-// CountArray Requirements
 pub trait CountArrayInterface {
     fn new_and_encode_text(text: &mut Text, kmer_size: usize) -> Self;
 
@@ -190,8 +180,6 @@ pub trait CountArrayInterface {
     fn get_initial_pos_range_and_idx_of_pattern(&self, pattern: Pattern) -> ((u64, u64), usize);
     fn kmer_size(&self) -> usize;
 }
-
-// Bwt Requirements
 pub trait BwtInterface {
     fn new(bwt_text: Text, pidx: u64) -> Self;
 

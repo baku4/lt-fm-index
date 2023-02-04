@@ -29,8 +29,10 @@ pub enum BuildError {
     ///  - ACGT@@## -> Error
     #[error("The type of text can not be inferred ('{0}' and '{1}' cannot coexist).")]
     TextTypeError(char, char),
+    /// Unsupported suffix array sampling ratio is inserted. (a value must be >= 1)
     #[error("Suffix array sampling ratio allows a value >= 1")]
     SasrBound,
+    /// Unsupported lookup table kmer size is inserted. (a value must be >=2 and <= half the width of pointer)
     #[error("Lookup table kmer size allows a value >= 2 and <= half the width of pointer")]
     LtksBound,
 }

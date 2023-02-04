@@ -4,6 +4,7 @@ use crate::core::{
 };
 use super::SuffixArrayInterface;
 
+#[allow(dead_code)]
 mod burrow_wheeler_transform;
 use burrow_wheeler_transform::get_suffix_array_and_pidx_while_bwt;
 

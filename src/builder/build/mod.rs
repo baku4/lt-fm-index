@@ -142,71 +142,25 @@ mod tests {
     use super::{
         TextType,
     };
-    use std::ops::Range;
-    use rand::{Rng, seq::SliceRandom};
-
-    const NO_STEMS: [u8; 3] = [b'A', b'C', b'G'];
-    const NN_STEMS: [u8; 4] = [b'A', b'C', b'G', b'T'];
-    const AO_STEMS: [u8; 19] = [b'A', b'C', b'D', b'E', b'F', b'G', b'H', b'I', b'K', b'L', b'M', b'N', b'P', b'Q', b'R', b'S', b'T', b'V', b'W'];
-    const AN_STEMS: [u8; 20] = [b'A', b'C', b'D', b'E', b'F', b'G', b'H', b'I', b'K', b'L', b'M', b'N', b'P', b'Q', b'R', b'S', b'T', b'V', b'W', b'Y'];
-    const TEXT_LENGTH_RANGE: Range<usize> = 50..200;
-    fn rand_text_of_list(chr_stem: &[u8]) -> Vec<u8> {
-        let mut rng = rand::thread_rng();
-        // chr list
-        let mut chr_list = chr_stem.to_vec();
-        loop {
-            let addt: u8 = rng.gen();
-            if !chr_list.contains(&addt) {
-                chr_list.push(addt);
-                break;
-            }
-        }
-        // make text
-        let chr_count = chr_list.len();
-        let mut text = chr_list.clone();
-        let text_len: usize = rng.gen_range(TEXT_LENGTH_RANGE);
-        if text_len > chr_list.len() {
-            let remain = text_len - chr_count;
-            for _ in 0..remain {
-                let chr = chr_list[rng.gen_range(0..chr_count)];
-                text.push(chr);
-            }
-        }
-        // shuffle
-        text.shuffle(&mut rng);
-        
-        text
-    }
-    fn get_no_text() -> Vec<u8> {
-        rand_text_of_list(&NO_STEMS)
-    }
-    fn get_nn_text() -> Vec<u8> {
-        rand_text_of_list(&NN_STEMS)
-    }
-    fn get_ao_text() -> Vec<u8> {
-        rand_text_of_list(&AO_STEMS)
-    }
-    fn get_an_text() -> Vec<u8> {
-        rand_text_of_list(&AN_STEMS)
-    }
+    use crate::tests::random_text::*;
 
     #[test]
     fn infer_text_type() {
         let n = 100;
         for _ in 0..n {
-            let no_text = get_no_text();
+            let no_text = rand_text_of_no();
             let type_ = TextType::new_inferred(&no_text).unwrap();
             assert_eq!(type_, TextType::NucleotideOnly);
 
-            let nn_text = get_nn_text();
+            let nn_text = rand_text_of_nn();
             let type_ = TextType::new_inferred(&nn_text).unwrap();
             assert_eq!(type_, TextType::NucleotideWithNoise);
 
-            let ao_text = get_ao_text();
+            let ao_text = rand_text_of_ao();
             let type_ = TextType::new_inferred(&ao_text).unwrap();
             assert_eq!(type_, TextType::AminoAcidOnly);
 
-            let an_text = get_an_text();
+            let an_text = rand_text_of_an();
             let type_ = TextType::new_inferred(&an_text).unwrap();
             assert_eq!(type_, TextType::AminoAcidWithNoise)
         }

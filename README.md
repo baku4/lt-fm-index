@@ -22,6 +22,7 @@
         - If the TextType is `NucleotideOnly`, `LtFmIndex` stores the text of *ACGTXYZ* as <i>ACG****</i>.
         - If the TextType is `NucleotideWithNoise`, `LtFmIndex` stores the same text (*ACGTXYZ*) as <i>ACGT***</i>
         - If the indexed text is <i>ACGT***</i>, the patterns of *ACGTXXX*, *ACGT@@@*, and *ACGTX@#* give the same result.
+- Using `fastbwt` feature can accelerate the indexing, but needs `cmake` to build `libdivsufsort` and cannot be built as WASM.
 ## Examples
 ### 1. Use `LtFmIndex` to count and locate a pattern.
 ```rust

@@ -4,13 +4,13 @@ fn example_in_doc_1() {
 
     // (1) Define builder for lt-fm-index
     let builder = LtFmIndexBuilder::new()
-        .use_nucleotide_with_noise()
-        .set_lookup_table_kmer_size(4).unwrap()
-        .set_suffix_array_sampling_ratio(2).unwrap();
+        .text_type_is_inferred()
+        .set_suffix_array_sampling_ratio(2).unwrap()
+        .set_lookup_table_kmer_size(4).unwrap();
 
     // (2) Generate lt-fm-index with text
     let text = b"CTCCGTACACCTGTTTCGTATCGGANNNN".to_vec();
-    let lt_fm_index = builder.build(text); // text is consumed
+    let lt_fm_index = builder.build(text).unwrap(); // text is consumed
 
     // (3) Match with pattern
     let pattern = b"TA".to_vec();
@@ -28,7 +28,7 @@ fn example_in_doc_2() {
 
     // (1) Generate lt-fm-index
     let text = b"CTCCGTACACCTGTTTCGTATCGGA".to_vec();
-    let lt_fm_index_to_save = LtFmIndexBuilder::new().build(text);
+    let lt_fm_index_to_save = LtFmIndexBuilder::new().build(text).unwrap();
 
     // (2) Save lt-fm-index to buffer
     let mut buffer = Vec::new();

@@ -24,49 +24,60 @@ impl Default for LtFmIndexBuilder {
 }
 
 impl LtFmIndexBuilder {
-    // New builder with default option
+    /// New builder with default option
     pub fn new() -> Self {
         Default::default()
     }
-    // Change text type
+    /// Make the [TextType] to be inferred (This is default option)
+    ///  - What is the difference from the specification of TextType manually?
+    ///    - If the ACGTY is used as Text, TextType is inferred as TextType::NucleotideWithNoise (ACGT and Y as wildcard)
+    ///    - However, when you specify the TextType as TextType::NucleotideOnly, you can force the both T and Y to be treated as wildcard.
+    ///       - Locating AATTAA, AAYYAA, AA@@AA, AA**AA, ... all gives the same result.
     pub fn text_type_is_inferred(mut self) -> Self {
         self.text_type = None;
         self
     }
+    /// Mark the [TextType] as [TextType::NucleotideOnly]
     pub fn text_type_is_nucleotide_only(mut self) -> Self {
         self.text_type = Some(TextType::NucleotideOnly);
         self
     }
+    /// Mark the [TextType] as [TextType::NucleotideWithNoise]
     pub fn text_type_is_nucleotide_with_noise(mut self) -> Self {
         self.text_type = Some(TextType::NucleotideWithNoise);
         self
     }
+    /// Mark the [TextType] as [TextType::AminoAcidOnly]
     pub fn text_type_is_amino_acid_only(mut self) -> Self {
         self.text_type = Some(TextType::AminoAcidOnly);
         self
     }
+    /// Mark the [TextType] as [TextType::AminoAcidWithNoise]
     pub fn text_type_is_amino_acid_with_noise(mut self) -> Self {
         self.text_type = Some(TextType::AminoAcidWithNoise);
         self
     }
-    // Change BWT block size
+    /// Use the default BWT block size
     pub fn bwt_block_size_is_default(mut self) -> Self {
         self.bwt_block_size = DEFAULT_BBS;
         self
     }
+    /// Use the 64-sized BWT block
     pub fn bwt_block_size_is_64(mut self) -> Self {
         self.bwt_block_size = BwtBlockSize::_64;
         self
     }
+    /// Use the 128-sized BWT block
     pub fn bwt_block_size_is_128(mut self) -> Self {
         self.bwt_block_size = BwtBlockSize::_128;
         self
     }
-    // Change suffix array sampling ratio
+    /// Use the default suffix array sampling ratio
     pub fn set_suffix_array_sampling_ratio_to_default(mut self) -> Self {
         self.suffix_array_sampling_ratio = DEFAULT_SASR;
         self
     }
+    /// Set the suffix array sampling ratio
     pub fn set_suffix_array_sampling_ratio(
         mut self,
         sampling_ratio: u64,
@@ -78,11 +89,12 @@ impl LtFmIndexBuilder {
             Err(BuildError::SasrBound)
         }
     }
-    // Set lookup table kmer size
+    /// Use the default kmer size for lookup table
     pub fn set_lookup_table_kmer_size_to_default(mut self) -> Self {
         self.lookup_table_kmer_size = None;
         self
     }
+    /// Set the size of kmer in lookup table
     pub fn set_lookup_table_kmer_size(
         mut self,
         kmer_size: usize,

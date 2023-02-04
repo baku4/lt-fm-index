@@ -1,5 +1,4 @@
 use crate::core::{
-    Text, Pattern,
     LtFmIndexInterface, FmIndexInterface,
 };
 use super::{
@@ -10,7 +9,7 @@ use super::{
 mod features;
 pub use features::IoError;
 
-/// LtFmIndex
+/// The index to (1) count or (2) locate the pattern in the indexed text.
 #[derive(Clone, PartialEq, Eq)]
 pub struct LtFmIndex {
     inner_wrapper: InnerWrapper,
@@ -31,6 +30,14 @@ enum InnerWrapper {
     AN128(LtFmIndex128AN),
 }
 /// Text type marker
+///   - NucleotideOnly
+///      - ACG and wildcard
+///   - NucleotideWithNoise
+///      - ACGT and wildcard
+///   - AminoAcidOnly
+///      - ACDEFGHIKLMNPQRSTVW and wildcard
+///   - AminoAcidWithNoise
+///      - ACDEFGHIKLMNPQRSTVWY and wildcard
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum TextType {
     NucleotideOnly,
@@ -39,6 +46,7 @@ pub enum TextType {
     AminoAcidWithNoise,
 }
 /// Bwt block size marker
+/// Using the larger block size makes the index small but slightly slow.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum BwtBlockSize {
     _64,
@@ -46,10 +54,10 @@ pub enum BwtBlockSize {
 }
 
 impl LtFmIndex {
-    /// Generally, LtFmIndex is assumed to be created using Builder.
+    /// Generally, LtFmIndex is assumed to be created using [LtFmIndexBuilder].
     /// This raw method is slightly faster, but using builder is safe and concise.
     pub fn new(
-        text: Text,
+        text: Vec<u8>,
         suffix_array_sampling_ratio: u64,
         lookup_table_kmer_size: usize,
         text_type: TextType,
@@ -119,9 +127,9 @@ impl LtFmIndex {
 }
 
 impl LtFmIndex {
-    /// Count pattern
+    /// Count the pattern in the indexed text
     #[inline]
-    pub fn count(&self, pattern: Pattern) -> u64 {
+    pub fn count(&self, pattern: &[u8]) -> u64 {
         match &self.inner_wrapper {
             InnerWrapper::NO64(inner) => inner.count(pattern),
             InnerWrapper::NO128(inner) => inner.count(pattern),
@@ -133,9 +141,9 @@ impl LtFmIndex {
             InnerWrapper::AN128(inner) => inner.count(pattern),
         }
     }
-    /// Locate pattern
+    /// Locate the pattern in the indexed text
     #[inline]
-    pub fn locate(&self, pattern: Pattern) -> Vec<u64> {
+    pub fn locate(&self, pattern: &[u8]) -> Vec<u64> {
         match &self.inner_wrapper {
             InnerWrapper::NO64(inner) => inner.locate(pattern),
             InnerWrapper::NO128(inner) => inner.locate(pattern),

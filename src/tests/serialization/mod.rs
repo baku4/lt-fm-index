@@ -4,7 +4,7 @@ use crate::tests::random_text::*;
 use std::io::Cursor;
 
 #[test]
-fn test_all_types_of_structures_are_serializable() {
+fn all_type_types_is_serializable() {
     let kmer_size = 4;
     let sa_sampling_ratio = 4;
 
@@ -18,11 +18,12 @@ fn test_all_types_of_structures_are_serializable() {
 
             // 64
             let lt_fm_index_64 = LtFmIndexBuilder::new()
-                .use_nucleotide_only()
-                .compress_bwt_64()
+                .text_type_is_nucleotide_only()
+                .bwt_block_size_is_64()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
                 .set_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
-                .build(text.clone());
+                .build(text.clone())
+                .unwrap();
             let mut buffer = Vec::new();
             lt_fm_index_64.save_to(&mut buffer).unwrap();
             let loaded_lt_fm_index_64 = LtFmIndex::load_from(Cursor::new(buffer)).unwrap();
@@ -31,11 +32,11 @@ fn test_all_types_of_structures_are_serializable() {
             
             // 128
             let lt_fm_index_128 = LtFmIndexBuilder::new()
-                .use_nucleotide_only()
-                .compress_bwt_128()
+                .text_type_is_nucleotide_only()
+                .bwt_block_size_is_128()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
                 .set_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
-                .build(text.clone());
+                .build(text.clone()).unwrap();
             let mut buffer = Vec::new();
             lt_fm_index_128.save_to(&mut buffer).unwrap();
             let loaded_lt_fm_index_128 = LtFmIndex::load_from(Cursor::new(buffer)).unwrap();
@@ -48,11 +49,11 @@ fn test_all_types_of_structures_are_serializable() {
 
             // 64
             let lt_fm_index_64 = LtFmIndexBuilder::new()
-                .use_nucleotide_with_noise()
-                .compress_bwt_64()
+                .text_type_is_nucleotide_with_noise()
+                .bwt_block_size_is_64()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
                 .set_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
-                .build(text.clone());
+                .build(text.clone()).unwrap();
             let mut buffer = Vec::new();
             lt_fm_index_64.save_to(&mut buffer).unwrap();
             let loaded_lt_fm_index_64 = LtFmIndex::load_from(Cursor::new(buffer)).unwrap();
@@ -61,11 +62,11 @@ fn test_all_types_of_structures_are_serializable() {
 
             // 128
             let lt_fm_index_128 = LtFmIndexBuilder::new()
-                .use_nucleotide_with_noise()
-                .compress_bwt_128()
+                .text_type_is_nucleotide_with_noise()
+                .bwt_block_size_is_128()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
                 .set_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
-                .build(text.clone());
+                .build(text.clone()).unwrap();
             let mut buffer = Vec::new();
             lt_fm_index_128.save_to(&mut buffer).unwrap();
             let loaded_lt_fm_index_128 = LtFmIndex::load_from(Cursor::new(buffer)).unwrap();
@@ -78,11 +79,11 @@ fn test_all_types_of_structures_are_serializable() {
 
             // 64
             let lt_fm_index_64 = LtFmIndexBuilder::new()
-                .use_amino_acid_only()
-                .compress_bwt_64()
+                .text_type_is_amino_acid_only()
+                .bwt_block_size_is_64()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
                 .set_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
-                .build(text.clone());
+                .build(text.clone()).unwrap();
             let mut buffer = Vec::new();
             lt_fm_index_64.save_to(&mut buffer).unwrap();
             let loaded_lt_fm_index_64 = LtFmIndex::load_from(Cursor::new(buffer)).unwrap();
@@ -91,11 +92,11 @@ fn test_all_types_of_structures_are_serializable() {
 
             // 128
             let lt_fm_index_128 = LtFmIndexBuilder::new()
-                .use_amino_acid_only()
-                .compress_bwt_128()
+                .text_type_is_amino_acid_only()
+                .bwt_block_size_is_128()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
                 .set_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
-                .build(text.clone());
+                .build(text.clone()).unwrap();
             let mut buffer = Vec::new();
             lt_fm_index_128.save_to(&mut buffer).unwrap();
             let loaded_lt_fm_index_128 = LtFmIndex::load_from(Cursor::new(buffer)).unwrap();
@@ -108,11 +109,11 @@ fn test_all_types_of_structures_are_serializable() {
 
             // 64
             let lt_fm_index_64 = LtFmIndexBuilder::new()
-                .use_amino_acid_with_noise()
-                .compress_bwt_64()
+                .text_type_is_amino_acid_with_noise()
+                .bwt_block_size_is_64()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
                 .set_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
-                .build(text.clone());
+                .build(text.clone()).unwrap();
             let mut buffer = Vec::new();
             lt_fm_index_64.save_to(&mut buffer).unwrap();
             let loaded_lt_fm_index_64 = LtFmIndex::load_from(Cursor::new(buffer)).unwrap();
@@ -121,11 +122,11 @@ fn test_all_types_of_structures_are_serializable() {
 
             // 128
             let lt_fm_index_128 = LtFmIndexBuilder::new()
-                .use_amino_acid_with_noise()
-                .compress_bwt_128()
+                .text_type_is_amino_acid_with_noise()
+                .bwt_block_size_is_128()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
                 .set_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
-                .build(text.clone());
+                .build(text.clone()).unwrap();
             let mut buffer = Vec::new();
             lt_fm_index_128.save_to(&mut buffer).unwrap();
             let loaded_lt_fm_index_128 = LtFmIndex::load_from(Cursor::new(buffer)).unwrap();
@@ -137,7 +138,7 @@ fn test_all_types_of_structures_are_serializable() {
 
 
 #[test]
-fn test_all_types_of_structures_are_aware_collect_size() {
+fn all_type_types_is_aware_to_be_saved_size() {
     let kmer_size = 4;
     let sa_sampling_ratio = 4;
 
@@ -151,11 +152,12 @@ fn test_all_types_of_structures_are_aware_collect_size() {
 
             // 64
             let lt_fm_index_64 = LtFmIndexBuilder::new()
-                .use_nucleotide_only()
-                .compress_bwt_64()
+                .text_type_is_nucleotide_only()
+                .bwt_block_size_is_64()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
                 .set_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
-                .build(text.clone());
+                .build(text.clone())
+                .unwrap();
             let mut buffer = Vec::new();
             lt_fm_index_64.save_to(&mut buffer).unwrap();
 
@@ -163,11 +165,11 @@ fn test_all_types_of_structures_are_aware_collect_size() {
             
             // 128
             let lt_fm_index_128 = LtFmIndexBuilder::new()
-                .use_nucleotide_only()
-                .compress_bwt_128()
+                .text_type_is_nucleotide_only()
+                .bwt_block_size_is_128()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
                 .set_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
-                .build(text.clone());
+                .build(text.clone()).unwrap();
             let mut buffer = Vec::new();
             lt_fm_index_128.save_to(&mut buffer).unwrap();
 
@@ -179,11 +181,11 @@ fn test_all_types_of_structures_are_aware_collect_size() {
 
             // 64
             let lt_fm_index_64 = LtFmIndexBuilder::new()
-                .use_nucleotide_with_noise()
-                .compress_bwt_64()
+                .text_type_is_nucleotide_with_noise()
+                .bwt_block_size_is_64()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
                 .set_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
-                .build(text.clone());
+                .build(text.clone()).unwrap();
             let mut buffer = Vec::new();
             lt_fm_index_64.save_to(&mut buffer).unwrap();
             
@@ -191,11 +193,11 @@ fn test_all_types_of_structures_are_aware_collect_size() {
 
             // 128
             let lt_fm_index_128 = LtFmIndexBuilder::new()
-                .use_nucleotide_with_noise()
-                .compress_bwt_128()
+                .text_type_is_nucleotide_with_noise()
+                .bwt_block_size_is_128()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
                 .set_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
-                .build(text.clone());
+                .build(text.clone()).unwrap();
             let mut buffer = Vec::new();
             lt_fm_index_128.save_to(&mut buffer).unwrap();
             
@@ -207,11 +209,11 @@ fn test_all_types_of_structures_are_aware_collect_size() {
 
             // 64
             let lt_fm_index_64 = LtFmIndexBuilder::new()
-                .use_amino_acid_only()
-                .compress_bwt_64()
+                .text_type_is_amino_acid_only()
+                .bwt_block_size_is_64()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
                 .set_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
-                .build(text.clone());
+                .build(text.clone()).unwrap();
             let mut buffer = Vec::new();
             lt_fm_index_64.save_to(&mut buffer).unwrap();
             
@@ -219,11 +221,11 @@ fn test_all_types_of_structures_are_aware_collect_size() {
 
             // 128
             let lt_fm_index_128 = LtFmIndexBuilder::new()
-                .use_amino_acid_only()
-                .compress_bwt_128()
+                .text_type_is_amino_acid_only()
+                .bwt_block_size_is_128()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
                 .set_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
-                .build(text.clone());
+                .build(text.clone()).unwrap();
             let mut buffer = Vec::new();
             lt_fm_index_128.save_to(&mut buffer).unwrap();
             
@@ -235,11 +237,11 @@ fn test_all_types_of_structures_are_aware_collect_size() {
 
             // 64
             let lt_fm_index_64 = LtFmIndexBuilder::new()
-                .use_amino_acid_with_noise()
-                .compress_bwt_64()
+                .text_type_is_amino_acid_with_noise()
+                .bwt_block_size_is_64()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
                 .set_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
-                .build(text.clone());
+                .build(text.clone()).unwrap();
             let mut buffer = Vec::new();
             lt_fm_index_64.save_to(&mut buffer).unwrap();
             
@@ -247,11 +249,11 @@ fn test_all_types_of_structures_are_aware_collect_size() {
 
             // 128
             let lt_fm_index_128 = LtFmIndexBuilder::new()
-                .use_amino_acid_with_noise()
-                .compress_bwt_128()
+                .text_type_is_amino_acid_with_noise()
+                .bwt_block_size_is_128()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
                 .set_suffix_array_sampling_ratio(sa_sampling_ratio).unwrap()
-                .build(text.clone());
+                .build(text.clone()).unwrap();
             let mut buffer = Vec::new();
             lt_fm_index_128.save_to(&mut buffer).unwrap();
             

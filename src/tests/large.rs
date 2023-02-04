@@ -8,13 +8,14 @@ fn print_generate_large_index_no() {
         let n = 1usize << i;
 
         let t = Instant::now();
-        let text = rand_text_with_length(&UTF8_OF_NO, n);
+        let text = gen_rand_text(&NO_STEMS, n..n);
         println!("Text size: {}, {}s", n, t.elapsed().as_secs_f64());
 
         let t = Instant::now();
         let lt_fm_index = LtFmIndexBuilder::new()
-            .use_nucleotide_only()
-            .build(text);
+            .text_type_is_nucleotide_only()
+            .build(text)
+            .unwrap();
         println!("LtFmIndex generated, {}s", t.elapsed().as_secs_f64());
 
         let t = Instant::now();

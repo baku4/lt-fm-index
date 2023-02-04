@@ -51,19 +51,6 @@ pub use builder::{
 pub mod errors;
 
 // ## Supplement
-// #[doc(hidden)]
-// #[allow(dead_code)]
-// pub mod tests;
-
-// ## Main
-
-// Encoded wrapper
-// mod encoded;
-
-// # API
-// Public Struct
-// pub use encoded::{LtFmIndex, LtFmIndexBuilder};
-// Public Enum
-// pub use composition::{TextType, BwtCompressionSize};
-// Public Type
-// pub use self::core::{Text, Pattern};
+#[doc(hidden)]
+#[allow(dead_code)]
+pub mod tests;

@@ -7,7 +7,7 @@ use super::{
 mod build;
 mod configure;
 
-
+/// The safe and concise builder for LtFmIndex
 #[derive(Debug, Clone)]
 pub struct LtFmIndexBuilder {
     text_type: Option<TextType>,

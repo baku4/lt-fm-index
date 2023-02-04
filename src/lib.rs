@@ -37,9 +37,6 @@
 mod core;
 // Data structures
 mod structures;
-use structures::{
-    IoError,
-};
 pub use structures::{
     LtFmIndex,
     TextType,
@@ -47,18 +44,11 @@ pub use structures::{
 };
 // Builder
 mod builder;
-use builder::{
-    BuildError,
-};
 pub use builder::{
     LtFmIndexBuilder,
 };
-
-// Integration for multiple structures
-// #[doc(hidden)] // Make public for benchmark, not assumed to be used by end-users.
-// pub mod composition;
-
-// # Modules
+/// Errors
+pub mod errors;
 
 // ## Supplement
 // #[doc(hidden)]

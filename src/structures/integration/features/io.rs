@@ -7,15 +7,19 @@ use super::{
     LtFmIndex, InnerWrapper,
 };
 use thiserror::Error;
+
+/// Errors that can occur when saving or loading LtFmIndex
 #[derive(Error, Debug)]
 pub enum IoError {
+    /// std::io::Error
     #[error(transparent)]
     StdIoError(#[from] std::io::Error),
-    /// This error can occur in various scenarios:
-    ///  1. You pass Non-lt-fm-index data
-    ///  2. You pass the lt-fm-index data of different OS
-    ///    - the serialized bytes array of lt-fm-index can differ by pointer width or architecture.
-    #[error("not a valid lt-fm-index structure")]
+    /// - This error can occur in various scenarios:
+    ///   1. You pass Non-LtFmIndex data
+    ///   2. You pass the LtFmIndex data of different OS
+    ///     - the serialized bytes array of LtFmIndex can differ by pointer width or architecture.
+    /// - This error sometimes can not be captured because the validation step is checking the "magic number" of the only first some bytes of data. When error is not occurred from invalid LtFmIndex data, thread **can be** panic or LtFmIndex structure does not works properly.
+    #[error("not a valid LtFmIndex structure")]
     Invalid,
 }
 

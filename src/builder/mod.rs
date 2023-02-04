@@ -17,8 +17,16 @@ pub struct LtFmIndexBuilder {
 }
 
 use thiserror::Error;
+/// Error thats can occur when build LtFmIndex with LtFmIndexBuilder
 #[derive(Error, Debug)]
 pub enum BuildError {
+    /// [TextType] can not be inferred.
+    /// This is occurred when the multiple characters must be assigned to wild-card(*).
+    /// ex)
+    ///  - ACG@@@@ -> Ok
+    ///  - ACG@@## -> Error
+    ///  - ACGT@@@@ -> Ok
+    ///  - ACGT@@## -> Error
     #[error("The type of text can not be inferred ('{0}' and '{1}' cannot coexist).")]
     TextTypeError(char, char),
     #[error("Suffix array sampling ratio allows a value >= 1")]

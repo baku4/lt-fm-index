@@ -8,21 +8,22 @@ use std::marker::PhantomData;
 // CountArray Structure
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CountArray<T: TextEncoder> {
+pub struct CountArray {
     kmer_size: u32,
     count_table: Vec<u64>,
     kmer_count_table: Vec<u64>,
     multiplier: Vec<usize>,
 }
 
-impl<T: TextEncoder> CountArray<T> {
+impl CountArray {
     // Build
     pub fn new_and_encode_text(
         text: &mut Text,
         chr_idx_table: &ChrIdxTable,
+        chr_count: usize,
         lookup_table_kmer_size: u32,
+        wildcard_chr: u8,
     ) -> Self {
-        let chr_count = T::CHR_COUNT;
         let chr_with_pidx_count = chr_count + 1;
         let mut count_table: Vec<u64> = vec![0; chr_with_pidx_count];
 
@@ -43,18 +44,17 @@ impl<T: TextEncoder> CountArray<T> {
                 }).collect()
             };
     
+            let last_chridx = (chr_count - 1) as u8;
             text.iter_mut().rev().for_each(|chr| {
-                let idx = chr_idx_table.idx_of(chr);
-                if idx == chr_count {
-                    //FIXME:
+                let chridx = chr_idx_table.idx_of(*chr);
+                if chridx == last_chridx {
+                    *chr = wildcard_chr;
                 }
-
-                let chridx = get_chridx_with_encoding_chr(chr);
                 // Add count to counts
-                count_table[chridx + 1] += 1;
+                count_table[chridx as usize + 1] += 1;
                 // Add count to lookup table
                 table_index /= chr_with_pidx_count;
-                table_index += index_for_each_chr[chridx];
+                table_index += index_for_each_chr[chridx as usize];
                 kmer_count_table[table_index] += 1;
             });
 
@@ -70,7 +70,6 @@ impl<T: TextEncoder> CountArray<T> {
             count_table,
             kmer_count_table,
             multiplier,
-            text_encoder: PhantomData,
         }
     }
     fn accumulate_count_table(count_table: &mut [u64]) {
@@ -80,48 +79,51 @@ impl<T: TextEncoder> CountArray<T> {
             *count = accumed_count;
         });
     }
+    
     // Locate
-    fn get_precount_of_chridx(&self, chridx: usize) -> u64 {
+    pub fn get_precount(&self, chridx: usize) -> u64 {
         self.count_table[chridx]
     }
-    fn get_chridx_and_precount_of_chr(&self, chr: u8) -> (usize, u64) {
-        let chridx = T::chridx_of_chr(chr);
-        let precount = self.get_precount_of_chridx(chridx);
-        (chridx, precount)
-    }
-    fn get_initial_pos_range_and_idx_of_pattern(&self, pattern: Pattern) -> ((u64, u64), usize) {
+    pub fn get_initial_pos_range_and_idx_of_pattern(
+        &self,
+        pattern: Pattern,
+        chr_idx_table: &ChrIdxTable,
+    ) -> ((u64, u64), usize) {
         let pattern_len = pattern.len();
         if pattern_len < self.kmer_size as usize {
-            let start_idx = self.get_idx_of_kmer_count_table(pattern);
+            let start_idx = self.get_idx_of_kmer_count_table(pattern, chr_idx_table);
             let gap_btw_unsearched_kmer = self.multiplier[pattern_len - 1] - 1;
-            let end_idx = start_idx + gap_btw_unsearched_kmer as u32;
+            let end_idx = start_idx + gap_btw_unsearched_kmer;
 
-            let pos_range = (self.kmer_count_table[start_idx as usize -1], self.kmer_count_table[end_idx as usize]);
+            let pos_range = (self.kmer_count_table[start_idx -1], self.kmer_count_table[end_idx]);
             (pos_range, 0)
         } else {
-            let sliced_pattern = &pattern[pattern.len() - self.kmer_size as usize..];
-            let start_idx = self.get_idx_of_kmer_count_table(sliced_pattern);
+            let sliced_pattern = &pattern[pattern.len() - self.kmer_size as usize ..];
+            let start_idx = self.get_idx_of_kmer_count_table(sliced_pattern, chr_idx_table);
 
-            let pos_range = (self.kmer_count_table[start_idx as usize -1], self.kmer_count_table[start_idx as usize]);
+            let pos_range = (self.kmer_count_table[start_idx -1], self.kmer_count_table[start_idx]);
             (pos_range, pattern_len - self.kmer_size as usize)
         }
     }
-    fn kmer_size(&self) -> usize {
-        self.kmer_size as usize
-    }
-    
-
-    fn get_idx_of_kmer_count_table(&self, sliced_pattern: Pattern) -> u32 {
+    fn get_idx_of_kmer_count_table(
+        &self,
+        sliced_pattern: Pattern,
+        chr_idx_table: &ChrIdxTable,
+    ) -> usize {
         sliced_pattern.iter().zip(self.multiplier.iter())
             .map(|(&chr, &mul_of_pos)| {
-                T::chrwpidx_of_chr(chr) * mul_of_pos as u32
+                (chr_idx_table.idx_of(chr) + 1) as usize * mul_of_pos
             }).sum()
+    }
+
+    fn kmer_size(&self) -> usize {
+        self.kmer_size as usize
     }
 }
 
 use capwriter::{Saveable, Loadable};
 
-impl<T: TextEncoder> Serializable for CountArray<T> {
+impl Serializable for CountArray {
     fn save_to<W>(&self, mut writer: W) -> Result<(), std::io::Error> where
         W: std::io::Write,
     {
@@ -160,7 +162,6 @@ impl<T: TextEncoder> Serializable for CountArray<T> {
             count_table,
             kmer_count_table,
             multiplier,
-            text_encoder: PhantomData,
         })
     }
     fn size_of(&self) -> usize {

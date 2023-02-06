@@ -14,6 +14,7 @@ pub struct SuffixArray {
 }
 
 impl SuffixArray {
+    // Build
     pub fn new_while_bwt(text: &mut Text, suffix_array_sampling_ratio: u64) -> (Self, u64) {
         let (suffix_array_i64, pidx) = get_suffix_array_and_pidx_while_bwt(text);
 
@@ -25,22 +26,21 @@ impl SuffixArray {
         };
         (suffix_array, pidx)
     }
-
-    fn sampling_ratio(&self) -> u64 {
-        self.sampling_ratio
-    }
-    fn get_location_of_position(&self, position: u64) -> u64 {
-        self.array[(position / self.sampling_ratio) as usize]
-    }
-}
-
-impl SuffixArray {
+    // FIXME: type conversion is performed only one time when using crate bio
     fn compress_suffix_array(suffix_array: Vec<i64>, sampling_ratio: u64) -> Vec<u64> {
         if sampling_ratio == 1 {
             suffix_array.into_iter().map(|x| x as u64).collect()
         } else {
             suffix_array.into_iter().step_by(sampling_ratio as usize).map(|x| x as u64).collect()
         }
+    }
+
+    // Locate
+    pub fn sampling_ratio(&self) -> u64 {
+        self.sampling_ratio
+    }
+    pub fn get_location_of_position(&self, position: u64) -> u64 {
+        self.array[(position / self.sampling_ratio) as usize]
     }
 }
 

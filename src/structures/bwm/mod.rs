@@ -5,91 +5,99 @@ use crate::core::{
     EndianType, ReadBytesExt, WriteBytesExt, Serializable,
 };
 
+mod block;
+
 use super::TextEncoder;
 
 // Burrows-Wheeler Matrix
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Bwm<T: TextEncoder, B: BlockVector> {
+pub struct Bwm<B: BwtBlock> {
     primary_index: u64,
     blocks: Vec<B>,
-    phantom_data: PhantomData<T>,
-}
-pub struct BwtBlock<T: TextEncoder> {
-    rank_check_point: [u64; T::CHR_COUNT],
-    bwt_vector: [u64; 4],
+    phantom_data: PhantomData<B>,
 }
 
-pub trait BwtBlock {
+pub trait BwtBlock: Sized {
+    type Bit: VectorBit;
 
+    fn new_with_bwt_text(bwt_text: Text) -> Vec<Self>;
+    fn get_rank(&self, rem: u64, chridx: u8) -> u64;
+    fn get_rank_and_chridx_of_rem(&self, rem: u64) -> (u64, u8);
+}
+
+pub trait VectorBit {
+    const LENGTH: u64;
 }
 
 // Bwt Implementations
-impl<T: TextEncoder, B: BwtBlock> Bwm<T, B> {
+impl<B: BwtBlock> Bwm<B> {
     // Build
-    fn new(bwt_text: Text, pidx: u64) -> Self {
-        let blocks: Vec<V> = Self::new_with_bwt_text(bwt_text);
+    pub fn new(bwt_text: Text, pidx: u64) -> Self {
+        let blocks: Vec<B> = B::new_with_bwt_text(bwt_text);
 
         Self {
             primary_index: pidx,
             blocks: blocks,
+            phantom_data: PhantomData,
         }
     }
-    fn new_with_bwt_text(bwt_text: Text) -> Vec<V> {
-        let mut chunk_count = bwt_text.len() / V::BLOCK_SEG_LEN as usize;
-        let rem = bwt_text.len() % V::BLOCK_SEG_LEN as usize;
+    // fn new_with_bwt_text(bwt_text: Text) -> Vec<B> {
+    //     let mut chunk_count = bwt_text.len() / B::Bit::LENGTH;
+    //     let rem = bwt_text.len() % B::Bit::LENGTH;
         
-        let last_offset = if rem == 0 {
-            chunk_count += 1;
-            rem
-        } else {
-            V::BLOCK_SEG_LEN as usize - rem
-        };
+    //     let last_offset = if rem == 0 {
+    //         chunk_count += 1;
+    //         rem
+    //     } else {
+    //         B::Bit::LENGTH - rem
+    //     };
 
-        let mut rank_checkpoint = W::empty_rank_check_point();
-        let mut blocks: Vec<W> = Vec::with_capacity(chunk_count);
+    //     let mut rank_checkpoint = W::empty_rank_check_point();
+    //     let mut blocks: Vec<B> = Vec::with_capacity(chunk_count);
 
-        bwt_text.chunks(W::BLOCK_SEG_LEN as usize).for_each(|text_chunk| {
-            let block_rank_checkpoint = rank_checkpoint.clone();
+    //     bwt_text.chunks(B::Bit::LENGTH).for_each(|text_chunk| {
+    //         let block_rank_checkpoint = rank_checkpoint.clone();
             
-            let bwt_vector = W::encoding_text_chunk(text_chunk, &mut rank_checkpoint);
+    //         let bwt_vector = W::encoding_text_chunk(text_chunk, &mut rank_checkpoint);
 
-            let block = W::new(block_rank_checkpoint, bwt_vector);
+    //         let block = W::new(block_rank_checkpoint, bwt_vector);
             
-            blocks.push(block);
-        });
+    //         blocks.push(block);
+    //     });
 
-        if last_offset == 0 {
-            let last_block = W::new_last(rank_checkpoint);
-            blocks.push(last_block);
-        } else {
-            let last_block = blocks.last_mut().unwrap();
-            last_block.add_offset(last_offset);
+    //     if last_offset == 0 {
+    //         let last_block = W::new_last(rank_checkpoint);
+    //         blocks.push(last_block);
+    //     } else {
+    //         let last_block = blocks.last_mut().unwrap();
+    //         last_block.add_offset(last_offset);
+    //     }
+
+    //     blocks
+    // }
+    pub fn get_next_rank_of_pos_and_chridx(&self, mut pos: u64, chridx: u8) -> u64 {
+        if pos < self.primary_index {
+            pos += 1;
         }
+        let quot = pos / B::Bit::LENGTH;
+        let rem = pos % B::Bit::LENGTH;
 
-        blocks
+        self.blocks[quot as usize].get_rank(rem, chridx)
     }
 
-    fn get_pre_chridx_and_rank_of_pos(&self, mut pos: u64) -> Option<(usize, u64)> {
+    pub fn get_pre_rank_and_chridx_of_pos(&self, mut pos: u64) -> Option<(u64, u8)> {
         if pos == self.primary_index - 1 {
             return None;
         } else if pos < self.primary_index {
             pos += 1;
         }
-        let quot = pos / W::BLOCK_SEG_LEN;
-        let rem = pos % W::BLOCK_SEG_LEN;
+        let quot = pos / B::Bit::LENGTH;
+        let rem = pos % B::Bit::LENGTH;
 
-        let (chridx, rank) = self.blocks[quot as usize].get_chridx_and_rank_of_rem(rem);
-        Some((chridx, rank))
+        let (rank, chridx) = self.blocks[quot as usize].get_rank_and_chridx_of_rem(rem);
+        Some((rank, chridx))
     }
-    fn get_next_rank_of_pos_and_chridx(&self, mut pos: u64, chridx: usize) -> u64 {
-        if pos < self.primary_index {
-            pos += 1;
-        }
-        let quot = pos / W::BLOCK_SEG_LEN;
-        let rem = pos % W::BLOCK_SEG_LEN;
-
-        self.blocks[quot as usize].get_rank_of_chridx_and_rem(chridx, rem)
-    }
+    
 }
 
 

@@ -4,7 +4,7 @@ use crate::core::{
 use super::{
     LtFmIndex64NO, LtFmIndex128NO, LtFmIndex64NN, LtFmIndex128NN,
     LtFmIndex64AO, LtFmIndex128AO, LtFmIndex64AN, LtFmIndex128AN,
-    LtFmIndex, InnerWrapper,
+    LtFmIndexDep, InnerWrapper,
 };
 use thiserror::Error;
 
@@ -33,7 +33,7 @@ const MAGIC_NUMBER_AO128: u8 = 66;
 const MAGIC_NUMBER_AN64: u8 = 77;
 const MAGIC_NUMBER_AN128: u8 = 88;
 
-impl LtFmIndex {
+impl LtFmIndexDep {
     pub fn save_to<W>(&self, mut writer: W) -> Result<(), IoError> where
         W: std::io::Write,
     {

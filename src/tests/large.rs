@@ -25,7 +25,7 @@ fn print_generate_large_index_no() {
 
         let t = Instant::now();
         let cursor = std::io::Cursor::new(buffer);
-        let _ = LtFmIndex::load_from(cursor).unwrap();
+        let _ = LtFmIndexDep::load_from(cursor).unwrap();
         println!("LtFmIndex loaded, {}s", t.elapsed().as_secs_f64());
     }
 }

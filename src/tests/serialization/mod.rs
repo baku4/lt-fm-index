@@ -26,7 +26,7 @@ fn all_type_types_is_serializable() {
                 .unwrap();
             let mut buffer = Vec::new();
             lt_fm_index_64.save_to(&mut buffer).unwrap();
-            let loaded_lt_fm_index_64 = LtFmIndex::load_from(Cursor::new(buffer)).unwrap();
+            let loaded_lt_fm_index_64 = LtFmIndexDep::load_from(Cursor::new(buffer)).unwrap();
 
             assert_eq!(lt_fm_index_64, loaded_lt_fm_index_64);
             
@@ -39,7 +39,7 @@ fn all_type_types_is_serializable() {
                 .build(text.clone()).unwrap();
             let mut buffer = Vec::new();
             lt_fm_index_128.save_to(&mut buffer).unwrap();
-            let loaded_lt_fm_index_128 = LtFmIndex::load_from(Cursor::new(buffer)).unwrap();
+            let loaded_lt_fm_index_128 = LtFmIndexDep::load_from(Cursor::new(buffer)).unwrap();
 
             assert_eq!(lt_fm_index_128, loaded_lt_fm_index_128);
         }
@@ -56,7 +56,7 @@ fn all_type_types_is_serializable() {
                 .build(text.clone()).unwrap();
             let mut buffer = Vec::new();
             lt_fm_index_64.save_to(&mut buffer).unwrap();
-            let loaded_lt_fm_index_64 = LtFmIndex::load_from(Cursor::new(buffer)).unwrap();
+            let loaded_lt_fm_index_64 = LtFmIndexDep::load_from(Cursor::new(buffer)).unwrap();
 
             assert_eq!(lt_fm_index_64, loaded_lt_fm_index_64);
 
@@ -69,7 +69,7 @@ fn all_type_types_is_serializable() {
                 .build(text.clone()).unwrap();
             let mut buffer = Vec::new();
             lt_fm_index_128.save_to(&mut buffer).unwrap();
-            let loaded_lt_fm_index_128 = LtFmIndex::load_from(Cursor::new(buffer)).unwrap();
+            let loaded_lt_fm_index_128 = LtFmIndexDep::load_from(Cursor::new(buffer)).unwrap();
 
             assert_eq!(lt_fm_index_128, loaded_lt_fm_index_128);
         }
@@ -86,7 +86,7 @@ fn all_type_types_is_serializable() {
                 .build(text.clone()).unwrap();
             let mut buffer = Vec::new();
             lt_fm_index_64.save_to(&mut buffer).unwrap();
-            let loaded_lt_fm_index_64 = LtFmIndex::load_from(Cursor::new(buffer)).unwrap();
+            let loaded_lt_fm_index_64 = LtFmIndexDep::load_from(Cursor::new(buffer)).unwrap();
 
             assert_eq!(lt_fm_index_64, loaded_lt_fm_index_64);
 
@@ -99,7 +99,7 @@ fn all_type_types_is_serializable() {
                 .build(text.clone()).unwrap();
             let mut buffer = Vec::new();
             lt_fm_index_128.save_to(&mut buffer).unwrap();
-            let loaded_lt_fm_index_128 = LtFmIndex::load_from(Cursor::new(buffer)).unwrap();
+            let loaded_lt_fm_index_128 = LtFmIndexDep::load_from(Cursor::new(buffer)).unwrap();
 
             assert_eq!(lt_fm_index_128, loaded_lt_fm_index_128);
         }
@@ -116,7 +116,7 @@ fn all_type_types_is_serializable() {
                 .build(text.clone()).unwrap();
             let mut buffer = Vec::new();
             lt_fm_index_64.save_to(&mut buffer).unwrap();
-            let loaded_lt_fm_index_64 = LtFmIndex::load_from(Cursor::new(buffer)).unwrap();
+            let loaded_lt_fm_index_64 = LtFmIndexDep::load_from(Cursor::new(buffer)).unwrap();
 
             assert_eq!(lt_fm_index_64, loaded_lt_fm_index_64);
 
@@ -129,7 +129,7 @@ fn all_type_types_is_serializable() {
                 .build(text.clone()).unwrap();
             let mut buffer = Vec::new();
             lt_fm_index_128.save_to(&mut buffer).unwrap();
-            let loaded_lt_fm_index_128 = LtFmIndex::load_from(Cursor::new(buffer)).unwrap();
+            let loaded_lt_fm_index_128 = LtFmIndexDep::load_from(Cursor::new(buffer)).unwrap();
 
             assert_eq!(lt_fm_index_128, loaded_lt_fm_index_128);
         }

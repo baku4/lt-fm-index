@@ -1,7 +1,7 @@
 use super::{
-    LtFmIndex,
-    TextType,
-    BwtBlockSize,
+    LtFmIndexDep,
+    TextTypeDep,
+    BwtBlockSizeDep,
 };
 
 mod build;
@@ -10,8 +10,8 @@ mod configure;
 /// The safe and concise builder for LtFmIndex
 #[derive(Debug, Clone)]
 pub struct LtFmIndexBuilder {
-    text_type: Option<TextType>,
-    bwt_block_size: BwtBlockSize,
+    text_type: Option<TextTypeDep>,
+    bwt_block_size: BwtBlockSizeDep,
     suffix_array_sampling_ratio: u64,
     lookup_table_kmer_size: Option<usize>,
 }

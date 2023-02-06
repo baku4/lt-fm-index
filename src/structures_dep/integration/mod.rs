@@ -11,7 +11,7 @@ pub use features::IoError;
 
 /// The index to (1) count or (2) locate the pattern in the indexed text.
 #[derive(Clone, PartialEq, Eq)]
-pub struct LtFmIndex {
+pub struct LtFmIndexDep {
     inner_wrapper: InnerWrapper,
 }
 // Self-descriptive structure wrapper
@@ -39,7 +39,7 @@ enum InnerWrapper {
 ///   - AminoAcidWithNoise
 ///      - ACDEFGHIKLMNPQRSTVWY and wildcard
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum TextType {
+pub enum TextTypeDep {
     NucleotideOnly,
     NucleotideWithNoise,
     AminoAcidOnly,
@@ -48,72 +48,72 @@ pub enum TextType {
 /// Bwt block size marker
 /// Using the larger block size makes the index small but slightly slow.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum BwtBlockSize {
+pub enum BwtBlockSizeDep {
     _64,
     _128,
 }
 
-impl LtFmIndex {
+impl LtFmIndexDep {
     /// Generally, LtFmIndex is assumed to be created using [LtFmIndexBuilder].
     /// This raw method is slightly faster, but using builder is safe and concise.
     pub fn new(
         text: Vec<u8>,
         suffix_array_sampling_ratio: u64,
         lookup_table_kmer_size: usize,
-        text_type: TextType,
-        bwt_block_size: BwtBlockSize,
+        text_type: TextTypeDep,
+        bwt_block_size: BwtBlockSizeDep,
     ) -> Self {
         let inner_wrapper = match text_type {
-            TextType::NucleotideOnly => {
+            TextTypeDep::NucleotideOnly => {
                 match bwt_block_size {
-                    BwtBlockSize::_64 => {
+                    BwtBlockSizeDep::_64 => {
                         InnerWrapper::NO64(
                             LtFmIndex64NO::new(text, suffix_array_sampling_ratio, lookup_table_kmer_size)
                         )
                     },
-                    BwtBlockSize::_128 => {
+                    BwtBlockSizeDep::_128 => {
                         InnerWrapper::NO128(
                             LtFmIndex128NO::new(text, suffix_array_sampling_ratio, lookup_table_kmer_size)
                         )
                     },
                 }
             },
-            TextType::NucleotideWithNoise => {
+            TextTypeDep::NucleotideWithNoise => {
                 match bwt_block_size {
-                    BwtBlockSize::_64 => {
+                    BwtBlockSizeDep::_64 => {
                         InnerWrapper::NN64(
                             LtFmIndex64NN::new(text, suffix_array_sampling_ratio, lookup_table_kmer_size)
                         )
                     },
-                    BwtBlockSize::_128 => {
+                    BwtBlockSizeDep::_128 => {
                         InnerWrapper::NN128(
                             LtFmIndex128NN::new(text, suffix_array_sampling_ratio, lookup_table_kmer_size)
                         )
                     },
                 }
             },
-            TextType::AminoAcidOnly => {
+            TextTypeDep::AminoAcidOnly => {
                 match bwt_block_size {
-                    BwtBlockSize::_64 => {
+                    BwtBlockSizeDep::_64 => {
                         InnerWrapper::AO64(
                             LtFmIndex64AO::new(text, suffix_array_sampling_ratio, lookup_table_kmer_size)
                         )
                     },
-                    BwtBlockSize::_128 => {
+                    BwtBlockSizeDep::_128 => {
                         InnerWrapper::AO128(
                             LtFmIndex128AO::new(text, suffix_array_sampling_ratio, lookup_table_kmer_size)
                         )
                     },
                 }
             },
-            TextType::AminoAcidWithNoise => {
+            TextTypeDep::AminoAcidWithNoise => {
                 match bwt_block_size {
-                    BwtBlockSize::_64 => {
+                    BwtBlockSizeDep::_64 => {
                         InnerWrapper::AN64(
                             LtFmIndex64AN::new(text, suffix_array_sampling_ratio, lookup_table_kmer_size)
                         )
                     },
-                    BwtBlockSize::_128 => {
+                    BwtBlockSizeDep::_128 => {
                         InnerWrapper::AN128(
                             LtFmIndex128AN::new(text, suffix_array_sampling_ratio, lookup_table_kmer_size)
                         )
@@ -126,7 +126,7 @@ impl LtFmIndex {
     }
 }
 
-impl LtFmIndex {
+impl LtFmIndexDep {
     /// Count the pattern in the indexed text
     #[inline]
     pub fn count(&self, pattern: &[u8]) -> u64 {

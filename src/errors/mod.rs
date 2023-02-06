@@ -9,5 +9,5 @@ pub enum LtFmIndexError {
     BuildError(#[from] BuildError),
 }
 
-pub use crate::structures::IoError;
+pub use crate::structures_dep::IoError;
 pub use crate::builder::BuildError;

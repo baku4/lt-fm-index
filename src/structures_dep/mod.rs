@@ -19,8 +19,8 @@ use construction::{
 // Integration of all use cases
 mod integration;
 pub use integration::{
-    LtFmIndex,
-    TextType,
-    BwtBlockSize,
+    LtFmIndexDep,
+    TextTypeDep,
+    BwtBlockSizeDep,
     IoError,
 };

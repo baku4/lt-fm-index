@@ -2,18 +2,18 @@ use crate::core::{
     Text,
 };
 use super::{
-    LtFmIndex,
+    LtFmIndexDep,
     LtFmIndexBuilder,
-    TextType,
+    TextTypeDep,
     BuildError,
 };
 
 impl LtFmIndexBuilder {
-    pub fn build(self, text: Text) -> Result<LtFmIndex, BuildError> {
+    pub fn build(self, text: Text) -> Result<LtFmIndexDep, BuildError> {
         let text_type = match self.text_type {
             Some(v) => v,
             None => {
-                let text_type = TextType::new_inferred(&text);
+                let text_type = TextTypeDep::new_inferred(&text);
                 text_type.unwrap()
             }
         };
@@ -22,7 +22,7 @@ impl LtFmIndexBuilder {
             None => text_type.recommend_kmer_size(),
         };
 
-        let lt_fm_index = LtFmIndex::new(
+        let lt_fm_index = LtFmIndexDep::new(
             text,
             self.suffix_array_sampling_ratio,
             lookup_table_kmer_size,
@@ -35,7 +35,7 @@ impl LtFmIndexBuilder {
 }
 
 use std::ops::ControlFlow;
-impl TextType {
+impl TextTypeDep {
     // The next case include all characters of previous case
     //  1. ACG*
     //  2. ACGT*
@@ -109,17 +109,17 @@ impl TextType {
                 let addt_chr_count = if addt_chr == None { 0 } else { 1 };
                 let case_1_noise_cand_count = bit_flag.count_ones() + addt_chr_count;
                 if case_1_noise_cand_count <= 1 {
-                    return Ok(TextType::NucleotideOnly)
+                    return Ok(TextTypeDep::NucleotideOnly)
                 }
                 let case_2_noise_cand_count = (bit_flag & 0b1_1111_1111_1111_0111).count_ones() + addt_chr_count;
                 if case_2_noise_cand_count <= 1 {
-                    return Ok(TextType::NucleotideWithNoise)
+                    return Ok(TextTypeDep::NucleotideWithNoise)
                 }
                 let case_3_noise_cand_count = (bit_flag & 0b0_0000_0000_0000_0001).count_ones() + addt_chr_count;
                 if case_3_noise_cand_count <= 1 {
-                    return Ok(TextType::AminoAcidOnly)
+                    return Ok(TextTypeDep::AminoAcidOnly)
                 }
-                Ok(TextType::AminoAcidWithNoise) // Case 4
+                Ok(TextTypeDep::AminoAcidWithNoise) // Case 4
             },
             ControlFlow::Break(chr) => {
                 Err(BuildError::TextTypeError(char::from(addt_chr.unwrap()), char::from(chr)))
@@ -140,7 +140,7 @@ impl TextType {
 #[cfg(test)]
 mod tests {
     use super::{
-        TextType,
+        TextTypeDep,
     };
     use crate::tests::random_text::*;
 
@@ -149,20 +149,20 @@ mod tests {
         let n = 100;
         for _ in 0..n {
             let no_text = rand_text_of_no();
-            let type_ = TextType::new_inferred(&no_text).unwrap();
-            assert_eq!(type_, TextType::NucleotideOnly);
+            let type_ = TextTypeDep::new_inferred(&no_text).unwrap();
+            assert_eq!(type_, TextTypeDep::NucleotideOnly);
 
             let nn_text = rand_text_of_nn();
-            let type_ = TextType::new_inferred(&nn_text).unwrap();
-            assert_eq!(type_, TextType::NucleotideWithNoise);
+            let type_ = TextTypeDep::new_inferred(&nn_text).unwrap();
+            assert_eq!(type_, TextTypeDep::NucleotideWithNoise);
 
             let ao_text = rand_text_of_ao();
-            let type_ = TextType::new_inferred(&ao_text).unwrap();
-            assert_eq!(type_, TextType::AminoAcidOnly);
+            let type_ = TextTypeDep::new_inferred(&ao_text).unwrap();
+            assert_eq!(type_, TextTypeDep::AminoAcidOnly);
 
             let an_text = rand_text_of_an();
-            let type_ = TextType::new_inferred(&an_text).unwrap();
-            assert_eq!(type_, TextType::AminoAcidWithNoise)
+            let type_ = TextTypeDep::new_inferred(&an_text).unwrap();
+            assert_eq!(type_, TextTypeDep::AminoAcidWithNoise)
         }
     }
 }

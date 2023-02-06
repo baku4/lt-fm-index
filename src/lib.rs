@@ -78,11 +78,11 @@ assert_eq!(lt_fm_index_to_save, lt_fm_index_loaded);
 // Core types and requirements
 mod core;
 // Data structures
-mod structures;
-pub use structures::{
-    LtFmIndex,
-    TextType,
-    BwtBlockSize,
+mod structures_dep;
+pub use structures_dep::{
+    LtFmIndexDep,
+    TextTypeDep,
+    BwtBlockSizeDep,
 };
 // Builder
 mod builder;

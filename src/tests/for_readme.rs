@@ -24,7 +24,7 @@ fn example_in_doc_1() {
 
 #[test]
 fn example_in_doc_2() {
-    use crate::{LtFmIndex, LtFmIndexBuilder};
+    use crate::{LtFmIndexDep, LtFmIndexBuilder};
 
     // (1) Generate lt-fm-index
     let text = b"CTCCGTACACCTGTTTCGTATCGGA".to_vec();
@@ -35,7 +35,7 @@ fn example_in_doc_2() {
     lt_fm_index_to_save.save_to(&mut buffer).unwrap();
 
     // (3) Load lt-fm-index from buffer
-    let lt_fm_index_loaded = LtFmIndex::load_from(&buffer[..]).unwrap();
+    let lt_fm_index_loaded = LtFmIndexDep::load_from(&buffer[..]).unwrap();
 
     assert_eq!(lt_fm_index_to_save, lt_fm_index_loaded);
 }

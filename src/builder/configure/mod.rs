@@ -1,6 +1,6 @@
 use super::{
-    TextType,
-    BwtBlockSize,
+    TextTypeDep,
+    BwtBlockSizeDep,
     LtFmIndexBuilder,
     BuildError,
 };
@@ -10,7 +10,7 @@ const POINTER_WIDTH: usize = 32;
 #[cfg(target_pointer_width = "64")]
 const POINTER_WIDTH: usize = 64;
 
-const DEFAULT_BBS: BwtBlockSize = BwtBlockSize::_128;
+const DEFAULT_BBS: BwtBlockSizeDep = BwtBlockSizeDep::_128;
 const DEFAULT_SASR: u64 = 2;
 impl Default for LtFmIndexBuilder {
     fn default() -> Self {
@@ -39,22 +39,22 @@ impl LtFmIndexBuilder {
     }
     /// Mark the [TextType] as [TextType::NucleotideOnly]
     pub fn text_type_is_nucleotide_only(mut self) -> Self {
-        self.text_type = Some(TextType::NucleotideOnly);
+        self.text_type = Some(TextTypeDep::NucleotideOnly);
         self
     }
     /// Mark the [TextType] as [TextType::NucleotideWithNoise]
     pub fn text_type_is_nucleotide_with_noise(mut self) -> Self {
-        self.text_type = Some(TextType::NucleotideWithNoise);
+        self.text_type = Some(TextTypeDep::NucleotideWithNoise);
         self
     }
     /// Mark the [TextType] as [TextType::AminoAcidOnly]
     pub fn text_type_is_amino_acid_only(mut self) -> Self {
-        self.text_type = Some(TextType::AminoAcidOnly);
+        self.text_type = Some(TextTypeDep::AminoAcidOnly);
         self
     }
     /// Mark the [TextType] as [TextType::AminoAcidWithNoise]
     pub fn text_type_is_amino_acid_with_noise(mut self) -> Self {
-        self.text_type = Some(TextType::AminoAcidWithNoise);
+        self.text_type = Some(TextTypeDep::AminoAcidWithNoise);
         self
     }
     /// Use the default BWT block size
@@ -64,12 +64,12 @@ impl LtFmIndexBuilder {
     }
     /// Use the 64-sized BWT block
     pub fn bwt_block_size_is_64(mut self) -> Self {
-        self.bwt_block_size = BwtBlockSize::_64;
+        self.bwt_block_size = BwtBlockSizeDep::_64;
         self
     }
     /// Use the 128-sized BWT block
     pub fn bwt_block_size_is_128(mut self) -> Self {
-        self.bwt_block_size = BwtBlockSize::_128;
+        self.bwt_block_size = BwtBlockSizeDep::_128;
         self
     }
     /// Use the default suffix array sampling ratio

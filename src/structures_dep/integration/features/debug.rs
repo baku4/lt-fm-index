@@ -1,10 +1,10 @@
 use std::fmt::Debug;
 
 use super::{
-    LtFmIndex, InnerWrapper, TextType, BwtBlockSize,
+    LtFmIndexDep, InnerWrapper, TextTypeDep, BwtBlockSizeDep,
 };
 
-impl Debug for LtFmIndex {
+impl Debug for LtFmIndexDep {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("LtFmIndex")
             .field("text_type", &self.text_type())
@@ -16,19 +16,19 @@ impl Debug for LtFmIndex {
     }
 }
 
-impl LtFmIndex {
-    pub fn text_type(&self) -> TextType {
+impl LtFmIndexDep {
+    pub fn text_type(&self) -> TextTypeDep {
         match &self.inner_wrapper {
-            InnerWrapper::NO64(_) | InnerWrapper::NO128(_) => TextType::NucleotideOnly,
-            InnerWrapper::NN64(_) | InnerWrapper::NN128(_) => TextType::NucleotideWithNoise,
-            InnerWrapper::AO64(_) | InnerWrapper::AO128(_) => TextType::AminoAcidOnly,
-            InnerWrapper::AN64(_) | InnerWrapper::AN128(_) => TextType::AminoAcidWithNoise,
+            InnerWrapper::NO64(_) | InnerWrapper::NO128(_) => TextTypeDep::NucleotideOnly,
+            InnerWrapper::NN64(_) | InnerWrapper::NN128(_) => TextTypeDep::NucleotideWithNoise,
+            InnerWrapper::AO64(_) | InnerWrapper::AO128(_) => TextTypeDep::AminoAcidOnly,
+            InnerWrapper::AN64(_) | InnerWrapper::AN128(_) => TextTypeDep::AminoAcidWithNoise,
         }
     }
-    pub fn bwt_block_size(&self) -> BwtBlockSize {
+    pub fn bwt_block_size(&self) -> BwtBlockSizeDep {
         match &self.inner_wrapper {
-            InnerWrapper::NO64(_) | InnerWrapper::NN64(_) | InnerWrapper::AO64(_) | InnerWrapper::AN64(_) => BwtBlockSize::_64,
-            InnerWrapper::NO128(_) | InnerWrapper::NN128(_) | InnerWrapper::AO128(_) | InnerWrapper::AN128(_) => BwtBlockSize::_128,
+            InnerWrapper::NO64(_) | InnerWrapper::NN64(_) | InnerWrapper::AO64(_) | InnerWrapper::AN64(_) => BwtBlockSizeDep::_64,
+            InnerWrapper::NO128(_) | InnerWrapper::NN128(_) | InnerWrapper::AO128(_) | InnerWrapper::AN128(_) => BwtBlockSizeDep::_128,
         }
     }
     pub fn suffix_array_sampling_ratio(&self) -> u64 {

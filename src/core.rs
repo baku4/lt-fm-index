@@ -30,7 +30,3 @@ pub type EndianType = byteorder::LittleEndian;
 pub type EndianType = byteorder::BigEndian;
 // Read & Write extension
 pub use byteorder::{ReadBytesExt, WriteBytesExt};
-
-// FIXME: To delete
-// Error propagation
-pub use anyhow::{Result, bail as error_msg};

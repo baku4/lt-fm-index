@@ -11,10 +11,10 @@ pub struct Bwm<B: BwtBlock> {
     blocks: Vec<B>,
 }
 
-pub trait BwtBlock: Sized {
+pub trait BwtBlock: Sized + std::fmt::Debug {
     const BIT_LEN: u64;
 
-    fn new_with_bwt_text(bwt_text: Text, chr_idx_table: &ChrIdxTable) -> Vec<Self>;
+    fn new_with_bwt_text(bwt_text: Text) -> Vec<Self>;
     fn get_rank(&self, rem: u64, chridx: u8) -> u64;
     fn get_rank_and_chridx_of_rem(&self, rem: u64) -> (u64, u8);
 }
@@ -22,8 +22,8 @@ pub trait BwtBlock: Sized {
 // Bwt Implementations
 impl<B: BwtBlock> Bwm<B> {
     // Build
-    pub fn new(bwt_text: Text, pidx: u64, chr_idx_table: &ChrIdxTable) -> Self {
-        let blocks: Vec<B> = B::new_with_bwt_text(bwt_text, chr_idx_table);
+    pub fn new(bwt_text: Text, pidx: u64) -> Self {
+        let blocks: Vec<B> = B::new_with_bwt_text(bwt_text);
 
         Self {
             primary_index: pidx,
@@ -54,7 +54,6 @@ impl<B: BwtBlock> Bwm<B> {
     }
     
 }
-
 
 // impl<B> Serializable for Bwm<B> where
 //     B: BwtBlockInterface + bytemuck::Pod,

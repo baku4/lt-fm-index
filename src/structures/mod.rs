@@ -6,15 +6,16 @@ use raw::{
 };
 
 mod blocks;
-use blocks::{
-    Four64, Four128,
+pub use blocks::{ // FIXME: un-public
+    B4U64, B4U128,
+    B3U128, B3U64,
 };
 
 mod wrapper;
 pub use wrapper::{
-    FmIndex,
+    LtFmIndex,
     TextEncoder,
 };
 
 // Text Encoders
-// mod encoders;
+pub mod text_encoders;

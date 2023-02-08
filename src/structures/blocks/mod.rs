@@ -6,6 +6,10 @@ use bytemuck::{Pod, Zeroable};
 mod vec2;
 
 macro_rules! Block {
+    ( $name: ident, 3, $bits: ty ) => {
+        OuterBlock!($name, 3, 2, $bits);
+        Vec2!($name, 3, $bits);
+    };
     ( $name: ident, 4, $bits: ty ) => {
         OuterBlock!($name, 4, 2, $bits);
         Vec2!($name, 4, $bits);
@@ -24,7 +28,7 @@ macro_rules! OuterBlock {
             const BIT_LEN: u64 = <$bits>::BITS as u64;
 
             #[inline]
-            fn new_with_bwt_text(bwt_text: Text, chr_idx_table: &ChrIdxTable) -> Vec<Self> {
+            fn new_with_bwt_text(bwt_text: Text) -> Vec<Self> {
                 let mut chunk_count = bwt_text.len() / Self::BIT_LEN as usize;
                 let rem = bwt_text.len() % Self::BIT_LEN as usize;
                 
@@ -41,7 +45,7 @@ macro_rules! OuterBlock {
                 bwt_text.chunks(Self::BIT_LEN as usize).for_each(|text_chunk| {
                     let block_rank_checkpoint = rank_checkpoint.clone();
                     let mut bwt_vector = [0; $vec];
-                    Self::vectorize(text_chunk, chr_idx_table, &mut rank_checkpoint, &mut bwt_vector);
+                    Self::vectorize(text_chunk, &mut rank_checkpoint, &mut bwt_vector);
         
                     let block = Self {
                         rank_checkpoint: block_rank_checkpoint,
@@ -76,7 +80,10 @@ macro_rules! OuterBlock {
     };
 }
 
-
 // Implementations
-Block!(Four64, 4, u64);
-Block!(Four128, 4, u128);
+Block!(B3U32, 3, u32);
+Block!(B3U64, 3, u64);
+Block!(B3U128, 3, u128);
+Block!(B4U32, 4, u32);
+Block!(B4U64, 4, u64);
+Block!(B4U128, 4, u128);

@@ -14,12 +14,11 @@ pub struct CountArray {
 
 impl CountArray {
     // Build
-    pub fn new_and_encode_text(
+    pub fn new_with_encoding_text_to_chridxwp(
         text: &mut Text,
         chr_idx_table: &ChrIdxTable,
         chr_count: usize,
         lookup_table_kmer_size: u32,
-        wildcard_chr: u8,
     ) -> Self {
         let chr_with_pidx_count = chr_count + 1;
         let mut count_table: Vec<u64> = vec![0; chr_with_pidx_count];
@@ -41,12 +40,9 @@ impl CountArray {
                 }).collect()
             };
     
-            let last_chridx = (chr_count - 1) as u8;
             text.iter_mut().rev().for_each(|chr| {
                 let chridx = chr_idx_table.idx_of(*chr);
-                if chridx == last_chridx {
-                    *chr = wildcard_chr;
-                }
+                *chr = chridx + 1;
                 // Add count to counts
                 count_table[chridx as usize + 1] += 1;
                 // Add count to lookup table

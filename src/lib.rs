@@ -79,8 +79,39 @@ assert_eq!(lt_fm_index_to_save, lt_fm_index_loaded);
 mod core;
 // Structures
 mod structures;
+pub use structures::{
+    LtFmIndex,
+    TextEncoder,
+    text_encoders,
+};
 
+#[test]
+fn example_1() {
+    use crate::LtFmIndex;
+    use crate::text_encoders::C3B64;
 
+    let text = b"CTCCGTACACCTGTTTCGTATCGGANNNN".to_vec();
+
+    let text_encoder = C3B64::new([
+        vec![b'A', b'a'],
+        vec![b'C', b'c'],
+        vec![b'G', b'g'],
+    ]);
+    let lt_fm_index = LtFmIndex::new(
+        text,
+        &text_encoder,
+        2,
+        4,
+    );
+
+    let pattern = b"TA".to_vec();
+    //   - count
+    let count = lt_fm_index.count(&pattern);
+    assert_eq!(count, 2);
+    //   - locate
+    let locations = lt_fm_index.locate(&pattern);
+    assert_eq!(locations, vec![5,18]);
+}
 
 // Data structures
 mod structures_dep;

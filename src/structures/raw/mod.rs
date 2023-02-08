@@ -49,18 +49,16 @@ impl<B: BwtBlock> RawLtFmIndex<B> {
         lookup_table_kmer_size: u32,
         chr_idx_table: ChrIdxTable,
         chr_count: usize,
-        wildcard_chr: u8,
     ) -> Self {
         let text_len = text.len() as u64;
-        let count_array = CountArray::new_and_encode_text(
+        let count_array = CountArray::new_with_encoding_text_to_chridxwp(
             &mut text,
             &chr_idx_table,
             chr_count,
             lookup_table_kmer_size,
-            wildcard_chr,
         );
         let (suffix_array, pidx) = SuffixArray::new_while_bwt(&mut text, suffix_array_sampling_ratio);
-        let bwm = Bwm::new(text, pidx, &chr_idx_table);
+        let bwm = Bwm::new(text, pidx);
         Self {
             text_len,
             chr_idx_table,

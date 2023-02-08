@@ -1,86 +1,41 @@
-use std::marker::PhantomData;
-
 use crate::core::{
     Text,
     EndianType, ReadBytesExt, WriteBytesExt, Serializable,
 };
-
-mod block;
-
-use super::TextEncoder;
+use super::ChrIdxTable;
 
 // Burrows-Wheeler Matrix
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Bwm<B: BwtBlock> {
     primary_index: u64,
     blocks: Vec<B>,
-    phantom_data: PhantomData<B>,
 }
 
 pub trait BwtBlock: Sized {
-    type Bit: VectorBit;
+    const BIT_LEN: u64;
 
-    fn new_with_bwt_text(bwt_text: Text) -> Vec<Self>;
+    fn new_with_bwt_text(bwt_text: Text, chr_idx_table: &ChrIdxTable) -> Vec<Self>;
     fn get_rank(&self, rem: u64, chridx: u8) -> u64;
     fn get_rank_and_chridx_of_rem(&self, rem: u64) -> (u64, u8);
-}
-
-pub trait VectorBit {
-    const LENGTH: u64;
 }
 
 // Bwt Implementations
 impl<B: BwtBlock> Bwm<B> {
     // Build
-    pub fn new(bwt_text: Text, pidx: u64) -> Self {
-        let blocks: Vec<B> = B::new_with_bwt_text(bwt_text);
+    pub fn new(bwt_text: Text, pidx: u64, chr_idx_table: &ChrIdxTable) -> Self {
+        let blocks: Vec<B> = B::new_with_bwt_text(bwt_text, chr_idx_table);
 
         Self {
             primary_index: pidx,
             blocks: blocks,
-            phantom_data: PhantomData,
         }
     }
-    // fn new_with_bwt_text(bwt_text: Text) -> Vec<B> {
-    //     let mut chunk_count = bwt_text.len() / B::Bit::LENGTH;
-    //     let rem = bwt_text.len() % B::Bit::LENGTH;
-        
-    //     let last_offset = if rem == 0 {
-    //         chunk_count += 1;
-    //         rem
-    //     } else {
-    //         B::Bit::LENGTH - rem
-    //     };
-
-    //     let mut rank_checkpoint = W::empty_rank_check_point();
-    //     let mut blocks: Vec<B> = Vec::with_capacity(chunk_count);
-
-    //     bwt_text.chunks(B::Bit::LENGTH).for_each(|text_chunk| {
-    //         let block_rank_checkpoint = rank_checkpoint.clone();
-            
-    //         let bwt_vector = W::encoding_text_chunk(text_chunk, &mut rank_checkpoint);
-
-    //         let block = W::new(block_rank_checkpoint, bwt_vector);
-            
-    //         blocks.push(block);
-    //     });
-
-    //     if last_offset == 0 {
-    //         let last_block = W::new_last(rank_checkpoint);
-    //         blocks.push(last_block);
-    //     } else {
-    //         let last_block = blocks.last_mut().unwrap();
-    //         last_block.add_offset(last_offset);
-    //     }
-
-    //     blocks
-    // }
     pub fn get_next_rank_of_pos_and_chridx(&self, mut pos: u64, chridx: u8) -> u64 {
         if pos < self.primary_index {
             pos += 1;
         }
-        let quot = pos / B::Bit::LENGTH;
-        let rem = pos % B::Bit::LENGTH;
+        let quot = pos / B::BIT_LEN;
+        let rem = pos % B::BIT_LEN;
 
         self.blocks[quot as usize].get_rank(rem, chridx)
     }
@@ -91,8 +46,8 @@ impl<B: BwtBlock> Bwm<B> {
         } else if pos < self.primary_index {
             pos += 1;
         }
-        let quot = pos / B::Bit::LENGTH;
-        let rem = pos % B::Bit::LENGTH;
+        let quot = pos / B::BIT_LEN;
+        let rem = pos % B::BIT_LEN;
 
         let (rank, chridx) = self.blocks[quot as usize].get_rank_and_chridx_of_rem(rem);
         Some((rank, chridx))
@@ -143,21 +98,3 @@ impl<B: BwtBlock> Bwm<B> {
 //         + casted_blocks.len() // casted blocks
 //     }
 // }
-
-
-// BwtBlock Requirements
-pub trait BwtBlockInterface {
-    const BLOCK_SEG_LEN: u64;
-    
-    type RankCheckPoint;
-    type BwtVector;
-
-    fn empty_rank_check_point() -> Self::RankCheckPoint;
-    fn encoding_text_chunk(text_chunk: &[u8], rank_check_point: &mut Self::RankCheckPoint) -> Self::BwtVector;
-    fn new(block_rank_check_point: Self::RankCheckPoint, bwt_vectors: Self::BwtVector) -> Self;
-    fn new_last(rank_check_point: Self::RankCheckPoint) -> Self;
-    fn add_offset(&mut self, last_offset: usize);
-
-    fn get_chridx_and_rank_of_rem(&self, rem: u64) -> (usize, u64);
-    fn get_rank_of_chridx_and_rem(&self, chridx: usize, rem: u64) -> u64;
-}

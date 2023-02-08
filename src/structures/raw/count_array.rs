@@ -2,10 +2,7 @@ use crate::core::{
     Text, Pattern,
     EndianType, ReadBytesExt, WriteBytesExt, Serializable,
 };
-use super::{TextEncoder, ChrIdxTable};
-use std::marker::PhantomData;
-
-// CountArray Structure
+use super::ChrIdxTable;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CountArray {
@@ -116,7 +113,7 @@ impl CountArray {
             }).sum()
     }
 
-    fn kmer_size(&self) -> usize {
+    pub fn kmer_size(&self) -> usize {
         self.kmer_size as usize
     }
 }

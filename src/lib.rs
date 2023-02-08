@@ -77,8 +77,9 @@ assert_eq!(lt_fm_index_to_save, lt_fm_index_loaded);
 
 // Core types and requirements
 mod core;
-
+// Structures
 mod structures;
+
 
 
 // Data structures

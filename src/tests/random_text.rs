@@ -57,3 +57,10 @@ pub fn rand_pattern_of_text(text: &[u8]) -> Vec<u8> {
     let end = rng.gen_range(start+1..text.len());
     text[start..end].to_vec()
 }
+pub fn rand_pattern_of_length(text: &[u8], length: usize) -> Vec<u8> {
+    let mut rng = rand::thread_rng();
+    let last_idx = text.len() - length;
+    let start = rng.gen_range(0..last_idx);
+    let end = start + length;
+    text[start..end].to_vec()
+}

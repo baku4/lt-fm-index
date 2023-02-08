@@ -14,10 +14,16 @@ mod sorting;
 #[cfg(feature = "fastbwt")]
 use sorting::bench_burrow_wheeler_transform;
 
+mod compare_perf;
+use compare_perf::{
+    build_no_text,
+    locate_no_text,
+};
+
 #[cfg(not(feature = "fastbwt"))]
 criterion_group!(
     benches,
-    bench_counting_bits_of_u64,
+    locate_no_text,
 );
 #[cfg(feature = "fastbwt")]
 criterion_group!(

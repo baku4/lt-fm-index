@@ -1,7 +1,7 @@
 use super::{
     TextTypeDep,
     BwtBlockSizeDep,
-    LtFmIndexBuilder,
+    LtFmIndexBuilderDep,
     BuildError,
 };
 
@@ -12,7 +12,7 @@ const POINTER_WIDTH: usize = 64;
 
 const DEFAULT_BBS: BwtBlockSizeDep = BwtBlockSizeDep::_128;
 const DEFAULT_SASR: u64 = 2;
-impl Default for LtFmIndexBuilder {
+impl Default for LtFmIndexBuilderDep {
     fn default() -> Self {
         Self {
             text_type: None,
@@ -23,7 +23,7 @@ impl Default for LtFmIndexBuilder {
     }
 }
 
-impl LtFmIndexBuilder {
+impl LtFmIndexBuilderDep {
     /// New builder with default option
     pub fn new() -> Self {
         Default::default()

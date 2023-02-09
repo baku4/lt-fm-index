@@ -17,7 +17,7 @@ fn all_type_types_is_serializable() {
             let text = rand_text_of_no();
 
             // 64
-            let lt_fm_index_64 = LtFmIndexBuilder::new()
+            let lt_fm_index_64 = LtFmIndexBuilderDep::new()
                 .text_type_is_nucleotide_only()
                 .bwt_block_size_is_64()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
@@ -31,7 +31,7 @@ fn all_type_types_is_serializable() {
             assert_eq!(lt_fm_index_64, loaded_lt_fm_index_64);
             
             // 128
-            let lt_fm_index_128 = LtFmIndexBuilder::new()
+            let lt_fm_index_128 = LtFmIndexBuilderDep::new()
                 .text_type_is_nucleotide_only()
                 .bwt_block_size_is_128()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
@@ -48,7 +48,7 @@ fn all_type_types_is_serializable() {
             let text = rand_text_of_nn();
 
             // 64
-            let lt_fm_index_64 = LtFmIndexBuilder::new()
+            let lt_fm_index_64 = LtFmIndexBuilderDep::new()
                 .text_type_is_nucleotide_with_noise()
                 .bwt_block_size_is_64()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
@@ -61,7 +61,7 @@ fn all_type_types_is_serializable() {
             assert_eq!(lt_fm_index_64, loaded_lt_fm_index_64);
 
             // 128
-            let lt_fm_index_128 = LtFmIndexBuilder::new()
+            let lt_fm_index_128 = LtFmIndexBuilderDep::new()
                 .text_type_is_nucleotide_with_noise()
                 .bwt_block_size_is_128()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
@@ -78,7 +78,7 @@ fn all_type_types_is_serializable() {
             let text = rand_text_of_ao();
 
             // 64
-            let lt_fm_index_64 = LtFmIndexBuilder::new()
+            let lt_fm_index_64 = LtFmIndexBuilderDep::new()
                 .text_type_is_amino_acid_only()
                 .bwt_block_size_is_64()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
@@ -91,7 +91,7 @@ fn all_type_types_is_serializable() {
             assert_eq!(lt_fm_index_64, loaded_lt_fm_index_64);
 
             // 128
-            let lt_fm_index_128 = LtFmIndexBuilder::new()
+            let lt_fm_index_128 = LtFmIndexBuilderDep::new()
                 .text_type_is_amino_acid_only()
                 .bwt_block_size_is_128()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
@@ -108,7 +108,7 @@ fn all_type_types_is_serializable() {
             let text = rand_text_of_an();
 
             // 64
-            let lt_fm_index_64 = LtFmIndexBuilder::new()
+            let lt_fm_index_64 = LtFmIndexBuilderDep::new()
                 .text_type_is_amino_acid_with_noise()
                 .bwt_block_size_is_64()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
@@ -121,7 +121,7 @@ fn all_type_types_is_serializable() {
             assert_eq!(lt_fm_index_64, loaded_lt_fm_index_64);
 
             // 128
-            let lt_fm_index_128 = LtFmIndexBuilder::new()
+            let lt_fm_index_128 = LtFmIndexBuilderDep::new()
                 .text_type_is_amino_acid_with_noise()
                 .bwt_block_size_is_128()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
@@ -151,7 +151,7 @@ fn all_type_types_is_aware_to_be_saved_size() {
             let text = rand_text_of_no();
 
             // 64
-            let lt_fm_index_64 = LtFmIndexBuilder::new()
+            let lt_fm_index_64 = LtFmIndexBuilderDep::new()
                 .text_type_is_nucleotide_only()
                 .bwt_block_size_is_64()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
@@ -164,7 +164,7 @@ fn all_type_types_is_aware_to_be_saved_size() {
             assert_eq!(buffer.len(), lt_fm_index_64.size_of());
             
             // 128
-            let lt_fm_index_128 = LtFmIndexBuilder::new()
+            let lt_fm_index_128 = LtFmIndexBuilderDep::new()
                 .text_type_is_nucleotide_only()
                 .bwt_block_size_is_128()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
@@ -180,7 +180,7 @@ fn all_type_types_is_aware_to_be_saved_size() {
             let text = rand_text_of_nn();
 
             // 64
-            let lt_fm_index_64 = LtFmIndexBuilder::new()
+            let lt_fm_index_64 = LtFmIndexBuilderDep::new()
                 .text_type_is_nucleotide_with_noise()
                 .bwt_block_size_is_64()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
@@ -192,7 +192,7 @@ fn all_type_types_is_aware_to_be_saved_size() {
             assert_eq!(buffer.len(), lt_fm_index_64.size_of());
 
             // 128
-            let lt_fm_index_128 = LtFmIndexBuilder::new()
+            let lt_fm_index_128 = LtFmIndexBuilderDep::new()
                 .text_type_is_nucleotide_with_noise()
                 .bwt_block_size_is_128()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
@@ -208,7 +208,7 @@ fn all_type_types_is_aware_to_be_saved_size() {
             let text = rand_text_of_ao();
 
             // 64
-            let lt_fm_index_64 = LtFmIndexBuilder::new()
+            let lt_fm_index_64 = LtFmIndexBuilderDep::new()
                 .text_type_is_amino_acid_only()
                 .bwt_block_size_is_64()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
@@ -220,7 +220,7 @@ fn all_type_types_is_aware_to_be_saved_size() {
             assert_eq!(buffer.len(), lt_fm_index_64.size_of());
 
             // 128
-            let lt_fm_index_128 = LtFmIndexBuilder::new()
+            let lt_fm_index_128 = LtFmIndexBuilderDep::new()
                 .text_type_is_amino_acid_only()
                 .bwt_block_size_is_128()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
@@ -236,7 +236,7 @@ fn all_type_types_is_aware_to_be_saved_size() {
             let text = rand_text_of_an();
 
             // 64
-            let lt_fm_index_64 = LtFmIndexBuilder::new()
+            let lt_fm_index_64 = LtFmIndexBuilderDep::new()
                 .text_type_is_amino_acid_with_noise()
                 .bwt_block_size_is_64()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()
@@ -248,7 +248,7 @@ fn all_type_types_is_aware_to_be_saved_size() {
             assert_eq!(buffer.len(), lt_fm_index_64.size_of());
 
             // 128
-            let lt_fm_index_128 = LtFmIndexBuilder::new()
+            let lt_fm_index_128 = LtFmIndexBuilderDep::new()
                 .text_type_is_amino_acid_with_noise()
                 .bwt_block_size_is_128()
                 .set_lookup_table_kmer_size(kmer_size).unwrap()

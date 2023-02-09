@@ -16,7 +16,6 @@ thiserror = "1.0.38"
 byteorder = "1.4.3"
 capwriter = "0.1.4"
 bytemuck = { version = "1.13.0", features = [ "derive" ] }
-seq-macro = "0.3.2"
 rand = "0.8.0"
 bio = "1.1.0"
 libdivsufsort-rs = { version = "0.1.2", optional = true }

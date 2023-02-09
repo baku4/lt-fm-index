@@ -2,10 +2,9 @@ use super::{
     TextEncoder,
     BwtBlock,
 };
-use super::{
-    B3U64, B3U128,
-    B4U64, B4U128,
-};
+
+mod blocks;
+use blocks::*; // All is blocks
 
 macro_rules! make_text_encoder {
     ( $name: ident, $chr: tt,  $bits: tt ) => {
@@ -29,18 +28,12 @@ macro_rules! make_text_encoder {
     };
 }
 macro_rules! appropriate_block_type {
-    ( 2,  64 ) => {
-        B3U64
-    };
-    ( 2,  128 ) => {
-        B3U128
-    };
-    ( 3,  64 ) => {
-        B4U64
-    };
-    ( 3,  128 ) => {
-        B4U128
-    };
+    ( 2,  32 ) => { B3U64 };
+    ( 2,  64 ) => { B3U64 };
+    ( 2,  128 ) => { B3U128 };
+    ( 3,  32 ) => { B4U64 };
+    ( 3,  64 ) => { B4U64 };
+    ( 3,  128 ) => { B4U128 };
 }
 macro_rules! impl_new {
     ( $chr:expr ) => {
@@ -55,5 +48,6 @@ macro_rules! impl_new {
     };
 }
 
+make_text_encoder!(C3B32, 3, 32);
 make_text_encoder!(C3B64, 3, 64);
 make_text_encoder!(C3B128, 3, 128);

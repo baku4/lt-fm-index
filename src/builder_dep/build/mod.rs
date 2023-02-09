@@ -3,12 +3,12 @@ use crate::core::{
 };
 use super::{
     LtFmIndexDep,
-    LtFmIndexBuilder,
+    LtFmIndexBuilderDep,
     TextTypeDep,
     BuildError,
 };
 
-impl LtFmIndexBuilder {
+impl LtFmIndexBuilderDep {
     pub fn build(self, text: Text) -> Result<LtFmIndexDep, BuildError> {
         let text_type = match self.text_type {
             Some(v) => v,

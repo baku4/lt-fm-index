@@ -23,7 +23,7 @@ use compare_perf::{
 #[cfg(not(feature = "fastbwt"))]
 criterion_group!(
     benches,
-    locate_no_text,
+    build_no_text,
 );
 #[cfg(feature = "fastbwt")]
 criterion_group!(

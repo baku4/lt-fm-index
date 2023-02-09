@@ -1,8 +1,4 @@
-use crate::core::{
-    Text,
-    EndianType, ReadBytesExt, WriteBytesExt, Serializable,
-};
-use super::ChrIdxTable;
+use crate::core::Text;
 
 // Burrows-Wheeler Matrix
 #[derive(Debug, Clone, PartialEq, Eq)]

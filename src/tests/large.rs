@@ -12,7 +12,7 @@ fn print_generate_large_index_no() {
         println!("Text size: {}, {}s", n, t.elapsed().as_secs_f64());
 
         let t = Instant::now();
-        let lt_fm_index = LtFmIndexBuilder::new()
+        let lt_fm_index = LtFmIndexBuilderDep::new()
             .text_type_is_nucleotide_only()
             .build(text)
             .unwrap();

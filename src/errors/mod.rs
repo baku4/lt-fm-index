@@ -10,4 +10,4 @@ pub enum LtFmIndexError {
 }
 
 pub use crate::structures_dep::IoError;
-pub use crate::builder::BuildError;
+pub use crate::builder_dep::BuildError;

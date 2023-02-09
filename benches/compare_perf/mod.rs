@@ -9,7 +9,7 @@ use lt_fm_index::tests::random_text::{
 };
 
 fn build_old(text: Vec<u8>, ss: u64, lk: u32) -> LtFmIndexDep {
-    LtFmIndexBuilder::new()
+    LtFmIndexBuilderDep::new()
         .set_lookup_table_kmer_size(lk as usize).unwrap()
         .set_suffix_array_sampling_ratio(ss).unwrap()
         .text_type_is_nucleotide_only()

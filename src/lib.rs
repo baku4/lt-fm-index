@@ -84,6 +84,8 @@ pub use structures::{
     TextEncoder,
     text_encoders,
 };
+// Builder
+mod builder;
 
 #[test]
 fn example_1() {
@@ -115,15 +117,15 @@ fn example_1() {
 
 // Data structures
 mod structures_dep;
-pub use structures_dep::{
+use structures_dep::{
     LtFmIndexDep,
     TextTypeDep,
     BwtBlockSizeDep,
 };
 // Builder
-mod builder;
-pub use builder::{
-    LtFmIndexBuilder,
+mod builder_dep;
+use builder_dep::{
+    LtFmIndexBuilderDep,
 };
 /// Errors
 pub mod errors;

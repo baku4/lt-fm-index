@@ -1,5 +1,5 @@
 use crate::core::Text;
-use super::{BwtBlock, ChrIdxTable};
+use super::BwtBlock;
 use bytemuck::{Pod, Zeroable};
 
 #[macro_use]

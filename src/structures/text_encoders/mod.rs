@@ -6,6 +6,9 @@ use super::{
 mod blocks;
 use blocks::*; // All is blocks
 
+#[derive(Debug)]
+pub struct ChrCountError;
+
 macro_rules! make_text_encoder {
     ( $name: ident, $chr: tt,  $bits: tt ) => {
         pub struct $name {
@@ -37,13 +40,24 @@ macro_rules! appropriate_block_type {
 }
 macro_rules! impl_new {
     ( $chr:expr ) => {
-        pub fn new(chrs: [Vec::<u8>; $chr]) -> Self {
+        pub fn new(chrs: &[&[u8]; $chr]) -> Self {
             let mut table = [$chr; 256];
             chrs.iter().enumerate().for_each(|(idx, chr)| {
                 chr.iter().for_each(|x| table[*x as usize] = idx as u8);
             });
 
             Self { chr_count: $chr+1, table }
+        }
+        pub fn from_vec_slices(chrs: &[Vec<u8>]) -> Result<Self, ChrCountError> {
+            let mut table = [$chr; 256];
+            if chrs.len() != $chr {
+                return Err(ChrCountError)
+            }
+            chrs.iter().enumerate().for_each(|(idx, chr)| {
+                chr.iter().for_each(|x| table[*x as usize] = idx as u8);
+            });
+
+            Ok(Self { chr_count: $chr+1, table })
         }
     };
 }

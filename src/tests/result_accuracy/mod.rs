@@ -16,10 +16,10 @@ fn new_struct_is_accurate() {
         println!("Text count: {}/{}", c+1, text_count);
         {
             let text = rand_text_of_no();
-            let text_encoder = text_encoders::C3B64::new([
-                vec![b'A'],
-                vec![b'C'],
-                vec![b'G'],
+            let text_encoder = text_encoders::C3B64::new(&[
+                &vec![b'A'],
+                &vec![b'C'],
+                &vec![b'G'],
             ]);
             let new_lt_fm_index = LtFmIndex::new(
                 text.clone(),

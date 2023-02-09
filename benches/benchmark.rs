@@ -14,8 +14,14 @@ mod sorting;
 #[cfg(feature = "fastbwt")]
 use sorting::bench_burrow_wheeler_transform;
 
-mod compare_perf;
-use compare_perf::{
+// mod compare_perf;
+// use compare_perf::{
+//     build_no_text,
+//     locate_no_text,
+// };
+
+mod perf_raw_vs_boxed;
+use perf_raw_vs_boxed::{
     build_no_text,
     locate_no_text,
 };
@@ -24,6 +30,7 @@ use compare_perf::{
 criterion_group!(
     benches,
     build_no_text,
+    locate_no_text,
 );
 #[cfg(feature = "fastbwt")]
 criterion_group!(

@@ -1,5 +1,5 @@
 use crate::core::{
-    Text, FmIndexInterface,
+    Text, FmIndex,
 };
 use super::{
     LtFmIndex,
@@ -11,9 +11,9 @@ use super::{
 };
 
 pub struct LtFmIndexRef {
-    pointer: Box<dyn FmIndexInterface>,
+    pointer: Box<dyn FmIndex>,
 }
-impl<E: TextEncoder> FmIndexInterface for LtFmIndex<E> {
+impl<E: TextEncoder> FmIndex for LtFmIndex<E> {
     fn count(&self, pattern: &[u8]) -> u64 {
         self.count(pattern)
     }
@@ -23,7 +23,7 @@ impl<E: TextEncoder> FmIndexInterface for LtFmIndex<E> {
 }
 
 impl LtFmIndexBuilder {
-    pub fn build(self, text: Text) -> Result<Box<dyn FmIndexInterface>, BuildError> {
+    pub fn build(self, text: Text) -> Result<Box<dyn FmIndex>, BuildError> {
         let chr_count = self.chrs_list.len();
         let ss = self.suffix_array_sampling_ratio;
         let lk = match self.lookup_table_kmer_size {
@@ -31,7 +31,7 @@ impl LtFmIndexBuilder {
             None => recommend_kmer_size(chr_count),
         };
 
-        let boxed: Box<dyn FmIndexInterface> = {
+        let boxed: Box<dyn FmIndex> = {
             match chr_count {
                 3 => {
                     match self.bwt_block_size {

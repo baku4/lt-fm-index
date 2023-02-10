@@ -1,4 +1,4 @@
-use crate::core::{Text, FmIndexInterface};
+use crate::core::{Text, FmIndex};
 use super::{
     RawLtFmIndex,
     ChrIdxTable,

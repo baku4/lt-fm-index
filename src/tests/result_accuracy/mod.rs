@@ -5,6 +5,19 @@ use crate::tests::other_crate::*;
 use crate::structures::*;
 
 #[test]
+fn results_are_accurate() {
+    let kmer_size = 4;
+    let sa_sampling_ratio = 4;
+
+    let text_count = 10;
+    let pattern_count_for_each_text = 5;
+
+    for c in 0..text_count {
+
+    }
+}
+
+#[test]
 fn new_struct_is_accurate() {
     let kmer_size = 4;
     let sa_sampling_ratio = 4;

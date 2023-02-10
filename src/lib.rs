@@ -76,7 +76,7 @@ assert_eq!(lt_fm_index_to_save, lt_fm_index_loaded);
 */
 
 // Core types and requirements
-pub mod core;
+mod core;
 // Structures
 mod structures;
 pub use structures::{
@@ -85,73 +85,8 @@ pub use structures::{
     text_encoders,
 };
 // Builder
-pub mod builder;
-pub use builder::LtFmIndexBuilder;
-
-pub mod utils;
-
-#[test]
-fn example_1() {
-    use crate::LtFmIndex;
-    use crate::text_encoders::C3B64;
-
-    let text = b"CTCCGTACACCTGTTTCGTATCGGANNNN".to_vec();
-
-    let text_encoder = C3B64::new(&[
-        &[b'A', b'a'],
-        &[b'C', b'c'],
-        &[b'G', b'g'],
-    ]);
-    let lt_fm_index = LtFmIndex::new(
-        text,
-        &text_encoder,
-        2,
-        4,
-    );
-
-    let pattern = b"TA".to_vec();
-    //   - count
-    let count = lt_fm_index.count(&pattern);
-    assert_eq!(count, 2);
-    //   - locate
-    let locations = lt_fm_index.locate(&pattern);
-    assert_eq!(locations, vec![5,18]);
-}
-#[test]
-fn example_2() {
-    use crate::LtFmIndexBuilder;
-
-    let text = b"CTCCGTACACCTGTTTCGTATCGGANNNN".to_vec();
-
-    let lt_fm_index = LtFmIndexBuilder::new()
-        .add_chr(&[b'A', b'a'])
-        .add_chr(&[b'C', b'c'])
-        .add_chr(&[b'G', b'g'])
-        .build(text).unwrap();
-    
-    let pattern = b"TA".to_vec();
-    //   - count
-    let count = lt_fm_index.count(&pattern);
-    assert_eq!(count, 2);
-    //   - locate
-    let locations = lt_fm_index.locate(&pattern);
-    assert_eq!(locations, vec![5,18]);
-}
-
-// Data structures
-mod structures_dep;
-use structures_dep::{
-    LtFmIndexDep,
-    TextTypeDep,
-    BwtBlockSizeDep,
-};
-// Builder
-mod builder_dep;
-use builder_dep::{
-    LtFmIndexBuilderDep,
-};
-/// Errors
-pub mod errors;
+// pub mod builder;
+// pub use builder::LtFmIndexBuilder;
 
 // ## Supplement
 #[doc(hidden)]

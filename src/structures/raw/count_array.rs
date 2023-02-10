@@ -1,8 +1,9 @@
 use crate::core::{
     Text, Pattern,
-    EndianType, ReadBytesExt, WriteBytesExt, Serializable,
+    EndianType, ReadBytesExt, WriteBytesExt, Serialize,
 };
 use super::ChrIdxTable;
+use capwriter::{Saveable, Loadable};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CountArray {
@@ -114,9 +115,7 @@ impl CountArray {
     }
 }
 
-use capwriter::{Saveable, Loadable};
-
-impl Serializable for CountArray {
+impl Serialize for CountArray {
     fn save_to<W>(&self, mut writer: W) -> Result<(), std::io::Error> where
         W: std::io::Write,
     {
@@ -157,7 +156,7 @@ impl Serializable for CountArray {
             multiplier,
         })
     }
-    fn size_of(&self) -> usize {
+    fn estimate_size(&self) -> usize {
         4 // kmer_size
         + self.count_table.size_of() // count_table
         + self.kmer_count_table.size_of() // kmer_count_table

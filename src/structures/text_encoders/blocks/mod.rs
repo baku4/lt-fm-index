@@ -2,10 +2,21 @@ use crate::core::Text;
 use super::BwtBlock;
 use bytemuck::{Pod, Zeroable};
 
+// From 2 to 3 chrs
 #[macro_use]
 mod vec2;
+// From 4 to 7 chrs
+#[macro_use]
+mod vec3;
+// From 8 to 15 chrs
+#[macro_use]
+mod vec4;
+// From 16 to 31 chrs
+#[macro_use]
+mod vec5;
 
 macro_rules! Block {
+    // Vec2
     ( $name: ident, 3, $bits: ty ) => {
         OuterBlock!($name, 3, 2, $bits);
         Vec2!($name, 3, $bits);
@@ -13,6 +24,15 @@ macro_rules! Block {
     ( $name: ident, 4, $bits: ty ) => {
         OuterBlock!($name, 4, 2, $bits);
         Vec2!($name, 4, $bits);
+    };
+    // Vec3
+    ( $name: ident, 5, $bits: ty ) => {
+        OuterBlock!($name, 5, 3, $bits);
+        Vec3!($name, 5, $bits);
+    };
+    ( $name: ident, 6 $bits: ty ) => {
+        OuterBlock!($name, 6, 3, $bits);
+        Vec2!($name, 6, $bits);
     };
 }
 macro_rules! OuterBlock {
@@ -81,9 +101,18 @@ macro_rules! OuterBlock {
 }
 
 // Implementations
-Block!(B3U32, 3, u32);
-Block!(B3U64, 3, u64);
-Block!(B3U128, 3, u128);
-Block!(B4U32, 4, u32);
-Block!(B4U64, 4, u64);
-Block!(B4U128, 4, u128);
+Block!(V2U32, 3, u32);
+Block!(V2U64, 3, u64);
+Block!(V2U128, 3, u128);
+
+Block!(V3U32, 4, u32);
+Block!(V3U64, 4, u64);
+Block!(V3U128, 4, u128);
+
+// Block!(V4U32, 5, u32);
+// Block!(V4U64, 5, u64);
+// Block!(V4U128, 5, u128);
+
+// Block!(V5U32, 6, u32);
+// Block!(V5U64, 6, u64);
+// Block!(V5U128, 6, u128);

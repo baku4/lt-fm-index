@@ -31,12 +31,12 @@ macro_rules! make_text_encoder {
     };
 }
 macro_rules! appropriate_block_type {
-    ( 2,  32 ) => { B3U64 };
-    ( 2,  64 ) => { B3U64 };
-    ( 2,  128 ) => { B3U128 };
-    ( 3,  32 ) => { B4U64 };
-    ( 3,  64 ) => { B4U64 };
-    ( 3,  128 ) => { B4U128 };
+    ( 2,  32 ) => { V2U32 };
+    ( 2,  64 ) => { V2U64 };
+    ( 2,  128 ) => { V2U128 };
+    ( 3,  32 ) => { V3U32 };
+    ( 3,  64 ) => { V3U64 };
+    ( 3,  128 ) => { V3U128 };
 }
 macro_rules! impl_new {
     ( $chr:expr ) => {
@@ -62,6 +62,9 @@ macro_rules! impl_new {
     };
 }
 
+make_text_encoder!(C2B32, 2, 32);
+make_text_encoder!(C2B64, 2, 64);
+make_text_encoder!(C2B128, 2, 128);
 make_text_encoder!(C3B32, 3, 32);
 make_text_encoder!(C3B64, 3, 64);
 make_text_encoder!(C3B128, 3, 128);

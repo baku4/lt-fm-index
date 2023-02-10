@@ -1,6 +1,6 @@
 use crate::core::{
     Text,
-    EndianType, ReadBytesExt, WriteBytesExt, Serializable,
+    EndianType, ReadBytesExt, WriteBytesExt, Serialize,
 };
 
 #[allow(dead_code)]
@@ -46,7 +46,7 @@ impl SuffixArray {
 
 use capwriter::{Saveable, Loadable};
 
-impl Serializable for SuffixArray {
+impl Serialize for SuffixArray {
     fn save_to<W>(&self, mut writer: W) -> Result<(), std::io::Error> where
         W: std::io::Write,
     {
@@ -69,7 +69,7 @@ impl Serializable for SuffixArray {
             array,
         })
     }
-    fn size_of(&self) -> usize {
+    fn estimate_size(&self) -> usize {
         8 // sampling_ratio
         + self.array.size_of() // array
     }

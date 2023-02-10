@@ -3,13 +3,6 @@ pub(crate) type Text = Vec<u8>;
 pub(crate) type Pattern<'a> = &'a [u8];
 
 // Requirements
-pub trait LtFmIndexInterface: FmIndex {
-    fn new(
-        text: Text,
-        suffix_array_sampling_ratio: u64,
-        lookup_table_kmer_size: usize,
-    ) -> Self;
-}
 pub trait FmIndex {
     fn count(&self, pattern: Pattern) -> u64;
     fn locate(&self, pattern: Pattern) -> Vec<u64>;
@@ -25,8 +18,8 @@ pub trait Serialize {
 
 // For Serialization
 #[cfg(target_endian = "little")]
-pub type EndianType = byteorder::LittleEndian;
+pub(crate) type EndianType = byteorder::LittleEndian;
 #[cfg(target_endian = "big")]
-pub type EndianType = byteorder::BigEndian;
+pub(crate) type EndianType = byteorder::BigEndian;
 // Read & Write extension
 pub use byteorder::{ReadBytesExt, WriteBytesExt};

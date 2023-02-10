@@ -5,6 +5,8 @@ use raw::{
     BwtBlock,
 };
 
+mod blocks;
+
 mod wrapper;
 pub use wrapper::{
     LtFmIndex,

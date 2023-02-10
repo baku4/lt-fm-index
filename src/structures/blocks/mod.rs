@@ -2,47 +2,56 @@ use crate::core::Text;
 use super::BwtBlock;
 use bytemuck::{Pod, Zeroable};
 
-// From 2 to 3 chrs
-#[macro_use]
-mod vec2;
-// From 4 to 7 chrs
-#[macro_use]
-mod vec3;
-// From 8 to 15 chrs
-#[macro_use]
-mod vec4;
-// From 16 to 31 chrs
-#[macro_use]
-mod vec5;
+#[repr(C)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Pod, Zeroable)]
+pub struct V2U64([u64; 2]);
 
-macro_rules! Block {
-    // Vec2
-    ( $name: ident, 3, $bits: ty ) => {
-        OuterBlock!($name, 3, 2, $bits);
-        Vec2!($name, 3, $bits);
-    };
-    ( $name: ident, 4, $bits: ty ) => {
-        OuterBlock!($name, 4, 2, $bits);
-        Vec2!($name, 4, $bits);
-    };
-    // Vec3
-    ( $name: ident, 5, $bits: ty ) => {
-        OuterBlock!($name, 5, 3, $bits);
-        Vec3!($name, 5, $bits);
-    };
-    ( $name: ident, 6 $bits: ty ) => {
-        OuterBlock!($name, 6, 3, $bits);
-        Vec2!($name, 6, $bits);
-    };
+impl BwtBlock for V2U64 {
+    const BLOCK_LEN: u64 = 64;
+
+    #[inline]
+    fn vectorize(text_chunk: &[u8], rank_pre_counts: &mut Vec<u64>) -> Self {
+        let mut bwt_vectors = [0; 2];
+        text_chunk.iter().for_each(|chridxwp| {
+            let chridx = chridxwp - 1;
+            rank_pre_counts[chridx as usize] += 1;
+            bwt_vectors[0] <<= 1;
+            if chridx & 0b01 != 0 {
+                bwt_vectors[0] += 1;
+            }
+            bwt_vectors[1] <<= 1;
+            if chridx & 0b10 != 0 {
+                bwt_vectors[1] += 1;
+            }
+        });
+        Self(bwt_vectors)
+    }
+    #[inline]
+    fn get_remain_count_of(&self, rem: u64, chridx: u8) -> u64 {
+        let mut count_bits = match chridx {
+            0 => !self.0[1] & !self.0[0], // 00
+            1 => !self.0[1] & self.0[0],  // 01
+            2 => self.0[1] & !self.0[0],  // 10
+            _ => self.0[1] & self.0[0],   // 11
+        };
+        count_bits >>= (Self::BLOCK_LEN - rem) as u64;
+        count_bits.count_ones() as _
+    }
+    #[inline]
+    fn get_chridx_of(&self, rem: u64) -> u8 {
+        let mov = Self::BLOCK_LEN - rem - 1;
+        let v1 = (self.0[0] >> mov as u64) as u8 & 1;
+        let v2 = (self.0[1] >> mov as u64) as u8 & 1 ;
+        v1 + (v2 << 1)
+    }
 }
+
+
 macro_rules! OuterBlock {
-    ( $name: ident, $chr: expr, $vec: expr, $bits: ty ) => {
+    ( $name: ident, $vec: expr, $bits: ty ) => {
         #[repr(C)]
         #[derive(Debug, Copy, Clone, PartialEq, Eq, Pod, Zeroable)]
-        pub struct $name {
-            rank_checkpoint: [u64; $chr],
-            bwt_vector: [$bits; $vec],
-        }
+        pub struct $name([$bits; $vec])
 
         impl BwtBlock for $name {
             const BIT_LEN: u64 = <$bits>::BITS as u64;
@@ -99,20 +108,3 @@ macro_rules! OuterBlock {
         }
     };
 }
-
-// Implementations
-Block!(V2U32, 3, u32);
-Block!(V2U64, 3, u64);
-Block!(V2U128, 3, u128);
-
-Block!(V3U32, 4, u32);
-Block!(V3U64, 4, u64);
-Block!(V3U128, 4, u128);
-
-// Block!(V4U32, 5, u32);
-// Block!(V4U64, 5, u64);
-// Block!(V4U128, 5, u128);
-
-// Block!(V5U32, 6, u32);
-// Block!(V5U64, 6, u64);
-// Block!(V5U128, 6, u128);

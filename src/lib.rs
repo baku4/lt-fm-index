@@ -79,16 +79,16 @@ assert_eq!(lt_fm_index_to_save, lt_fm_index_loaded);
 mod core;
 // Structures
 mod structures;
-pub use structures::{
-    LtFmIndex,
-    TextEncoder,
-    text_encoders,
-};
-// Builder
-// pub mod builder;
-// pub use builder::LtFmIndexBuilder;
+// pub use structures::{
+//     LtFmIndex,
+//     TextEncoder,
+//     text_encoders,
+// };
+// // Builder
+// // pub mod builder;
+// // pub use builder::LtFmIndexBuilder;
 
-// ## Supplement
-#[doc(hidden)]
-#[allow(dead_code)]
-pub mod tests;
+// // ## Supplement
+// #[doc(hidden)]
+// #[allow(dead_code)]
+// pub mod tests;

@@ -9,17 +9,17 @@ mod crate_bio;
 mod libdivsufsort;
 
 #[cfg(not(feature = "fastbwt"))]
-pub use crate_bio::get_suffix_array_and_pidx_while_bwt_with_crate_bio as get_suffix_array_and_pidx_while_bwt;
+pub use crate_bio::get_compressed_suffix_array_and_pidx_while_bwt_with_crate_bio as get_compressed_suffix_array_and_pidx_while_bwt;
 #[cfg(feature = "fastbwt")]
-pub use libdivsufsort::get_suffix_array_and_pidx_while_bwt_with_libdivsufsort as get_suffix_array_and_pidx_while_bwt;
+pub use libdivsufsort::get_compressed_suffix_array_and_pidx_while_bwtt_with_libdivsufsort as get_compressed_suffix_array_and_pidx_while_bwt;
 
 #[cfg(test)]
 #[cfg(feature = "fastbwt")]
 mod tests {
     use crate::tests::random_text::*;
 
-    use super::crate_bio::get_suffix_array_and_pidx_while_bwt_with_crate_bio;
-    use super::libdivsufsort::get_suffix_array_and_pidx_while_bwt_with_libdivsufsort;
+    use super::crate_bio::get_compressed_suffix_array_and_pidx_while_bwt_with_crate_bio;
+    use super::libdivsufsort::get_compressed_suffix_array_and_pidx_while_bwt_with_libdivsufsort;
 
     #[test]
     fn bwt_transform_result() {
@@ -40,11 +40,11 @@ mod tests {
     fn assert_crate_bio_bwt_same_with_libdivsufsort_rs(text: &[u8]) {
         // Result from libdivsufsort_rs
         let mut bwt_answer = text.to_vec();
-        let (suffix_array_answer, pidx_answer) = get_suffix_array_and_pidx_while_bwt_with_libdivsufsort(&mut bwt_answer);
+        let (suffix_array_answer, pidx_answer) = get_compressed_suffix_array_and_pidx_while_bwt_with_libdivsufsort(&mut bwt_answer, 1);
 
         // Result from built_in_bwt
         let mut bwt = text.to_vec();
-        let (suffix_array, pidx) = get_suffix_array_and_pidx_while_bwt_with_crate_bio(&mut bwt);
+        let (suffix_array, pidx) = get_compressed_suffix_array_and_pidx_while_bwt_with_crate_bio(&mut bwt, 1);
         
         assert_eq!(suffix_array, suffix_array_answer);
         assert_eq!(bwt, bwt_answer);

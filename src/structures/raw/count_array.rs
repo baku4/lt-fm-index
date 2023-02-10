@@ -15,7 +15,7 @@ pub struct CountArray {
 
 impl CountArray {
     // Build
-    pub fn new_with_encoding_text_to_chridxwp(
+    pub fn new_while_encoding_text_to_chridxwp(
         text: &mut Text,
         chr_idx_table: &ChrIdxTable,
         chr_count: usize,

@@ -5,7 +5,7 @@ use bio::data_structures::bwt::bwt as get_bwt;
 const SENTINEL_SYMBOL: u8 = 0;
 
 #[inline]
-pub fn get_suffix_array_and_pidx_while_bwt_with_crate_bio(text: &mut Text) -> (Vec<i64>, u64) {
+pub fn get_compressed_suffix_array_and_pidx_while_bwt_with_crate_bio(text: &mut Text,  sampling_ratio: u64) -> (Vec<u64>, u64) {
     let mut input_string = text.to_vec();
     input_string.push(SENTINEL_SYMBOL);
     let mut suffix_array = get_suffix_array(&input_string);
@@ -18,8 +18,8 @@ pub fn get_suffix_array_and_pidx_while_bwt_with_crate_bio(text: &mut Text) -> (V
 
     // Change original text to bwt
     *text = bwt;
-
-    (suffix_array.into_iter().map(|v| v as i64).collect(), pidx as u64)
+    let compressed_suffix_array = suffix_array.into_iter().step_by(sampling_ratio as usize).map(|x| x as u64).collect();
+    (compressed_suffix_array, pidx as u64)
 }
 
 fn get_pidx_from_bwt(bwt: &[u8]) -> usize {

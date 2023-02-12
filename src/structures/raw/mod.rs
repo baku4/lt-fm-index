@@ -29,10 +29,12 @@ impl ChrIdxTable {
 }
 
 impl<B: BwtBlock> RawLtFmIndex<B> {
+    #[inline]
     pub fn count(&self, pattern: Pattern) -> u64 {
         let pos_range = self.get_pos_range(pattern);
         pos_range.1 - pos_range.0
     }
+    #[inline]
     pub fn locate(&self, pattern: Pattern) -> Vec<u64> {
         let pos_range = self.get_pos_range(pattern);
         self.get_locations(pos_range)
@@ -132,45 +134,45 @@ impl Serialize for ChrIdxTable {
         256
     }
 }
-// impl<B> Serialize for RawLtFmIndex<B> where B: BwtBlock + bytemuck::Pod {
-//     fn save_to<W>(&self, mut writer: W) -> Result<(), std::io::Error> where
-//         W: std::io::Write
-//     {
-//         // text_len
-//         writer.write_u64::<EndianType>(self.text_len)?;
-//         // chr_idx_table
-//         self.chr_idx_table.save_to(&mut writer)?;
-//         // suffix_array
-//         self.suffix_array.save_to(&mut writer)?;
-//         // count_array
-//         self.count_array.save_to(&mut writer)?;
-//         // bwm
-//         self.bwm.save_to(&mut writer)?;
-//         Ok(())
-//     }
-//     fn load_from<R>(mut reader: R) -> Result<Self, std::io::Error> where
-//         R: std::io::Read,
-//         Self: Sized
-//     {
-//         let text_len = reader.read_u64::<EndianType>()?;
-//         let chr_idx_table = ChrIdxTable::load_from(&mut reader)?;
-//         let suffix_array = SuffixArray::load_from(&mut reader)?;
-//         let count_array = CountArray::load_from(&mut reader)?;
-//         let bwm = Bwm::load_from(&mut reader)?;
+impl<B> Serialize for RawLtFmIndex<B> where B: BwtBlock + bytemuck::Pod {
+    fn save_to<W>(&self, mut writer: W) -> Result<(), std::io::Error> where
+        W: std::io::Write
+    {
+        // text_len
+        writer.write_u64::<EndianType>(self.text_len)?;
+        // chr_idx_table
+        self.chr_idx_table.save_to(&mut writer)?;
+        // suffix_array
+        self.suffix_array.save_to(&mut writer)?;
+        // count_array
+        self.count_array.save_to(&mut writer)?;
+        // bwm
+        self.bwm.save_to(&mut writer)?;
+        Ok(())
+    }
+    fn load_from<R>(mut reader: R) -> Result<Self, std::io::Error> where
+        R: std::io::Read,
+        Self: Sized
+    {
+        let text_len = reader.read_u64::<EndianType>()?;
+        let chr_idx_table = ChrIdxTable::load_from(&mut reader)?;
+        let suffix_array = SuffixArray::load_from(&mut reader)?;
+        let count_array = CountArray::load_from(&mut reader)?;
+        let bwm = Bwm::load_from(&mut reader)?;
 
-//         Ok(Self {
-//             text_len,
-//             chr_idx_table,
-//             suffix_array,
-//             count_array,
-//             bwm,
-//         })
-//     }
-//     fn estimate_size(&self) -> usize {
-//         8 // text_len
-//         + self.chr_idx_table.estimate_size() // chr_idx_table
-//         + self.suffix_array.estimate_size() // suffix_array
-//         + self.count_array.estimate_size() // count_array
-//         + self.bwm.estimate_size() // bwm
-//     }
-// }
+        Ok(Self {
+            text_len,
+            chr_idx_table,
+            suffix_array,
+            count_array,
+            bwm,
+        })
+    }
+    fn estimate_size(&self) -> usize {
+        8 // text_len
+        + self.chr_idx_table.estimate_size() // chr_idx_table
+        + self.suffix_array.estimate_size() // suffix_array
+        + self.count_array.estimate_size() // count_array
+        + self.bwm.estimate_size() // bwm
+    }
+}

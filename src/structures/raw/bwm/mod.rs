@@ -2,6 +2,7 @@ use crate::core::{
     Text,
     Serialize, EndianType, WriteBytesExt, ReadBytesExt,
 };
+use capwriter::{Saveable, Loadable};
 
 // Burrows-Wheeler Matrix
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -13,10 +14,13 @@ pub struct Bwm<B: BwtBlock> {
 }
 pub trait BwtBlock: Sized + std::fmt::Debug {
     const BLOCK_LEN: u64;
-
+    // Build
     fn vectorize(bwt_text: &[u8], rank_pre_counts: &mut Vec<u64>) -> Self;
+    fn empty() -> Self;
+    fn shift_last_offset(&mut self, offset: usize);
+    // Locate
     fn get_remain_count_of(&self, rem: u64, chridx: u8) -> u64;
-    fn get_chridx_of(&self, rem: u64) -> u8;    
+    fn get_chridx_of(&self, rem: u64) -> u8;
 }
 
 // Bwm Implementations
@@ -44,6 +48,14 @@ impl<B: BwtBlock> Bwm<B> {
             let block = B::vectorize(text_chunk, &mut rank_pre_counts);
             blocks.push(block);
         });
+
+        if last_offset == 0 {
+            rank_checkpoints.extend_from_slice(&rank_pre_counts);
+            blocks.push(B::empty());
+        } else {
+            let last_block = blocks.last_mut().unwrap();
+            last_block.shift_last_offset(last_offset);
+        }
 
         Self {
             primary_index: pidx,
@@ -94,45 +106,55 @@ impl<B: BwtBlock> Bwm<B> {
     }
 }
 
-// impl<B> Serialize for Bwm<B> where
-//     B: BwtBlock + bytemuck::Pod,
-// {
-//     #[allow(unused_must_use)]
-//     fn save_to<W>(&self, mut writer: W) -> Result<(), std::io::Error> where
-//         W: std::io::Write,
-//     {
-//         // primary_index
-//         writer.write_u64::<EndianType>(self.primary_index)?;
-//         // blocks length
-//         let blocks_len = self.blocks.len() as u64;
-//         writer.write_u64::<EndianType>(blocks_len)?;
-//         // casted_blocks
-//         let casted_blocks = bytemuck::cast_slice(&self.blocks);
-//         writer.write_all(casted_blocks)?;
+impl<B> Serialize for Bwm<B> where
+    B: BwtBlock + bytemuck::Pod,
+{
+    #[allow(unused_must_use)]
+    fn save_to<W>(&self, mut writer: W) -> Result<(), std::io::Error> where
+        W: std::io::Write,
+    {
+        // primary_index
+        writer.write_u64::<EndianType>(self.primary_index)?;
+        // chr_count
+        writer.write_u64::<EndianType>(self.chr_count as u64)?;
+        // rank_checkpoints
+        self.rank_checkpoints.save_to(&mut writer)?;
+        // blocks
+        let blocks_len = self.blocks.len() as u64;
+        writer.write_u64::<EndianType>(blocks_len)?;
+        let casted_blocks = bytemuck::cast_slice(&self.blocks);
+        writer.write_all(casted_blocks)?;
 
-//         Ok(())
-//     }
-//     fn load_from<R>(mut reader: R) -> Result<Self, std::io::Error> where
-//         R: std::io::Read,
-//         Self: Sized,
-//     {
-//         // primary_index
-//         let primary_index = reader.read_u64::<EndianType>()?;
-//         // blocks length
-//         let blocks_len = reader.read_u64::<EndianType>()? as usize;
-//         let mut blocks = vec![B::zeroed(); blocks_len];
-//         // Read from reader
-//         let casted_buffer: &mut [u8] = bytemuck::cast_slice_mut(&mut blocks);
-//         reader.read_exact(casted_buffer)?;
+        Ok(())
+    }
+    fn load_from<R>(mut reader: R) -> Result<Self, std::io::Error> where
+        R: std::io::Read,
+        Self: Sized,
+    {
+        // primary_index
+        let primary_index = reader.read_u64::<EndianType>()?;
+        // chr_count
+        let chr_count = reader.read_u64::<EndianType>()? as usize;
+        // rank_checkpoints
+        let rank_checkpoints = Vec::<u64>::load_from(&mut reader)?;
+        // blocks length
+        let blocks_len = reader.read_u64::<EndianType>()? as usize;
+        let mut blocks = vec![B::zeroed(); blocks_len];
+        // Read from reader
+        let casted_buffer: &mut [u8] = bytemuck::cast_slice_mut(&mut blocks);
+        reader.read_exact(casted_buffer)?;
         
-//         Ok(Self {
-//             primary_index,
-//             blocks,
-//         })
-//     }
-//     fn estimate_size(&self) -> usize {
-//         let casted_blocks: &[u8] = bytemuck::cast_slice(&self.blocks);
-//         16 // primary_index(8) + blocks_len(8)
-//         + casted_blocks.len() // casted blocks
-//     }
-// }
+        Ok(Self {
+            primary_index,
+            chr_count,
+            rank_checkpoints,
+            blocks,
+        })
+    }
+    fn estimate_size(&self) -> usize {
+        let casted_blocks: &[u8] = bytemuck::cast_slice(&self.blocks);
+        24 // primary_index(8) + chr_count(8) + blocks_len(8)
+        + self.rank_checkpoints.size_of() // rank_checkpoints
+        + casted_blocks.len() // casted blocks
+    }
+}

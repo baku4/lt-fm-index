@@ -6,6 +6,7 @@ use raw::{
 };
 
 mod blocks;
+use blocks::*;
 
 mod wrapper;
 pub use wrapper::{

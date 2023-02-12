@@ -11,6 +11,7 @@ pub struct LtFmIndex<E: TextEncoder> {
 pub trait TextEncoder: Sized {
     type BwtBlockType: BwtBlock;
 
+    fn encode(chrs_by_idx: &[&[u8]]) -> Self;
     fn chr_idx_table(&self) -> [u8; 256];
     fn chr_count(&self) -> usize;
 }

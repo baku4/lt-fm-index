@@ -1,4 +1,4 @@
-use crate::core::Text;
+use crate::core::{TextLen, Text};
 use super::{
     RawLtFmIndex,
     ChrIdxTable,
@@ -21,7 +21,7 @@ impl<E: TextEncoder> LtFmIndex<E> {
     pub fn new(
         text: Text,
         text_encoder: &E,
-        suffix_array_sampling_ratio: u64,
+        suffix_array_sampling_ratio: TextLen,
         lookup_table_kmer_size: u32,
     ) -> Self {
         let inner = RawLtFmIndex::new(
@@ -38,10 +38,10 @@ impl<E: TextEncoder> LtFmIndex<E> {
 }
 // Locate
 impl<E: TextEncoder> LtFmIndex<E> {
-    pub fn count(&self, pattern: &[u8]) -> u64 {
+    pub fn count(&self, pattern: &[u8]) -> TextLen {
         self.inner.count(pattern)
     }
-    pub fn locate(&self, pattern: &[u8]) -> Vec<u64> {
+    pub fn locate(&self, pattern: &[u8]) -> Vec<TextLen> {
         self.inner.locate(pattern)
     }
 }

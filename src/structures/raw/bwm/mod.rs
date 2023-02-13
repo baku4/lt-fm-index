@@ -1,4 +1,5 @@
 use crate::core::{
+    TextLen,
     Text,
     Serialize, EndianType, WriteBytesExt, ReadBytesExt,
 };
@@ -7,27 +8,27 @@ use capwriter::{Saveable, Loadable};
 // Burrows-Wheeler Matrix
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Bwm<B: BwtBlock> {
-    primary_index: u64,
+    primary_index: TextLen,
     chr_count: usize,
-    rank_checkpoints: Vec<u64>,
+    rank_checkpoints: Vec<TextLen>,
     blocks: Vec<B>,
 }
 pub trait BwtBlock: Sized + std::fmt::Debug {
-    const BLOCK_LEN: u64;
+    const BLOCK_LEN: TextLen;
     // Build
-    fn vectorize(bwt_text: &[u8], rank_pre_counts: &mut Vec<u64>) -> Self;
+    fn vectorize(bwt_text: &[u8], rank_pre_counts: &mut Vec<TextLen>) -> Self;
     fn empty() -> Self;
     fn shift_last_offset(&mut self, offset: usize);
     // Locate
-    fn get_remain_count_of(&self, rem: u64, chridx: u8) -> u64;
-    fn get_chridx_of(&self, rem: u64) -> u8;
+    fn get_remain_count_of(&self, rem: TextLen, chridx: u8) -> TextLen;
+    fn get_chridx_of(&self, rem: TextLen) -> u8;
 }
 
 // Bwm Implementations
 impl<B: BwtBlock> Bwm<B> {
     // Build
     #[inline]
-    pub fn new(bwt_text: Text, pidx: u64, chr_count: usize) -> Self {
+    pub fn new(bwt_text: Text, pidx: TextLen, chr_count: usize) -> Self {
         let block_len = B::BLOCK_LEN;
         let mut chunk_count = bwt_text.len() / block_len as usize;
         let rem = bwt_text.len() % block_len as usize;
@@ -66,7 +67,7 @@ impl<B: BwtBlock> Bwm<B> {
     }
     // Locate
     #[inline]
-    pub fn get_next_rank(&self, mut pos: u64, chridx: u8) -> u64 {
+    pub fn get_next_rank(&self, mut pos: TextLen, chridx: u8) -> TextLen {
         if pos < self.primary_index {
             pos += 1;
         }
@@ -83,7 +84,7 @@ impl<B: BwtBlock> Bwm<B> {
         }
     }
     #[inline]
-    pub fn get_pre_rank_and_chridx(&self, mut pos: u64) -> Option<(u64, u8)> {
+    pub fn get_pre_rank_and_chridx(&self, mut pos: TextLen) -> Option<(TextLen, u8)> {
         if pos == self.primary_index - 1 {
             return None;
         } else if pos < self.primary_index {
@@ -114,7 +115,7 @@ impl<B> Serialize for Bwm<B> where
         W: std::io::Write,
     {
         // primary_index
-        writer.write_u64::<EndianType>(self.primary_index)?;
+        writer.write_u64::<EndianType>(self.primary_index as u64)?;
         // chr_count
         writer.write_u64::<EndianType>(self.chr_count as u64)?;
         // rank_checkpoints
@@ -132,11 +133,11 @@ impl<B> Serialize for Bwm<B> where
         Self: Sized,
     {
         // primary_index
-        let primary_index = reader.read_u64::<EndianType>()?;
+        let primary_index = reader.read_u64::<EndianType>()? as TextLen;
         // chr_count
         let chr_count = reader.read_u64::<EndianType>()? as usize;
         // rank_checkpoints
-        let rank_checkpoints = Vec::<u64>::load_from(&mut reader)?;
+        let rank_checkpoints = Vec::<TextLen>::load_from(&mut reader)?;
         // blocks length
         let blocks_len = reader.read_u64::<EndianType>()? as usize;
         let mut blocks = vec![B::zeroed(); blocks_len];

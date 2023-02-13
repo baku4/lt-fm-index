@@ -2,10 +2,16 @@
 pub(crate) type Text = Vec<u8>;
 pub(crate) type Pattern<'a> = &'a [u8];
 
+// Text Length
+#[cfg(not(features = "longtext"))]
+pub type TextLen = u32;
+#[cfg(features = "longtext")]
+pub type TextLen = u64;
+
 // Requirements
 pub trait FmIndex {
-    fn count(&self, pattern: Pattern) -> u64;
-    fn locate(&self, pattern: Pattern) -> Vec<u64>;
+    fn count(&self, pattern: Pattern) -> TextLen;
+    fn locate(&self, pattern: Pattern) -> Vec<TextLen>;
 }
 pub trait Serialize {
     fn save_to<W>(&self, writer: W) -> Result<(), std::io::Error> where

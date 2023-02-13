@@ -2,7 +2,7 @@ macro_rules! impl_vec3 {
     // Struct Name, Vector Type
     ( $sn:ident, $vt:ty ) => {
         #[inline]
-        fn vectorize(text_chunk: &[u8], rank_pre_counts: &mut Vec<u64>) -> Self {
+        fn vectorize(text_chunk: &[u8], rank_pre_counts: &mut Vec<TextLen>) -> Self {
             let mut bwt_vectors = [0; 3];
             text_chunk.iter().for_each(|chridxwp| {
                 let chridx = chridxwp - 1;
@@ -23,7 +23,7 @@ macro_rules! impl_vec3 {
             Self(bwt_vectors)
         }
         #[inline]
-        fn get_remain_count_of(&self, rem: u64, chridx: u8) -> u64 {
+        fn get_remain_count_of(&self, rem: TextLen, chridx: u8) -> TextLen {
             let mut count_bits = match chridx {
                 0 => !self.0[2] & !self.0[1] & !self.0[0], // 000
                 1 => !self.0[2] & !self.0[1] & self.0[0],  // 001
@@ -34,11 +34,11 @@ macro_rules! impl_vec3 {
                 6 => self.0[2] & self.0[1] & !self.0[0],   // 110
                 _ => self.0[2] & self.0[1] & self.0[0],    // 111
             };
-            count_bits >>= (Self::BLOCK_LEN - rem) as u64;
+            count_bits >>= Self::BLOCK_LEN - rem;
             count_bits.count_ones() as _
         }
         #[inline]
-        fn get_chridx_of(&self, rem: u64) -> u8 {
+        fn get_chridx_of(&self, rem: TextLen) -> u8 {
             let mov = Self::BLOCK_LEN - rem - 1;
             let v1 = (self.0[0] >> mov as u64) as u8 & 1;
             let v2 = (self.0[1] >> mov as u64) as u8 & 1;

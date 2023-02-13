@@ -18,8 +18,8 @@ pub use libdivsufsort::get_compressed_suffix_array_and_pidx_while_bwtt_with_libd
 mod tests {
     use crate::tests::random_text::*;
 
-    use super::crate_bio::get_compressed_suffix_array_and_pidx_while_bwt_with_crate_bio;
-    use super::libdivsufsort::get_compressed_suffix_array_and_pidx_while_bwt_with_libdivsufsort;
+    use super::crate_bio::get_compressed_suffix_array_and_pidx_while_bwt_with_crate_bio as bwt1;
+    use super::libdivsufsort::get_compressed_suffix_array_and_pidx_while_bwtt_with_libdivsufsort as bwt2;
 
     #[test]
     fn bwt_transform_result() {
@@ -38,16 +38,16 @@ mod tests {
     }
 
     fn assert_crate_bio_bwt_same_with_libdivsufsort_rs(text: &[u8]) {
-        // Result from libdivsufsort_rs
-        let mut bwt_answer = text.to_vec();
-        let (suffix_array_answer, pidx_answer) = get_compressed_suffix_array_and_pidx_while_bwt_with_libdivsufsort(&mut bwt_answer, 1);
+        // Result from crate_bio
+        let mut bwt_res_1 = text.to_vec();
+        let (suffix_array_1, pidx_1) = bwt1(&mut bwt_res_1, 1);
 
-        // Result from built_in_bwt
-        let mut bwt = text.to_vec();
-        let (suffix_array, pidx) = get_compressed_suffix_array_and_pidx_while_bwt_with_crate_bio(&mut bwt, 1);
-        
-        assert_eq!(suffix_array, suffix_array_answer);
-        assert_eq!(bwt, bwt_answer);
-        assert_eq!(pidx, pidx_answer);
+        // Result from libdivsufsort_rs
+        let mut bwt_res_2 = text.to_vec();
+        let (suffix_array_2, pidx_2) = bwt2(&mut bwt_res_2, 1);
+
+        assert_eq!(suffix_array_1, suffix_array_1);
+        assert_eq!(bwt_res_1, bwt_res_2);
+        assert_eq!(pidx_1, pidx_2);
     }
 }

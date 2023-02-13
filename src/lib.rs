@@ -89,6 +89,6 @@ mod structures;
 // // pub use builder::LtFmIndexBuilder;
 
 // // ## Supplement
-// #[doc(hidden)]
-// #[allow(dead_code)]
-// pub mod tests;
+#[doc(hidden)]
+#[allow(dead_code)]
+pub mod tests;

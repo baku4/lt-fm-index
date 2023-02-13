@@ -1,12 +1,12 @@
 mod raw;
-use raw::{
+pub use raw::{
     RawLtFmIndex,
     ChrIdxTable,
     BwtBlock,
 };
 
 mod blocks;
-use blocks::*;
+pub use blocks::*;
 
 mod wrapper;
 pub use wrapper::{
@@ -14,5 +14,5 @@ pub use wrapper::{
     TextEncoder,
 };
 
-/// Text encoders
-pub mod text_encoders;
+// Text encoders
+// pub mod text_encoders;

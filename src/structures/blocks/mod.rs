@@ -1,4 +1,4 @@
-use crate::core::Text;
+use crate::core::TextLen;
 use super::BwtBlock;
 use bytemuck::{Pod, Zeroable};
 
@@ -19,7 +19,7 @@ macro_rules! Block {
         pub struct $sn([$vt; $vc]);
 
         impl BwtBlock for $sn {
-            const BLOCK_LEN: u64 = <$vt>::BITS as u64;
+            const BLOCK_LEN: TextLen = <$vt>::BITS as TextLen;
             
             #[inline]
             fn empty() -> Self {
@@ -72,10 +72,10 @@ mod tests {
     pub struct TestBlockV2U64([u64; 2]);
 
     impl BwtBlock for TestBlockV2U64 {
-        const BLOCK_LEN: u64 = 64;
+        const BLOCK_LEN: TextLen = 64;
 
         #[inline]
-        fn vectorize(text_chunk: &[u8], rank_pre_counts: &mut Vec<u64>) -> Self {
+        fn vectorize(text_chunk: &[u8], rank_pre_counts: &mut Vec<TextLen>) -> Self {
             let mut bwt_vectors = [0; 2];
             text_chunk.iter().for_each(|chridxwp| {
                 let chridx = chridxwp - 1;
@@ -98,21 +98,21 @@ mod tests {
             self.0.iter_mut().for_each(|bits| *bits <<= offset);
         }
         #[inline]
-        fn get_remain_count_of(&self, rem: u64, chridx: u8) -> u64 {
+        fn get_remain_count_of(&self, rem: TextLen, chridx: u8) -> TextLen {
             let mut count_bits = match chridx {
                 0 => !self.0[1] & !self.0[0], // 00
                 1 => !self.0[1] & self.0[0],  // 01
                 2 => self.0[1] & !self.0[0],  // 10
                 _ => self.0[1] & self.0[0],   // 11
             };
-            count_bits >>= (Self::BLOCK_LEN - rem) as u64;
+            count_bits >>= (Self::BLOCK_LEN - rem) as TextLen;
             count_bits.count_ones() as _
         }
         #[inline]
-        fn get_chridx_of(&self, rem: u64) -> u8 {
+        fn get_chridx_of(&self, rem: TextLen) -> u8 {
             let mov = Self::BLOCK_LEN - rem - 1;
-            let v1 = (self.0[0] >> mov as u64) as u8 & 1;
-            let v2 = (self.0[1] >> mov as u64) as u8 & 1;
+            let v1 = (self.0[0] >> mov) as u8 & 1;
+            let v2 = (self.0[1] >> mov) as u8 & 1;
             v1 + (v2 << 1)
         }
     }

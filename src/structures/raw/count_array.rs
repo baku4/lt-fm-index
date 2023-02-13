@@ -1,4 +1,5 @@
 use crate::core::{
+    TextLen,
     Text, Pattern,
     EndianType, ReadBytesExt, WriteBytesExt, Serialize,
 };
@@ -8,8 +9,8 @@ use capwriter::{Saveable, Loadable};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CountArray {
     kmer_size: u32,
-    count_table: Vec<u64>,
-    kmer_count_table: Vec<u64>,
+    count_table: Vec<TextLen>,
+    kmer_count_table: Vec<TextLen>,
     multiplier: Vec<usize>,
 }
 
@@ -22,11 +23,11 @@ impl CountArray {
         lookup_table_kmer_size: u32,
     ) -> Self {
         let chr_with_pidx_count = chr_count + 1;
-        let mut count_table: Vec<u64> = vec![0; chr_with_pidx_count];
+        let mut count_table: Vec<TextLen> = vec![0; chr_with_pidx_count];
 
         let (kmer_count_table, multiplier) = {
             let table_length: usize = (chr_with_pidx_count).pow(lookup_table_kmer_size);
-            let mut kmer_count_table: Vec<u64> = vec![0; table_length];
+            let mut kmer_count_table: Vec<TextLen> = vec![0; table_length];
             let mut table_index: usize = 0;
     
             let multiplier: Vec<usize> = {
@@ -66,8 +67,8 @@ impl CountArray {
             multiplier,
         }
     }
-    fn accumulate_count_table(count_table: &mut [u64]) {
-        let mut accumed_count: u64 = 0;
+    fn accumulate_count_table(count_table: &mut [TextLen]) {
+        let mut accumed_count: TextLen = 0;
         count_table.iter_mut().for_each(|count| {
             accumed_count += *count;
             *count = accumed_count;
@@ -75,14 +76,14 @@ impl CountArray {
     }
     
     // Locate
-    pub fn get_precount(&self, chridx: usize) -> u64 {
+    pub fn get_precount(&self, chridx: usize) -> TextLen {
         self.count_table[chridx]
     }
     pub fn get_initial_pos_range_and_idx_of_pattern(
         &self,
         pattern: Pattern,
         chr_idx_table: &ChrIdxTable,
-    ) -> ((u64, u64), usize) {
+    ) -> ((TextLen, TextLen), usize) {
         let pattern_len = pattern.len();
         if pattern_len < self.kmer_size as usize {
             let start_idx = self.get_idx_of_kmer_count_table(pattern, chr_idx_table);
@@ -141,10 +142,10 @@ impl Serialize for CountArray {
         let kmer_size = reader.read_u32::<EndianType>()?;
 
         // count_table
-        let count_table = Vec::<u64>::load_from(&mut reader)?;
+        let count_table = Vec::<TextLen>::load_from(&mut reader)?;
 
         // kmer_count_table
-        let kmer_count_table = Vec::<u64>::load_from(&mut reader)?;
+        let kmer_count_table = Vec::<TextLen>::load_from(&mut reader)?;
 
         // multiplier
         let multiplier = Vec::<usize>::load_from(&mut reader)?;

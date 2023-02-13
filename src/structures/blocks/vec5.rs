@@ -2,7 +2,7 @@ macro_rules! impl_vec5 {
     // Struct Name, Vector Type
     ( $sn:ident, $vt:ty ) => {
         #[inline]
-        fn vectorize(text_chunk: &[u8], rank_pre_counts: &mut Vec<u64>) -> Self {
+        fn vectorize(text_chunk: &[u8], rank_pre_counts: &mut Vec<TextLen>) -> Self {
             let mut bwt_vectors = [0; 5];
             text_chunk.iter().for_each(|chridxwp| {
                 let chridx = chridxwp - 1;
@@ -35,7 +35,7 @@ macro_rules! impl_vec5 {
             Self(bwt_vectors)
         }
         #[inline]
-        fn get_remain_count_of(&self, rem: u64, chridx: u8) -> u64 {
+        fn get_remain_count_of(&self, rem: TextLen, chridx: u8) -> TextLen {
             let mut count_bits = match chridx {
                 0 => !self.0[4] & !self.0[3] & !self.0[2] & !self.0[1] & !self.0[0], // 00000
                 1 => !self.0[4] & !self.0[3] & !self.0[2] & !self.0[1] & self.0[0],  // 00001
@@ -70,17 +70,17 @@ macro_rules! impl_vec5 {
                 30 => self.0[4] & self.0[3] & self.0[2] & self.0[1] & !self.0[0],    // 11110
                 _ => self.0[4] & self.0[3] & self.0[2] & self.0[1] & self.0[0],      // 11111
             };
-            count_bits >>= (Self::BLOCK_LEN - rem) as u64;
+            count_bits >>= (Self::BLOCK_LEN - rem);
             count_bits.count_ones() as _
         }
         #[inline]
-        fn get_chridx_of(&self, rem: u64) -> u8 {
+        fn get_chridx_of(&self, rem: TextLen) -> u8 {
             let mov = Self::BLOCK_LEN - rem - 1;
-            let v1 = (self.0[0] >> mov as u64) as u8 & 1;
-            let v2 = (self.0[1] >> mov as u64) as u8 & 1;
-            let v3 = (self.0[2] >> mov as u64) as u8 & 1;
-            let v4 = (self.0[3] >> mov as u64) as u8 & 1;
-            let v5 = (self.0[4] >> mov as u64) as u8 & 1;
+            let v1 = (self.0[0] >> mov) as u8 & 1;
+            let v2 = (self.0[1] >> mov) as u8 & 1;
+            let v3 = (self.0[2] >> mov) as u8 & 1;
+            let v4 = (self.0[3] >> mov) as u8 & 1;
+            let v5 = (self.0[4] >> mov) as u8 & 1;
             v1 + (v2 << 1) + (v3 << 2) + (v4 << 3) + (v5 << 4)
         }
     };

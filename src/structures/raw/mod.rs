@@ -1,4 +1,5 @@
 use crate::core::{
+    TextLen,
     Text, Pattern,
     FmIndex,
     Serialize, EndianType, WriteBytesExt, ReadBytesExt,
@@ -30,12 +31,12 @@ impl ChrIdxTable {
 
 impl<B: BwtBlock> RawLtFmIndex<B> {
     #[inline]
-    pub fn count(&self, pattern: Pattern) -> u64 {
+    pub fn count(&self, pattern: Pattern) -> TextLen {
         let pos_range = self.get_pos_range(pattern);
         pos_range.1 - pos_range.0
     }
     #[inline]
-    pub fn locate(&self, pattern: Pattern) -> Vec<u64> {
+    pub fn locate(&self, pattern: Pattern) -> Vec<TextLen> {
         let pos_range = self.get_pos_range(pattern);
         self.get_locations(pos_range)
     }
@@ -45,7 +46,7 @@ impl<B: BwtBlock> RawLtFmIndex<B> {
     // Build
     pub fn new(
         mut text: Text,
-        suffix_array_sampling_ratio: u64,
+        suffix_array_sampling_ratio: TextLen,
         lookup_table_kmer_size: u32,
         chr_idx_table: ChrIdxTable,
         chr_count: usize,
@@ -69,7 +70,7 @@ impl<B: BwtBlock> RawLtFmIndex<B> {
     }
     
     // Pos range
-    fn get_pos_range(&self, pattern: Pattern) -> (u64, u64) {
+    fn get_pos_range(&self, pattern: Pattern) -> (TextLen, TextLen) {
         let (mut pos_range, mut idx) = self.count_array.get_initial_pos_range_and_idx_of_pattern(
             pattern,
             &self.chr_idx_table,
@@ -82,7 +83,7 @@ impl<B: BwtBlock> RawLtFmIndex<B> {
         }
         pos_range
     }
-    fn next_pos_range(&self, pos_range: (u64, u64), chr: u8) -> (u64, u64) {
+    fn next_pos_range(&self, pos_range: (TextLen, TextLen), chr: u8) -> (TextLen, TextLen) {
         let chridx = self.chr_idx_table.idx_of(chr);
         let precount = self.count_array.get_precount(chridx as usize);
         let start_rank = self.bwm.get_next_rank(pos_range.0, chridx);
@@ -91,10 +92,10 @@ impl<B: BwtBlock> RawLtFmIndex<B> {
     }
 
     // Get index
-    fn get_locations(&self, pos_range: (u64, u64)) -> Vec<u64> {
-        let mut locations: Vec<u64> = Vec::with_capacity((pos_range.1 - pos_range.0) as usize);
+    fn get_locations(&self, pos_range: (TextLen, TextLen)) -> Vec<TextLen> {
+        let mut locations: Vec<TextLen> = Vec::with_capacity((pos_range.1 - pos_range.0) as usize);
         'each_pos: for mut pos in pos_range.0..pos_range.1 {
-            let mut offset: u64 = 0;
+            let mut offset: TextLen = 0;
             while pos % self.suffix_array.sampling_ratio() != 0 { 
                 match self.bwm.get_pre_rank_and_chridx(pos) {
                     Some((rank, chridx)) => {

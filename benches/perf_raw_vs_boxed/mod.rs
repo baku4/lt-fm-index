@@ -3,7 +3,7 @@ use criterion::{
     PlotConfiguration, AxisScale,
 };
 use lt_fm_index::*;
-use lt_fm_index::core::FmIndexInterface;
+use lt_fm_index::FmIndexInterface;
 use lt_fm_index::tests::random_text::{
     NO_STEMS, gen_rand_text,
     rand_pattern_of_length,

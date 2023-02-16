@@ -21,7 +21,7 @@ macro_rules! GenBlock {
         pub struct $sn([$vt; $vc]);
 
         impl Block for $sn {
-            const BLOCK_LEN: TextLen = <$vt>::BITS as TextLen;
+            const BLOCK_LEN: TextLength = <$vt>::BITS as TextLen;
             
             #[inline]
             fn empty() -> Self {
@@ -80,10 +80,10 @@ mod tests {
     pub struct TestBlockV2U64([u64; 2]);
 
     impl Block for TestBlockV2U64 {
-        const BLOCK_LEN: TextLen = 64;
+        const BLOCK_LEN: TextLength = 64;
 
         #[inline]
-        fn vectorize(text_chunk: &[u8], rank_pre_counts: &mut Vec<TextLen>) -> Self {
+        fn vectorize(text_chunk: &[u8], rank_pre_counts: &mut Vec<TextLength>) -> Self {
             let mut bwt_vectors = [0; 2];
             text_chunk.iter().for_each(|chridxwp| {
                 let chridx = chridxwp - 1;
@@ -106,7 +106,7 @@ mod tests {
             self.0.iter_mut().for_each(|bits| *bits <<= offset);
         }
         #[inline]
-        fn get_remain_count_of(&self, rem: TextLen, chridx: u8) -> TextLen {
+        fn get_remain_count_of(&self, rem: TextLength, chridx: u8) -> TextLength {
             let mut count_bits = match chridx {
                 0 => !self.0[1] & !self.0[0], // 00
                 1 => !self.0[1] & self.0[0],  // 01
@@ -117,7 +117,7 @@ mod tests {
             count_bits.count_ones() as _
         }
         #[inline]
-        fn get_chridx_of(&self, rem: TextLen) -> u8 {
+        fn get_chridx_of(&self, rem: TextLength) -> u8 {
             let mov = Self::BLOCK_LEN - rem - 1;
             let v1 = (self.0[0] >> mov) as u8 & 1;
             let v2 = (self.0[1] >> mov) as u8 & 1;

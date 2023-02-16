@@ -1,5 +1,5 @@
 use crate::{
-    Text, Pattern,
+    Text,
     EndianType, ReadBytesExt, WriteBytesExt, Serializable,
 };
 use super::CountArrayInterface;
@@ -80,7 +80,7 @@ impl<E> CountArrayInterface for CountArray<E> where
         let precount = self.get_precount_of_chridx(chridx);
         (chridx, precount)
     }
-    fn get_initial_pos_range_and_idx_of_pattern(&self, pattern: Pattern) -> ((u64, u64), usize) {
+    fn get_initial_pos_range_and_idx_of_pattern(&self, pattern: &[u8]) -> ((u64, u64), usize) {
         let pattern_len = pattern.len();
         if pattern_len < self.kmer_size as usize {
             let start_idx = self.get_idx_of_kmer_count_table(pattern);
@@ -113,7 +113,7 @@ impl<E> CountArray<E> where
         });
     }
 
-    fn get_idx_of_kmer_count_table(&self, sliced_pattern: Pattern) -> u32 {
+    fn get_idx_of_kmer_count_table(&self, sliced_pattern: &[u8]) -> u32 {
         sliced_pattern.iter().zip(self.multiplier.iter())
             .map(|(&chr, &mul_of_pos)| {
                 E::chrwpidx_of_chr(chr) * mul_of_pos as u32

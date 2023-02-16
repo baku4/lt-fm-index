@@ -1,4 +1,4 @@
-use crate::{TextLen, Text};
+use crate::{TextLength, Text};
 
 #[cfg(not(features = "longtext"))]
 use libdivsufsort_rs::{
@@ -12,7 +12,7 @@ use libdivsufsort_rs::{
 };
 
 #[inline]
-pub fn get_compressed_suffix_array_and_pidx_while_bwtt_with_libdivsufsort(text: &mut Text, sampling_ratio: TextLen) -> (Vec<TextLen>, TextLen) {
+pub fn get_compressed_suffix_array_and_pidx_while_bwtt_with_libdivsufsort(text: &mut Text, sampling_ratio: TextLength) -> (Vec<TextLength>, TextLength) {
     let suffix_array = divsufsort(text).unwrap();
     let pidx = {
         let mut sa = suffix_array.clone();
@@ -20,6 +20,6 @@ pub fn get_compressed_suffix_array_and_pidx_while_bwtt_with_libdivsufsort(text: 
         pidx
     };
 
-    let compressed_suffix_array = suffix_array.into_iter().step_by(sampling_ratio as usize).map(|x| x as TextLen).collect();
-    (compressed_suffix_array, pidx as TextLen)
+    let compressed_suffix_array = suffix_array.into_iter().step_by(sampling_ratio as usize).map(|x| x as TextLength).collect();
+    (compressed_suffix_array, pidx as TextLength)
 }

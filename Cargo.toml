@@ -2,7 +2,8 @@
 resolver="2"
 members = [
     "core",
-    "bridges/v32",
-    "bridges/v64",
+    # "lt-fm-index",
+]
+exclude = [
     "lt-fm-index",
 ]

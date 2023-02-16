@@ -10,8 +10,8 @@
 ## Features
 - `LtFmIndex` is built from `Text` (`Vec<u8>`).
 - `LtFmIndex` have two functions.
-    1. `count`: Count the number of times the `Pattern` (`&[u8]`) appears in the `Text`.
-    2. `locate`: Locate the start index in which the `Pattern` appears in the `Text`.
+    1. `count`: Count the number of times the `&[u8]` (`&[u8]`) appears in the `Text`.
+    2. `locate`: Locate the start index in which the `&[u8]` appears in the `Text`.
 - **Four** types of `Text` are supported.
     - `NucleotideOnly`: consists of {ACG*}
     - `NucleotideWithNoise`: consists of {ACGT*}

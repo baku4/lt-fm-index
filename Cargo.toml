@@ -1,9 +1,37 @@
-[workspace]
-resolver="2"
-members = [
-    "core",
-    # "lt-fm-index",
-]
-exclude = [
-    "lt-fm-index",
-]
+[package]
+name = "lt-fm-index"
+version = "0.6.0"
+authors = ["baku4 <bahkhun@gmail.com>"]
+edition = "2021"
+rust-version = "1.57.0"
+description = "Fm-index using k-mer lookup table for exact pattern matching"
+readme = "README.md"
+repository = "https://github.com/baku4/lt-fm-index/"
+license = "MIT"
+keywords = ["fm-index", "bwt", "pattern_matching", "bio"]
+categories = ["science", "algorithms"]
+
+[dependencies]
+thiserror = "1.0.38"
+byteorder = "1.4.3"
+num-traits = "0.2.15"
+capwriter = "0.2.0"
+bytemuck = { version = "1.13.0", features = [ "derive" ] }
+rand = "0.8.0"
+bio = "1.1.0"
+libdivsufsort-rs = { version = "0.1.2", optional = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }
+
+[dev-dependencies]
+crate_fm_index = { package = "fm-index", version = "0.1" }
+criterion = "0.3.5"
+
+[[bench]]
+name = "benchmark"
+harness = false
+
+[features]
+default = []
+fastbwt = ["libdivsufsort-rs"]

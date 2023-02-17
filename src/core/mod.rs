@@ -16,3 +16,5 @@ pub(crate) trait Serialize {
         Self: Sized;
     fn to_be_saved_size(&self) -> usize;
 }
+
+pub mod errors;

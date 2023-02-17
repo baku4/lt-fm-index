@@ -8,6 +8,7 @@ pub struct Block6<V: Vector>([V; 6]);
 
 impl<P: Position, V: Vector> Block<P> for Block6<V> {
     const BLOCK_LEN: u32 = V::BLOCK_LEN;
+    const MAX_CHR: u32 = 63;
 
     #[inline]
     fn vectorize(text_chunk: &[u8], rank_pre_counts: &mut Vec<P>) -> Self {
@@ -127,7 +128,7 @@ impl<P: Position, V: Vector> Block<P> for Block6<V> {
         let v3 = (self.0[2] >> V::from_u32(mov)).as_u8() & 1;
         let v4 = (self.0[3] >> V::from_u32(mov)).as_u8() & 1;
         let v5 = (self.0[4] >> V::from_u32(mov)).as_u8() & 1;
-        let v6 = (self.0[4] >> V::from_u32(mov)).as_u8() & 1;
+        let v6 = (self.0[5] >> V::from_u32(mov)).as_u8() & 1;
         v1 + (v2 << 1) + (v3 << 2) + (v4 << 3) + (v5 << 4) + (v6 << 5)
     }
 }

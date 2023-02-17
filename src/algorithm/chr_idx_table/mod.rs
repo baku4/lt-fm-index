@@ -1,4 +1,4 @@
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ChrIdxTable(pub [u8; 256]);
 
 impl ChrIdxTable {

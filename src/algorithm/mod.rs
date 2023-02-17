@@ -1,8 +1,9 @@
 use crate::core::{
     Position,
+    errors::BuildError,
 };
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct LtFmIndex<P: Position, B: Block<P>> {
     text_len: P,
     chr_idx_table: ChrIdxTable,
@@ -36,14 +37,23 @@ impl<P: Position, B: Block<P>> LtFmIndex<P, B> {
 
 impl<P: Position, B: Block<P>> LtFmIndex<P, B> {
     // Build
-    pub fn new(
+    pub fn build(
         mut text: Vec<u8>,
         characters_by_index: &[&[u8]],
         suffix_array_sampling_ratio: P,
         lookup_table_kmer_size: u32,
-    ) -> Self {
+    ) -> Result<Self, BuildError> {
+        if suffix_array_sampling_ratio == P::ZERO {
+            return Err(BuildError::SuffixArraySamplingRatio);
+        }
+        if lookup_table_kmer_size == 0 {
+            return Err(BuildError::LookupTableKmerSize);
+        }
         let text_len = P::from_usize(text.len());
         let (chr_idx_table, chr_count) = ChrIdxTable::new_with_counting_chr(characters_by_index);
+        if chr_count - 1 > B::MAX_CHR {
+            return Err(BuildError::IndexCountOver(B::MAX_CHR, chr_count));
+        }
         let count_array = CountArray::new_while_encoding_text_to_chridxwp(
             &mut text,
             &chr_idx_table,
@@ -52,13 +62,13 @@ impl<P: Position, B: Block<P>> LtFmIndex<P, B> {
         );
         let (suffix_array, pidx) = SuffixArray::new_while_bwt(&mut text, suffix_array_sampling_ratio);
         let bwm = Bwm::new(text, pidx, chr_count);
-        Self {
+        Ok(Self {
             text_len,
             chr_idx_table,
             suffix_array,
             count_array,
             bwm,
-        }
+        })
     }
     
     // Pos range

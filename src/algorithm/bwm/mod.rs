@@ -12,6 +12,7 @@ pub struct Bwm<P: Position, B: Block<P>> {
 }
 pub trait Block<P: Position>: Sized + bytemuck::Pod {
     const BLOCK_LEN: u32;
+    const MAX_CHR: u32;
     // Build
     fn vectorize(bwt_text: &[u8], rank_pre_counts: &mut Vec<P>) -> Self;
     fn empty() -> Self;

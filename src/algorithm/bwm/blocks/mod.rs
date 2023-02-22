@@ -1,3 +1,9 @@
+/*!
+Implementation of blocks of trait [Block].
+The suffix of the struct name is the count of inner vectors.
+Using less vector makes the algorithms faster.
+But the maximum count of the index is restrict to the $2^{v}-1$ ($v$ the vector count.)
+*/
 use super::Block;
 
 mod vector;

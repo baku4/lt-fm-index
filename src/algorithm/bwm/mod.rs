@@ -10,6 +10,10 @@ pub struct Bwm<P: Position, B: Block<P>> {
     rank_checkpoints: Vec<P>,
     blocks: Vec<B>,
 }
+/**
+Type of the block of compressed Burrow-Wheeler transformed text.
+The implementations are in [blocks] module.
+*/
 pub trait Block<P: Position>: Sized + bytemuck::Pod {
     const BLOCK_LEN: u32;
     const MAX_CHR: u32;

@@ -1,3 +1,9 @@
+/**
+Type for the position in index.
+Two types are supported:
+  - `u32`
+  - `u64`
+*/
 pub trait Position:
     Sized
     + Copy

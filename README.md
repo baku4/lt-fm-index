@@ -2,71 +2,67 @@
 [![CI](https://github.com/baku4/lt-fm-index/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/baku4/lt-fm-index/actions/workflows/rust.yml)
 [![crates.io](https://img.shields.io/crates/v/lt-fm-index.svg)](https://crates.io/crates/lt-fm-index)
 
-`lt-fm-index` is a library to (1) locate or (2) count the pattern in the large text of nucleotide and amino acid sequences.
-## Description
-- *FmIndex* is a data structure for exact pattern matching.
-- `LtFmIndex` is *FmIndex* using lookup table, the precalculated count of *k-mer* occurrences.
-  - The lookup table can locate the first *k-mer* of pattern at once.
-## Features
-- `LtFmIndex` is built from `Text` (`Vec<u8>`).
-- `LtFmIndex` have two functions.
-    1. `count`: Count the number of times the `&[u8]` (`&[u8]`) appears in the `Text`.
-    2. `locate`: Locate the start index in which the `&[u8]` appears in the `Text`.
-- **Four** types of `Text` are supported.
-    - `NucleotideOnly`: consists of {ACG*}
-    - `NucleotideWithNoise`: consists of {ACGT*}
-    - `AminoacidOnly`: consists of {ACDEFGHIKLMNPQRSTVW*}
-    - `AminoacidWithNoise`: consists of {ACDEFGHIKLMNPQRSTVWY*}
-- The `*` of each type is treated as a *wildcard* that can be matched with any characters.
-    - For example,
-        - If the TextType is `NucleotideOnly`, `LtFmIndex` stores the text of *ACGTXYZ* as <i>ACG****</i>.
-        - If the TextType is `NucleotideWithNoise`, `LtFmIndex` stores the same text (*ACGTXYZ*) as <i>ACGT***</i>
-        - If the indexed text is <i>ACGT***</i>, the patterns of *ACGTXXX*, *ACGT@@@*, and *ACGTX@#* give the same result.
-- Using `fastbwt` feature can accelerate the indexing, but needs `cmake` to build `libdivsufsort` and cannot be built as WASM.
-## Examples
-### 1. Use `LtFmIndex` to count and locate a pattern.
+`LtFmIndex` is a Rust library for building and using a FM-index that contains a lookup table of the first *k-mer* of a pattern. This index can be used to (1) count the number of occurrences and (2) locate the positions of a pattern in an indexed text.
+
+## Usage
+### Add to dependency
+To use this library, add `lt_fm_index` to your `Cargo.toml`:
+```toml
+[dependencies]
+lt_fm_index = "0.7.0-alpha"
+```
+- About `fastbwt` features
+  - This feature can accelerate the indexing, but needs `cmake` to build `libdivsufsort` and cannot be built as WASM.
+### Example code
 ```rust
-use lt_fm_index::LtFmIndexBuilder;
+use lt_fm_index::LtFmIndex;
+use lt_fm_index::blocks::Block2; // `Block2` can index 3 types of characters.
 
-// (1) Define builder for lt-fm-index
-let builder = LtFmIndexBuilder::new()
-    .text_type_is_inferred()
-    .set_suffix_array_sampling_ratio(2).unwrap()
-    .set_lookup_table_kmer_size(4).unwrap();
+// (1) Define characters to use
+let characters_by_index: &[&[u8]] = &[
+    &[b'A', b'a'], // 'A' and 'a' are treated as the same
+    &[b'C', b'c'], // 'C' and 'c' are treated as the same
+    &[b'G', b'g'], // 'G' and 'g' are treated as the same
+];
+// Alternatively, you can use this simpler syntax:
+let characters_by_index: &[&[u8]] = &[
+    b"Aa", b"Cc", b"Gg"
+];
 
-// (2) Generate lt-fm-index with text
-let text = b"CTCCGTACACCTGTTTCGTATCGGANNNN".to_vec();
-let lt_fm_index = builder.build(text).unwrap(); // text is consumed
+// (2) Build index
+let text = b"CTCCGTACACCTGTTTCGTATCGGAXXYYZZ".to_vec();
+let lt_fm_index= LtFmIndex::<u32, Block2<u128>>::build(
+    text,
+    characters_by_index,
+    2,
+    4,
+).unwrap();
 
 // (3) Match with pattern
-let pattern = b"TA".to_vec();
+let pattern = b"TA";
 //   - count
-let count = lt_fm_index.count(&pattern);
+let count = lt_fm_index.count(pattern);
 assert_eq!(count, 2);
 //   - locate
-let locations = lt_fm_index.locate(&pattern);
+let mut locations = lt_fm_index.locate(pattern);
+locations.sort();  // The locations may not be in order.
 assert_eq!(locations, vec![5,18]);
-```
-### 2. Save and load `LtFmIndex`
-```rust
-use lt_fm_index::{LtFmIndex, LtFmIndexBuilder};
+// All unindexed characters are treated as the same character.
+// In the text, X, Y, and Z can match any other unindexed character
+let mut locations = lt_fm_index.locate(b"UNDEF");
+locations.sort();
+// Using the b"XXXXX", b"YYYYY", or b"!@#$%" gives the same result.
+assert_eq!(locations, vec![25,26]);
 
-// (1) Generate lt-fm-index
-let text = b"CTCCGTACACCTGTTTCGTATCGGA".to_vec();
-let lt_fm_index_to_save = LtFmIndexBuilder::new().build(text).unwrap();
-
-// (2) Save lt-fm-index to buffer
+// (4) Save and load
 let mut buffer = Vec::new();
-lt_fm_index_to_save.save_to(&mut buffer).unwrap();
-
-// (3) Load lt-fm-index from buffer
-let lt_fm_index_loaded = LtFmIndex::load_from(&buffer[..]).unwrap();
-
-assert_eq!(lt_fm_index_to_save, lt_fm_index_loaded);
+lt_fm_index.save_to(&mut buffer).unwrap();
+let loaded = LtFmIndex::load_from(&buffer[..]).unwrap();
+assert_eq!(lt_fm_index, loaded);
 ```
 ## Repository
 [https://github.com/baku4/lt-fm-index](https://github.com/baku4/lt-fm-index)
-## Doc
+## API Doc
 [https://docs.rs/lt-fm-index/](https://docs.rs/lt-fm-index/)
 ## Reference
 - Ferragina, P., et al. (2004). An Alphabet-Friendly FM-Index, Springer Berlin Heidelberg: 150-160.

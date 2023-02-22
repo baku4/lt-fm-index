@@ -1,6 +1,6 @@
 [package]
 name = "lt-fm-index"
-version = "0.6.0"
+version = "0.7.0-alpha"
 authors = ["baku4 <bahkhun@gmail.com>"]
 edition = "2021"
 rust-version = "1.57.0"
@@ -12,12 +12,10 @@ keywords = ["fm-index", "bwt", "pattern_matching", "bio"]
 categories = ["science", "algorithms"]
 
 [dependencies]
-thiserror = "1.0.38"
-anyhow = "1.0.44"
+capwriter = "0.2.0"
 byteorder = "1.4.3"
-capwriter = "0.1.4"
-bytemuck = { version = "1.7.3", features = [ "derive" ] }
-rand = "0.8.0"
+bytemuck = { version = "1.13.0", features = [ "derive" ] }
+num-traits = "0.2.15"
 bio = "1.1.0"
 libdivsufsort-rs = { version = "0.1.2", optional = true }
 
@@ -26,6 +24,7 @@ getrandom = { version = "0.2", features = ["js"] }
 
 [dev-dependencies]
 crate_fm_index = { package = "fm-index", version = "0.1" }
+rand = "0.8.0"
 criterion = "0.3.5"
 
 [[bench]]

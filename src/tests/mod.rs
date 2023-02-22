@@ -1,12 +1,6 @@
-pub mod random_text;
+pub mod random_data;
+pub mod result_answer;
 
-#[cfg(test)]
-pub mod other_crate;
-#[cfg(test)]
-pub mod for_readme;
-#[cfg(test)]
-pub mod result_accuracy;
-#[cfg(test)]
-pub mod serialization;
-#[cfg(test)]
-pub mod large;
+mod readme;
+mod accurate_result;
+mod save_and_load;

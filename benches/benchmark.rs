@@ -14,10 +14,27 @@ mod sorting;
 #[cfg(feature = "fastbwt")]
 use sorting::bench_burrow_wheeler_transform;
 
-#[cfg(not(feature = "fastbwt"))]
+// mod compare_perf;
+// use compare_perf::{
+//     build_no_text,
+//     locate_no_text,
+// };
+
+// mod perf_raw_vs_boxed;
+// use perf_raw_vs_boxed::{
+//     build_no_text,
+//     locate_no_text,
+// };
+
+// mod perf_by_vector_size;
+// use perf_by_vector_size::{
+//     build_no_text, locate_no_text,
+// };
+
 criterion_group!(
     benches,
-    bench_counting_bits_of_u64,
+    bench_counting_bits_of_u64
+    // build_no_text, locate_no_text,
 );
 #[cfg(feature = "fastbwt")]
 criterion_group!(

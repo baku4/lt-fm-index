@@ -27,6 +27,7 @@ pub trait Position:
     fn from_u64(value: u64) -> Self;
     fn as_usize(self) -> usize;
     fn from_usize(value: usize) -> Self;
+    fn from_i64(value: i64) -> Self;
     fn as_vec_in_range(from: &Self, to: &Self) -> Vec<Self>;
 }
 
@@ -60,6 +61,10 @@ impl Position for u32 {
         value as Self
     }
     #[inline(always)]
+    fn from_i64(value: i64) -> Self {
+        value as Self
+    }
+    #[inline(always)]
     fn as_vec_in_range(from: &Self, to: &Self) -> Vec<Self> {
         (*from..*to).collect::<Vec<Self>>()
     }
@@ -90,6 +95,10 @@ impl Position for u64 {
     }
     #[inline(always)]
     fn from_usize(value: usize) -> Self {
+        value as Self
+    }
+    #[inline(always)]
+    fn from_i64(value: i64) -> Self {
         value as Self
     }
     #[inline(always)]

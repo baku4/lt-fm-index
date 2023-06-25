@@ -16,7 +16,7 @@ capwriter = "0.2.0"
 byteorder = "1.4.3"
 bytemuck = { version = "1.13.0", features = [ "derive" ] }
 num-traits = "0.2.15"
-bio = "1.1.0"
+bio = ">=1.1.0, <=1.3.0"
 libdivsufsort-rs = { version = "0.1.2", optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

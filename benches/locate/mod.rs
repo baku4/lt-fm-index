@@ -13,24 +13,24 @@ use super::random_data::{
 };
 use std::time::{Duration, Instant};
 
-type LFI_32_2_32 = LtFmIndex<u32, Block2<u32>>;
-type LFI_32_2_64 = LtFmIndex<u32, Block2<u64>>;
-type LFI_32_2_128 = LtFmIndex<u32, Block2<u128>>;
-type LFI_32_3_32 = LtFmIndex<u32, Block3<u32>>;
-type LFI_32_3_64 = LtFmIndex<u32, Block3<u64>>;
-type LFI_32_3_128 = LtFmIndex<u32, Block3<u128>>;
-type LFI_32_4_32 = LtFmIndex<u32, Block4<u32>>;
-type LFI_32_4_64 = LtFmIndex<u32, Block4<u64>>;
-type LFI_32_4_128 = LtFmIndex<u32, Block4<u128>>;
-type LFI_64_2_32 = LtFmIndex<u64, Block2<u32>>;
-type LFI_64_2_64 = LtFmIndex<u64, Block2<u64>>;
-type LFI_64_2_128 = LtFmIndex<u64, Block2<u128>>;
-type LFI_64_3_32 = LtFmIndex<u64, Block3<u32>>;
-type LFI_64_3_64 = LtFmIndex<u64, Block3<u64>>;
-type LFI_64_3_128 = LtFmIndex<u64, Block3<u128>>;
-type LFI_64_4_32 = LtFmIndex<u64, Block4<u32>>;
-type LFI_64_4_64 = LtFmIndex<u64, Block4<u64>>;
-type LFI_64_4_128 = LtFmIndex<u64, Block4<u128>>;
+type Lfi32_2_32 = LtFmIndex<u32, Block2<u32>>;
+type Lfi32_2_64 = LtFmIndex<u32, Block2<u64>>;
+type Lfi32_2_128 = LtFmIndex<u32, Block2<u128>>;
+type Lfi32_3_32 = LtFmIndex<u32, Block3<u32>>;
+type Lfi32_3_64 = LtFmIndex<u32, Block3<u64>>;
+type Lfi32_3_128 = LtFmIndex<u32, Block3<u128>>;
+type Lfi32_4_32 = LtFmIndex<u32, Block4<u32>>;
+type Lfi32_4_64 = LtFmIndex<u32, Block4<u64>>;
+type Lfi32_4_128 = LtFmIndex<u32, Block4<u128>>;
+type Lfi64_2_32 = LtFmIndex<u64, Block2<u32>>;
+type Lfi64_2_64 = LtFmIndex<u64, Block2<u64>>;
+type Lfi64_2_128 = LtFmIndex<u64, Block2<u128>>;
+type Lfi64_3_32 = LtFmIndex<u64, Block3<u32>>;
+type Lfi64_3_64 = LtFmIndex<u64, Block3<u64>>;
+type Lfi64_3_128 = LtFmIndex<u64, Block3<u128>>;
+type Lfi64_4_32 = LtFmIndex<u64, Block4<u32>>;
+type Lfi64_4_64 = LtFmIndex<u64, Block4<u64>>;
+type Lfi64_4_128 = LtFmIndex<u64, Block4<u128>>;
 
 #[inline]
 fn locate_multiple_patterns<P: Position, B: Block<P>>(
@@ -92,24 +92,24 @@ pub fn perf_of_locate(c: &mut Criterion) {
                     }
                 };
             }
-            TestCode!(LFI_32_2_32, "LFI_u32_b2_v32");
-            TestCode!(LFI_32_2_64, "LFI_u32_b2_v64");
-            TestCode!(LFI_32_2_128, "LFI_u32_b2_v128");
-            TestCode!(LFI_32_3_32, "LFI_u32_b3_v32");
-            TestCode!(LFI_32_3_64, "LFI_u32_b3_v64");
-            TestCode!(LFI_32_3_128, "LFI_u32_b3_v128");
-            TestCode!(LFI_32_4_32, "LFI_u32_b4_v32");
-            TestCode!(LFI_32_4_64, "LFI_u32_b4_v64");
-            TestCode!(LFI_32_4_128, "LFI_u32_b4_v128");
-            TestCode!(LFI_64_2_32, "LFI_u64_b2_v32");
-            TestCode!(LFI_64_2_64, "LFI_u64_b2_v64");
-            TestCode!(LFI_64_2_128, "LFI_u64_b2_v128");
-            TestCode!(LFI_64_3_32, "LFI_u64_b3_v32");
-            TestCode!(LFI_64_3_64, "LFI_u64_b3_v64");
-            TestCode!(LFI_64_3_128, "LFI_u64_b3_v128");
-            TestCode!(LFI_64_4_32, "LFI_u64_b4_v32");
-            TestCode!(LFI_64_4_64, "LFI_u64_b4_v64");
-            TestCode!(LFI_64_4_128, "LFI_u64_b4_v128");
+            TestCode!(Lfi32_2_32, "LFI_u32_b2_v32");
+            TestCode!(Lfi32_2_64, "LFI_u32_b2_v64");
+            TestCode!(Lfi32_2_128, "LFI_u32_b2_v128");
+            TestCode!(Lfi32_3_32, "LFI_u32_b3_v32");
+            TestCode!(Lfi32_3_64, "LFI_u32_b3_v64");
+            TestCode!(Lfi32_3_128, "LFI_u32_b3_v128");
+            TestCode!(Lfi32_4_32, "LFI_u32_b4_v32");
+            TestCode!(Lfi32_4_64, "LFI_u32_b4_v64");
+            TestCode!(Lfi32_4_128, "LFI_u32_b4_v128");
+            TestCode!(Lfi64_2_32, "LFI_u64_b2_v32");
+            TestCode!(Lfi64_2_64, "LFI_u64_b2_v64");
+            TestCode!(Lfi64_2_128, "LFI_u64_b2_v128");
+            TestCode!(Lfi64_3_32, "LFI_u64_b3_v32");
+            TestCode!(Lfi64_3_64, "LFI_u64_b3_v64");
+            TestCode!(Lfi64_3_128, "LFI_u64_b3_v128");
+            TestCode!(Lfi64_4_32, "LFI_u64_b4_v32");
+            TestCode!(Lfi64_4_64, "LFI_u64_b4_v64");
+            TestCode!(Lfi64_4_128, "LFI_u64_b4_v128");
         }
     }
 

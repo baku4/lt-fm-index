@@ -10,7 +10,5 @@ pub use algorithm::{
     blocks,
 };
 
-mod wrapper;
-
 #[cfg(test)]
 mod tests;

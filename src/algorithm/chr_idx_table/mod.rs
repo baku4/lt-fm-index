@@ -3,11 +3,14 @@ pub struct ChrIdxTable(pub [u8; 256]);
 
 impl ChrIdxTable {
     #[inline]
-    pub fn new_with_counting_chr(characters_by_index: &[&[u8]]) -> (Self, u32) {
+    pub fn new_with_counting_chr<T>(characters_by_index: &[T]) -> (Self, u32)
+    where
+        T: AsRef<[u8]>,
+    {
         let chr_count = characters_by_index.len() as u32 + 1;
         let mut table = [(chr_count - 1) as u8; 256];
         characters_by_index.iter().enumerate().for_each(|(idx, chr)| {
-            chr.iter().for_each(|x| table[*x as usize] = idx as u8);
+            chr.as_ref().iter().for_each(|x| table[*x as usize] = idx as u8);
         });
         (Self(table), chr_count)
     }

@@ -4,7 +4,7 @@ use crate::core::{
 };
 
 #[derive(Clone, PartialEq, Eq)]
-pub struct LtFmIndex<P: Position, B: Block<P>> {
+pub struct  LtFmIndex<P: Position, B: Block<P>> {
     text_len: P,
     chr_idx_table: ChrIdxTable,
     suffix_array: SuffixArray<P>,
@@ -37,12 +37,15 @@ impl<P: Position, B: Block<P>> LtFmIndex<P, B> {
 
 impl<P: Position, B: Block<P>> LtFmIndex<P, B> {
     // Build
-    pub fn build(
+    pub fn build<T>(
         mut text: Vec<u8>,
-        characters_by_index: &[&[u8]],
+        characters_by_index: &[T],
         suffix_array_sampling_ratio: P,
         lookup_table_kmer_size: u32,
-    ) -> Result<Self, BuildError> {
+    ) -> Result<Self, BuildError>
+    where
+        T: AsRef<[u8]>,
+    {
         if suffix_array_sampling_ratio == P::ZERO {
             return Err(BuildError::SuffixArraySamplingRatio);
         }

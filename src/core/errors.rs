@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::fmt;
 
+/// Error type for building `LtFmIndex`.
 #[derive(Debug)]
 pub enum BuildError {
     /// Index is over the maximum count of block

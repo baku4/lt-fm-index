@@ -1,8 +1,10 @@
 /**
 Type for the compressed bits in Burrow-Wheeler transformed text.
-Two types are supported:
-  - `u64`
-  - `u128`
+Three types are supported:
+- `u32`
+- `u64`
+- `u128`
+
 Using the more small bits makes the algorithm faster, but the size of the struct is the larger than of long bits.
 */
 pub trait Vector:

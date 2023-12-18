@@ -3,6 +3,7 @@ use crate::core::{
     errors::BuildError,
 };
 
+/// FM-index using lookup table for first k-mer search.
 #[derive(Clone, PartialEq, Eq)]
 pub struct  LtFmIndex<P: Position, B: Block<P>> {
     text_len: P,

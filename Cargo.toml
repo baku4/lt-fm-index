@@ -1,6 +1,6 @@
 [package]
 name = "lt-fm-index"
-version = "0.7.0-alpha.3"
+version = "0.7.0-alpha.4"
 authors = ["baku4 <bahkhun@gmail.com>"]
 edition = "2021"
 rust-version = "1.57.0"

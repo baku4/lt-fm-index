@@ -1,14 +1,13 @@
-use crate::core::{
-    Position
-};
+use crate::core::Position;
 use super::ChrIdxTable;
 
+// pub(crate) is used for 'features > locate_from_raw_index.rs'
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CountArray<P: Position> {
-    kmer_size: u32,
-    count_table: Vec<P>,
-    kmer_count_table: Vec<P>,
-    multiplier: Vec<usize>,
+    pub(crate) kmer_size: u32,
+    pub(crate) count_table: Vec<P>,
+    pub(crate) kmer_count_table: Vec<P>,
+    pub(crate) multiplier: Vec<usize>,
 }
 
 impl<P: Position> CountArray<P> {

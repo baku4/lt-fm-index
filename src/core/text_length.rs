@@ -8,6 +8,7 @@ pub trait Position:
     Sized
     + Copy
     + Clone
+    + Ord + PartialOrd + Eq + PartialEq
     + std::fmt::Debug
     + std::ops::Div<Output = Self>
     + std::ops::Rem<Output = Self>

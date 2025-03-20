@@ -1,28 +1,15 @@
 use crate::{LtFmIndex, Position, Block};
 use crate::blocks::{Block2, Block3, Block4, Block5, Block6};
-use crate::tests::{
-    random_data::{
-        gen_rand_chr_list,
-        gen_rand_text,
-        gen_rand_pattern,
-    },
-    result_answer::{
-        get_fmindex_of_other_crate,
-        get_sorted_locations,
-    },
+use crate::tests::random_data::{
+    gen_rand_chr_list,
+    gen_rand_text,
+    gen_rand_pattern,
 };
 
-// *** For extensive and thorough testing ***
-// To enable "WIDE_TEST",
-// set the environment variable WIDE_TEST=1
-
-mod accurate_results_from_raw_index;
-
-fn assert_accurate_lt_fm_index<P: Position, B: Block<P>>(
+fn assert_accurate_lt_fm_index_from_raw_index<P: Position, B: Block<P>>(
     chr_list: &Vec<u8>,
     text: Vec<u8>,
-    patterns: &Vec<Vec<u8>>,
-    answers: &Vec<Vec<u64>>,
+    patterns: &[Vec<u8>],
     ltks: u32,
     sasr: u64,
 ) {
@@ -37,15 +24,23 @@ fn assert_accurate_lt_fm_index<P: Position, B: Block<P>>(
         P::from_u64(sasr),
         ltks,
     ).unwrap();
-    patterns.iter().zip(answers.iter()).for_each(|(pattern, answer)| {
-        let mut result: Vec<u64> = lt_fm_index.locate(pattern).into_iter().map(|x| x.as_u64()).collect();
+    
+    for pattern in patterns {
+        let mut answer = lt_fm_index.locate(pattern);
+        answer.sort();
+
+        let decoding_table = lt_fm_index.decoding_table();
+        let raw_index_rev_iter = pattern.iter().map(|&c| decoding_table[c as usize]).rev();
+
+        let mut result = lt_fm_index.locate_from_raw_index(raw_index_rev_iter);
         result.sort();
-        assert_eq!(&result, answer);
-    });
+        
+        assert_eq!(result, answer);
+    }
 }
 
 #[test]
-fn result_is_accurate() {
+fn result_is_accurate_from_raw_index() {
     let wide_test = std::env::var("WIDE_TEST").is_ok();
 
     let range_chr_count = if wide_test { 2..63 } else { 2..4 };
@@ -68,19 +63,13 @@ fn result_is_accurate() {
             let patterns: Vec<Vec<u8>> = (0..n_pattern).map(|_| {
                 gen_rand_pattern(&text, pattern_min_len, pattern_max_len)
             }).collect();
-            let answers: Vec<Vec<u64>> = {
-                let fm_index = get_fmindex_of_other_crate(&text);
-                patterns.iter().map(|pattern| {
-                    get_sorted_locations(&fm_index, pattern)
-                }).collect()
-            };
+
             macro_rules! test_type_of {
                 ( $p: ty, $b: ident, $v: ty ) => {
-                    assert_accurate_lt_fm_index::<$p, $b::<$v>>(
+                    assert_accurate_lt_fm_index_from_raw_index::<$p, $b::<$v>>(
                         &chr_list,
                         text.clone(),
                         &patterns,
-                        &answers,
                         ltks,
                         sasr,
                     )

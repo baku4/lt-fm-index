@@ -1,4 +1,4 @@
-use crate::core::{Position};
+use crate::core::Position;
 
 pub mod blocks;
 

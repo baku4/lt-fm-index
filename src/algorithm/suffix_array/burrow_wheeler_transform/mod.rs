@@ -1,13 +1,13 @@
 // Type 1: use crate 'bio'
 // This is default version
-mod crate_bio;
+mod crate_bio_manual;
 // Type 2: use 'libdivsufsort'
 // Faster, but restrict the environment
 #[cfg(feature = "fastbwt")]
 mod libdivsufsort;
 
 #[cfg(not(feature = "fastbwt"))]
-pub use crate_bio::get_compressed_suffix_array_and_pidx_while_bwt_with_crate_bio as get_compressed_suffix_array_and_pidx_while_bwt;
+pub use crate_bio_manual::get_compressed_suffix_array_and_pidx_while_bwt_with_crate_bio as get_compressed_suffix_array_and_pidx_while_bwt;
 #[cfg(feature = "fastbwt")]
 pub use libdivsufsort::get_compressed_suffix_array_and_pidx_while_bwt_with_libdivsufsort as get_compressed_suffix_array_and_pidx_while_bwt;
 
@@ -17,7 +17,7 @@ mod tests {
     use crate::Position;
     use crate::tests::random_data::*;
 
-    use super::crate_bio::get_compressed_suffix_array_and_pidx_while_bwt_with_crate_bio as bwt1;
+    use super::crate_bio_manual::get_compressed_suffix_array_and_pidx_while_bwt_with_crate_bio as bwt1;
     use super::libdivsufsort::get_compressed_suffix_array_and_pidx_while_bwt_with_libdivsufsort as bwt2;
 
     #[test]
@@ -55,7 +55,7 @@ mod tests {
                 P::from_u32(sampling_ratio),
             );
 
-            assert_eq!(suffix_array_1, suffix_array_1);
+            assert_eq!(suffix_array_1, suffix_array_2);
             assert_eq!(bwt_res_1, bwt_res_2);
             assert_eq!(pidx_1, pidx_2);
         }

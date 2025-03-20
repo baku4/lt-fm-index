@@ -1,6 +1,6 @@
 use crate::core::Position;
-use bio::data_structures::suffix_array::suffix_array as get_suffix_array;
-use bio::data_structures::bwt::bwt as get_bwt;
+use suffix_array::suffix_array as get_suffix_array;
+use bwt::bwt as get_bwt;
 
 const SENTINEL_SYMBOL: u8 = 0;
 
@@ -30,3 +30,13 @@ fn get_pidx_from_bwt(bwt: &[u8]) -> usize {
     }
     0
 }
+
+// =================================================================================================
+// These modules are sourced from the Rust-Bio crate (https://github.com/rust-bio/rust-bio)
+// version 2.2.0 and have been modified under the MIT License. Both the original code and
+// the modifications remain under the MIT License. The original copyright
+// and license notices are preserved at the top of each module.\
+mod bwt;
+mod alphabets;
+mod suffix_array;
+mod smallints;

@@ -6,8 +6,8 @@ impl<P: Position, B: Block<P>> LtFmIndex<P, B> {
     #[inline]
     /// Returns the decoding table.
     /// The decoding table is a 256-length array that stores the indices for 1-byte characters.
-    pub fn decoding_table(&self) -> [u8; 256] {
-        self.chr_idx_table.0
+    pub fn decoding_table(&self) -> &[u8; 256] {
+        &self.chr_idx_table.0
     }
     #[inline]
     /// Performs the same functionality as [Self::locate], but instead of plain text, it iterates over the text in reverse order and takes a raw index as input using the decoding table (with [Self::decoding_table]).

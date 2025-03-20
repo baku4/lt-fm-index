@@ -18,7 +18,10 @@ use sorting::bench_burrow_wheeler_transform;
 
 // Bench of locating by options
 mod locate;
-use locate::{perf_of_locate};
+use locate::perf_of_locate;
+
+mod locate_with_raw_index;
+use locate_with_raw_index::compare_locate_vs_locate_from_raw_index;
 
 // mod perf_by_vector_size;
 // use perf_by_vector_size::{
@@ -27,7 +30,7 @@ use locate::{perf_of_locate};
 
 criterion_group!(
     benches,
-    bench_counting_bits_of_u64,
+    compare_locate_vs_locate_from_raw_index,
 );
 #[cfg(feature = "fastbwt")]
 criterion_group!(

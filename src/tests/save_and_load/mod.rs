@@ -1,12 +1,9 @@
 use crate::{LtFmIndex, Position, Block};
 use crate::blocks::{Block2, Block3, Block4, Block5, Block6};
-use crate::tests::{
-    random_data::{
-        gen_rand_chr_list,
-        gen_rand_text,
-    },
+use crate::tests::random_data::{
+    gen_rand_chr_list,
+    gen_rand_text,
 };
-use std::io::Cursor;
 
 fn assert_serializing_and_estimating_size_are_success<P: Position, B: Block<P> + std::cmp::PartialEq>(
     chr_list: &Vec<u8>,
@@ -29,7 +26,7 @@ fn assert_serializing_and_estimating_size_are_success<P: Position, B: Block<P> +
     lt_fm_index.save_to(&mut buffer).unwrap();
     assert_eq!(lt_fm_index.to_be_saved_size(), buffer.len());
 
-    let loaded: LtFmIndex::<P, B> = LtFmIndex::load_from(Cursor::new(buffer)).unwrap();
+    let loaded: LtFmIndex::<P, B> = LtFmIndex::load_from(&mut &buffer[..]).unwrap();
     assert_eq!(lt_fm_index, loaded);
 }
 

@@ -44,7 +44,7 @@ assert_eq!(locations, vec![25,26]);
 // (4) Save and load
 let mut buffer = Vec::new();
 lt_fm_index.save_to(&mut buffer).unwrap();
-let loaded = LtFmIndex::load_from(&buffer[..]).unwrap();
+let loaded = LtFmIndex::load_from(&mut &buffer[..]).unwrap();
 assert_eq!(lt_fm_index, loaded);
 
 }

@@ -12,7 +12,7 @@ keywords = ["fm-index", "bwt", "pattern_matching", "bio"]
 categories = ["science", "algorithms"]
 
 [dependencies]
-capwriter = "0.2.0"
+capwriter = "0.3.0"
 byteorder = "1.5"
 bytemuck = { version = "1.22", features = [ "derive" ] }
 num-traits = "0.2"

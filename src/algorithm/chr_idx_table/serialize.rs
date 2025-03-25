@@ -2,13 +2,13 @@ use crate::core::Serialize;
 use super::ChrIdxTable;
 
 impl Serialize for ChrIdxTable {
-    fn save_to<W>(&self, mut writer: W) -> Result<(), std::io::Error> where
+    fn save_to<W>(&self, writer: &mut W) -> Result<(), std::io::Error> where
         W: std::io::Write
     {
         writer.write_all(&self.0)?;
         Ok(())
     }
-    fn load_from<R>(mut reader: R) -> Result<Self, std::io::Error> where
+    fn load_from<R>(reader: &mut R) -> Result<Self, std::io::Error> where
         R: std::io::Read,
         Self: Sized
     {

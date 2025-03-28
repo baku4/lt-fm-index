@@ -86,9 +86,7 @@ pub use structures::{
 };
 // Builder
 mod builder;
-pub use builder::{
-    LtFmIndexBuilder,
-};
+pub use builder::LtFmIndexBuilder;
 /// Errors
 pub mod errors;
 

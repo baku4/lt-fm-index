@@ -4,11 +4,7 @@ use super::{
 };
 
 // TODO: Delete padding
-const CHR_COUNT: usize = if cfg!(target_arch = "aarch64") {
-    22
-} else {
-    21
-};
+const CHR_COUNT: usize = 22;
 const BITS_COUNT: usize = 5;
 
 const A_UTF8: u8 = 65;

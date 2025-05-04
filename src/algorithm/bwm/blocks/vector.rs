@@ -9,6 +9,7 @@ Using the more small bits makes the algorithm faster, but the size of the struct
 */
 pub trait Vector:
     Sized
+    + Send + Sync
     + std::ops::Not<Output = Self>
     + std::ops::BitAnd<Output = Self>
     + std::ops::Shr<Output = Self>

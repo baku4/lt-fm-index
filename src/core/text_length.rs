@@ -4,11 +4,13 @@ Two types are supported:
   - `u32`
   - `u64`
 */
+#[cfg(feature = "async-tokio")]
 pub trait Position:
     Sized
     + Copy
     + Clone
     + Ord + PartialOrd + Eq + PartialEq
+    + Send + Sync
     + std::fmt::Debug
     + std::ops::Div<Output = Self>
     + std::ops::Rem<Output = Self>
@@ -18,6 +20,10 @@ pub trait Position:
     + std::cmp::PartialOrd
     + bytemuck::Pod
     + bytemuck::Zeroable
+    + capwriter::Save
+    + capwriter::Load
+    + capwriter::AsyncSave
+    + capwriter::AsyncLoad
 {
     const ZERO: Self;
     const ONE: Self;
@@ -31,7 +37,37 @@ pub trait Position:
     fn from_i64(value: i64) -> Self;
     fn as_vec_in_range(from: &Self, to: &Self) -> Vec<Self>;
 }
-
+#[cfg(not(feature = "async-tokio"))]
+pub trait Position:
+    Sized
+    + Copy
+    + Clone
+    + Ord + PartialOrd + Eq + PartialEq
+    + Send + Sync
+    + std::fmt::Debug
+    + std::ops::Div<Output = Self>
+    + std::ops::Rem<Output = Self>
+    + std::ops::Add<Output = Self>
+    + std::ops::AddAssign<Self>
+    + std::ops::Sub<Output = Self>
+    + std::cmp::PartialOrd
+    + bytemuck::Pod
+    + bytemuck::Zeroable
+    + capwriter::Save
+    + capwriter::Load
+{
+    const ZERO: Self;
+    const ONE: Self;
+    const BITS: u32;
+    fn as_u32(self) -> u32;
+    fn from_u32(value: u32) -> Self;
+    fn as_u64(self) -> u64;
+    fn from_u64(value: u64) -> Self;
+    fn as_usize(self) -> usize;
+    fn from_usize(value: usize) -> Self;
+    fn from_i64(value: i64) -> Self;
+    fn as_vec_in_range(from: &Self, to: &Self) -> Vec<Self>;
+}
 
 impl Position for u32 {
     const ZERO: Self = 0_u32;

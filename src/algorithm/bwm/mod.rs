@@ -14,7 +14,7 @@ pub struct Bwm<P: Position, B: Block<P>> {
 Type of the block of compressed Burrow-Wheeler transformed text.
 The implementations are in [blocks] module.
 */
-pub trait Block<P: Position>: Sized + bytemuck::Pod {
+pub trait Block<P: Position>: Sized + bytemuck::Pod + Send + Sync {
     const BLOCK_LEN: u32;
     const MAX_CHR: u32;
     // Build
@@ -114,3 +114,5 @@ impl<P: Position, B: Block<P>> Bwm<P, B> {
 }
 
 mod serialize;
+#[cfg(feature = "async-tokio")]
+mod async_serialize;

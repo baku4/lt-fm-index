@@ -21,3 +21,5 @@ impl ChrIdxTable {
 }
 
 mod serialize;
+#[cfg(feature = "async-tokio")]
+mod async_serialize;

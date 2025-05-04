@@ -1,32 +1,32 @@
-use crate::core::{Position, Serialize, EndianType, WriteBytesExt, ReadBytesExt};
+use crate::core::{Position, Serialize};
 use super::SuffixArray;
 use capwriter::{Save, Load};
 
 impl<P: Position> Serialize for SuffixArray<P> {
-    fn save_to<W>(&self, mut writer: W) -> Result<(), std::io::Error> where
+    fn save_to<W>(&self, writer: &mut W) -> Result<(), std::io::Error> where
         W: std::io::Write,
     {
-        writer.write_u64::<EndianType>(self.sampling_ratio.as_u64())?;
+        self.sampling_ratio.as_u64().save_as_ne(writer)?;
 
-        self.array.save_to(writer)?;
+        self.array.save_as_ne(writer)?;
 
         Ok(())
     }
-    fn load_from<R>(mut reader: R) -> Result<Self, std::io::Error> where
+    fn load_from<R>(reader: &mut R) -> Result<Self, std::io::Error> where
         R: std::io::Read,
         Self: Sized,
     {
-        let sampling_ratio = P::from_u64(reader.read_u64::<EndianType>()?);
+        let sampling_ratio = P::from_u64(u64::load_as_ne(reader)?);
 
-        let array = Vec::<P>::load_from(reader)?;
+        let array = Vec::<P>::load_as_ne(reader)?;
 
         Ok(Self{
             sampling_ratio,
             array,
         })
     }
-    fn to_be_saved_size(&self) -> usize {
+    fn encoded_len(&self) -> usize {
         8 // sampling_ratio
-        + self.array.to_be_saved_size() // array
+        + self.array.encoded_len() // array
     }
 }

@@ -32,6 +32,8 @@ impl<P: Position> SuffixArray<P> {
 }
 
 mod serialize;
+#[cfg(feature = "async-tokio")]
+mod async_serialize;
 
 #[cfg(test)]
 mod tests {

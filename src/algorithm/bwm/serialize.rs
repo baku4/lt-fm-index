@@ -1,4 +1,4 @@
-use crate::core::{Position, Serialize, EndianType, WriteBytesExt, ReadBytesExt};
+use crate::core::{Position, Serialize};
 use super::{Bwm, Block};
 use capwriter::{Save, Load};
 
@@ -7,50 +7,53 @@ impl<T, B> Serialize for Bwm<T, B> where
     B: Block<T>,
 {
     #[allow(unused_must_use)]
-    fn save_to<W>(&self, mut writer: W) -> Result<(), std::io::Error> where
+    fn save_to<W>(&self, writer: &mut W) -> Result<(), std::io::Error> where
         W: std::io::Write,
     {
         // primary_index
-        writer.write_u64::<EndianType>(self.primary_index.as_u64())?;
+        self.primary_index.as_u64().save_as_ne(writer)?;
         // chr_count
-        writer.write_u32::<EndianType>(self.chr_count)?;
+        self.chr_count.save_as_ne(writer)?;
         // rank_checkpoints
-        self.rank_checkpoints.save_to(&mut writer)?;
+        self.rank_checkpoints.save_as_ne(writer)?;
         // blocks
         let blocks_len = self.blocks.len() as u64;
-        writer.write_u64::<EndianType>(blocks_len)?;
+        blocks_len.save_as_ne(writer)?;
         let casted_blocks = bytemuck::cast_slice(&self.blocks);
         writer.write_all(casted_blocks)?;
 
         Ok(())
     }
-    fn load_from<R>(mut reader: R) -> Result<Self, std::io::Error> where
+    fn load_from<R>(reader: &mut R) -> Result<Self, std::io::Error> where
         R: std::io::Read,
         Self: Sized,
     {
         // primary_index
-        let primary_index = T::from_u64(reader.read_u64::<EndianType>()?);
+        let primary_index = u64::load_as_ne(reader)?;
         // chr_count
-        let chr_count = reader.read_u32::<EndianType>()?;
+        let chr_count = u32::load_as_ne(reader)?;
         // rank_checkpoints
-        let rank_checkpoints = Vec::<T>::load_from(&mut reader)?;
+        let rank_checkpoints = Vec::<T>::load_as_ne(reader)?;
         // blocks length
-        let blocks_len = reader.read_u64::<EndianType>()? as usize;
+        let blocks_len = u64::load_as_ne(reader)? as usize;
         let mut blocks = vec![B::zeroed(); blocks_len];
         // Read from reader
         let casted_buffer: &mut [u8] = bytemuck::cast_slice_mut(&mut blocks);
         reader.read_exact(casted_buffer)?;
         
         Ok(Self {
-            primary_index,
+            primary_index: T::from_u64(primary_index),
             chr_count,
             rank_checkpoints,
             blocks,
         })
     }
-    fn to_be_saved_size(&self) -> usize {
+    fn encoded_len(&self) -> usize {
+        let block_bytes: &[u8] = bytemuck::cast_slice(&self.blocks);
         12 // primary_index(8) + chr_count(4)
-        + self.rank_checkpoints.to_be_saved_size() // rank_checkpoints
-        + self.blocks.to_be_saved_size() // blocks
+        + self.rank_checkpoints.encoded_len() // rank_checkpoints
+        + 8 // blocks_len
+        + block_bytes.len() // blocks
     }
 }
+

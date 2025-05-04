@@ -113,3 +113,5 @@ impl<P: Position> CountArray<P> {
 }
 
 mod serialize;
+#[cfg(feature = "async-tokio")]
+mod async_serialize;

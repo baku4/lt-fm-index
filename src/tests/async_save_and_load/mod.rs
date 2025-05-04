@@ -4,9 +4,9 @@ use crate::tests::random_data::{
     gen_rand_chr_list,
     gen_rand_text,
 };
-use std::io::Cursor;
+use std::pin::Pin;
 
-fn assert_serializing_and_estimating_size_are_success<P: Position, B: Block<P> + std::cmp::PartialEq>(
+async fn assert_serializing_is_success<P: Position, B: Block<P> + std::cmp::PartialEq>(
     chr_list: &Vec<u8>,
     text: Vec<u8>,
     ltks: u32,
@@ -24,15 +24,14 @@ fn assert_serializing_and_estimating_size_are_success<P: Position, B: Block<P> +
         ltks,
     ).unwrap();
     let mut buffer = Vec::new();
-    lt_fm_index.save_to(&mut buffer).unwrap();
-    assert_eq!(lt_fm_index.encoded_len(), buffer.len());
+    lt_fm_index.async_save_to(Pin::new(&mut buffer)).await.unwrap();
 
-    let loaded: LtFmIndex::<P, B> = LtFmIndex::load_from(Cursor::new(buffer)).unwrap();
+    let loaded: LtFmIndex::<P, B> = LtFmIndex::async_load_from(Pin::new(&mut &buffer[..])).await.unwrap();
     assert_eq!(lt_fm_index, loaded);
 }
 
-#[test]
-fn save_and_load() {
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn async_save_and_load() {
     let range_chr_count = 2..4;
     let text_min_len = 100;
     let text_max_len = 300;
@@ -49,12 +48,12 @@ fn save_and_load() {
 
             macro_rules! test_type_of {
                 ( $p: ty, $b: ident, $v: ty ) => {
-                    assert_serializing_and_estimating_size_are_success::<$p, $b::<$v>>(
+                    assert_serializing_is_success::<$p, $b::<$v>>(
                         &chr_list,
                         text.clone(),
                         ltks,
                         sasr,
-                    )
+                    ).await;
                 };
             }
             macro_rules! of_position_for_blocks {

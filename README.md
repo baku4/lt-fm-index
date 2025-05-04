@@ -1,5 +1,5 @@
 # LtFmIndex
-[![CI](https://github.com/baku4/lt-fm-index/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/baku4/lt-fm-index/actions/workflows/rust.yml)
+[![CI](https://github.com/baku4/lt-fm-index/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/baku4/lt-fm-index/actions/workflows/ci.yml)
 [![crates.io](https://img.shields.io/crates/v/lt-fm-index.svg)](https://crates.io/crates/lt-fm-index)
 
 `LtFmIndex` is a Rust library for building and using a FM-index that contains a lookup table of the first *k-mer* of a pattern. This index can be used to (1) count the number of occurrences and (2) locate the positions of a pattern in an indexed text.

@@ -9,10 +9,9 @@
 To use this library, add `lt_fm_index` to your `Cargo.toml`:
 ```toml
 [dependencies]
-lt_fm_index = "0.7.0-alpha"
+lt_fm_index = "0.7.0"
 ```
-- About `fastbwt` features
-  - This feature can accelerate the indexing, but needs `cmake` to build `libdivsufsort` and cannot be built as WASM.
+
 ### Example code
 ```rust
 use lt_fm_index::LtFmIndex;
@@ -60,10 +59,17 @@ lt_fm_index.save_to(&mut buffer).unwrap();
 let loaded = LtFmIndex::load_from(&buffer[..]).unwrap();
 assert_eq!(lt_fm_index, loaded);
 ```
+
+### Features
+- `fastbwt`: This feature can accelerate the indexing, but needs `cmake` to build `libdivsufsort` and cannot be built as WASM.
+- `async-io`: This feature enables asynchronous I/O operations using Tokio for saving and loading the index. It adds support for async methods like `async_save_to` and `async_load_from` which can be used in asynchronous contexts.
+
 ## Repository
 [https://github.com/baku4/lt-fm-index](https://github.com/baku4/lt-fm-index)
+
 ## API Doc
 [https://docs.rs/lt-fm-index/](https://docs.rs/lt-fm-index/)
+
 ## Reference
 - Ferragina, P., et al. (2004). An Alphabet-Friendly FM-Index, Springer Berlin Heidelberg: 150-160.
 - Anderson, T. and T. J. Wheeler (2021). An optimized FM-index library for nucleotide and amino acid search, Cold Spring Harbor Laboratory.

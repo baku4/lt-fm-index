@@ -1,33 +1,15 @@
-use std::error::Error;
-use std::fmt;
+use thiserror::Error;
 
 /// Error type for building `LtFmIndex`.
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum BuildError {
     /// Index is over the maximum count of block
+    #[error("Maximum index of block is {0}, but input is {1}.")]
     IndexCountOver(u32, u32),
     /// Invalid lookup table k-mer size
+    #[error("Lookup table kmer size must be a positive integer")]
     LookupTableKmerSize,
     /// Invalid suffix array sampling ratio
+    #[error("Suffix array sampling ratio must be a positive integer")]
     SuffixArraySamplingRatio,
-}
-impl Error for BuildError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        None
-    }
-}
-impl fmt::Display for BuildError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match *self {
-            Self::IndexCountOver(max, input) => {
-                write!(f, "Maximum index of block is {}, but input is {}.", max, input)
-            },
-            Self::LookupTableKmerSize => {
-                write!(f, "Lookup table kmer size must be a positive integer.")
-            },
-            Self::SuffixArraySamplingRatio => {
-                write!(f, "Suffix array sampling ratio must be a positive integer.")
-            },
-        }
-    }
 }

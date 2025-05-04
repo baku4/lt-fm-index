@@ -4,7 +4,7 @@ Two types are supported:
   - `u32`
   - `u64`
 */
-#[cfg(feature = "async-tokio")]
+#[cfg(feature = "async-io")]
 pub trait Position:
     Sized
     + Copy
@@ -37,7 +37,7 @@ pub trait Position:
     fn from_i64(value: i64) -> Self;
     fn as_vec_in_range(from: &Self, to: &Self) -> Vec<Self>;
 }
-#[cfg(not(feature = "async-tokio"))]
+#[cfg(not(feature = "async-io"))]
 pub trait Position:
     Sized
     + Copy

@@ -1,7 +1,7 @@
 use crate::core::Position;
 use super::ChrIdxTable;
 
-// pub(crate) is used for 'features > locate_from_raw_index.rs'
+// A data structure for storing and querying character counts in the FM-index
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CountArray<P: Position> {
     pub(crate) kmer_size: u32,
@@ -113,5 +113,5 @@ impl<P: Position> CountArray<P> {
 }
 
 mod serialize;
-#[cfg(feature = "async-tokio")]
+#[cfg(feature = "async-io")]
 mod async_serialize;

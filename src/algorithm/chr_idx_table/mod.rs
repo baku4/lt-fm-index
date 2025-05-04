@@ -1,3 +1,4 @@
+// A table mapping characters to their indices in the FM-index
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ChrIdxTable(pub [u8; 256]);
 
@@ -21,5 +22,5 @@ impl ChrIdxTable {
 }
 
 mod serialize;
-#[cfg(feature = "async-tokio")]
+#[cfg(feature = "async-io")]
 mod async_serialize;

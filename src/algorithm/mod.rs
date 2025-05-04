@@ -4,6 +4,8 @@ use crate::core::{
 };
 
 /// FM-index using lookup table for first k-mer search.
+/// This is a space-efficient implementation of the FM-index that uses a lookup table
+/// for the first k-mer search to improve performance.
 #[derive(Clone, PartialEq, Eq)]
 pub struct  LtFmIndex<P: Position, B: Block<P>> {
     text_len: P,
@@ -24,11 +26,26 @@ use bwm::Bwm;
 pub use bwm::{Block, blocks};
 
 impl<P: Position, B: Block<P>> LtFmIndex<P, B> {
+    /// Counts the number of occurrences of a pattern in the indexed text.
+    /// 
+    /// # Arguments
+    /// * `pattern` - The pattern to search for
+    /// 
+    /// # Returns
+    /// The number of occurrences of the pattern in the text
     #[inline]
     pub fn count(&self, pattern: &[u8]) -> P {
         let pos_range = self.get_pos_range(pattern);
         pos_range.1 - pos_range.0
     }
+
+    /// Locates all occurrences of a pattern in the indexed text.
+    /// 
+    /// # Arguments
+    /// * `pattern` - The pattern to search for
+    /// 
+    /// # Returns
+    /// A vector of positions where the pattern occurs in the text
     #[inline]
     pub fn locate(&self, pattern: &[u8]) -> Vec<P> {
         let pos_range = self.get_pos_range(pattern);
@@ -37,7 +54,16 @@ impl<P: Position, B: Block<P>> LtFmIndex<P, B> {
 }
 
 impl<P: Position, B: Block<P>> LtFmIndex<P, B> {
-    // Build
+    /// Builds a new FM-index from the given text.
+    /// 
+    /// # Arguments
+    /// * `text` - The text to index
+    /// * `characters_by_index` - The characters to index, in order of their indices
+    /// * `suffix_array_sampling_ratio` - The sampling ratio for the suffix array
+    /// * `lookup_table_kmer_size` - The size of k-mers to use in the lookup table
+    /// 
+    /// # Returns
+    /// A Result containing the built FM-index or a BuildError if construction fails
     pub fn build<T>(
         mut text: Vec<u8>,
         characters_by_index: &[T],

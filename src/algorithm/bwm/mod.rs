@@ -114,5 +114,5 @@ impl<P: Position, B: Block<P>> Bwm<P, B> {
 }
 
 mod serialize;
-#[cfg(feature = "async-tokio")]
+#[cfg(feature = "async-io")]
 mod async_serialize;

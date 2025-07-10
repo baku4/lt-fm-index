@@ -1,3 +1,5 @@
+use num_integer::div_rem;
+
 /**
 Type for the position in index.
 Two types are supported:
@@ -18,6 +20,9 @@ pub trait Position:
     + std::ops::AddAssign<Self>
     + std::ops::Sub<Output = Self>
     + std::cmp::PartialOrd
+    + zerocopy::FromBytes
+    + zerocopy::IntoBytes
+    + zerocopy::Immutable
     + bytemuck::Pod
     + bytemuck::Zeroable
     + capwriter::Save
@@ -28,6 +33,7 @@ pub trait Position:
     const ZERO: Self;
     const ONE: Self;
     const BITS: u32;
+
     fn as_u32(self) -> u32;
     fn from_u32(value: u32) -> Self;
     fn as_u64(self) -> u64;
@@ -35,6 +41,8 @@ pub trait Position:
     fn as_usize(self) -> usize;
     fn from_usize(value: usize) -> Self;
     fn from_i64(value: i64) -> Self;
+
+    fn div_rem_with_u32(self, rhs: u32) -> (Self, u32);
     fn as_vec_in_range(from: &Self, to: &Self) -> Vec<Self>;
 }
 #[cfg(not(feature = "async-io"))]
@@ -51,6 +59,9 @@ pub trait Position:
     + std::ops::AddAssign<Self>
     + std::ops::Sub<Output = Self>
     + std::cmp::PartialOrd
+    + zerocopy::FromBytes
+    + zerocopy::IntoBytes
+    + zerocopy::Immutable
     + bytemuck::Pod
     + bytemuck::Zeroable
     + capwriter::Save
@@ -59,6 +70,7 @@ pub trait Position:
     const ZERO: Self;
     const ONE: Self;
     const BITS: u32;
+
     fn as_u32(self) -> u32;
     fn from_u32(value: u32) -> Self;
     fn as_u64(self) -> u64;
@@ -66,6 +78,8 @@ pub trait Position:
     fn as_usize(self) -> usize;
     fn from_usize(value: usize) -> Self;
     fn from_i64(value: i64) -> Self;
+
+    fn div_rem_with_u32(self, rhs: u32) -> (Self, u32);
     fn as_vec_in_range(from: &Self, to: &Self) -> Vec<Self>;
 }
 
@@ -100,6 +114,11 @@ impl Position for u32 {
     #[inline(always)]
     fn from_i64(value: i64) -> Self {
         value as Self
+    }
+
+    #[inline(always)]
+    fn div_rem_with_u32(self, rhs: u32) -> (Self, u32) {
+        div_rem(self, rhs)
     }
     #[inline(always)]
     fn as_vec_in_range(from: &Self, to: &Self) -> Vec<Self> {
@@ -137,6 +156,12 @@ impl Position for u64 {
     #[inline(always)]
     fn from_i64(value: i64) -> Self {
         value as Self
+    }
+
+    #[inline(always)]
+    fn div_rem_with_u32(self, rhs: u32) -> (Self, u32) {
+        let (quot, rem) = div_rem(self, rhs as u64);
+        (quot as Self, rem as u32)
     }
     #[inline(always)]
     fn as_vec_in_range(from: &Self, to: &Self) -> Vec<Self> {

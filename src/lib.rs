@@ -75,5 +75,7 @@ pub use algorithm::{
     blocks,
 };
 
+mod new_algorithm;
+
 #[cfg(test)]
 mod tests;

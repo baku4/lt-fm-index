@@ -15,6 +15,7 @@ categories = ["science", "algorithms"]
 capwriter = { version = "0.4.2", default-features = false }
 byteorder = "1.5"
 bytemuck = { version = "1.22", features = [ "derive" ] }
+zerocopy = { version = "0.8", features = ["derive"] }
 num-traits = "0.2"
 thiserror = "2"
 libdivsufsort-rs = { version = "0.1.4", optional = true }
@@ -41,7 +42,7 @@ name = "benchmark"
 harness = false
 
 [features]
-default = []
+default = ["async-io"] # FIXME: activated temporary for debugging
 fastbwt = ["libdivsufsort-rs"]
 async-io = [
     "dep:tokio",

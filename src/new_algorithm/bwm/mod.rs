@@ -1,15 +1,15 @@
 use num_integer::div_rem;
+use zerocopy::IntoBytes;
 
 use crate::core::Position;
 
 pub mod blocks;
 
 #[repr(C)]
-#[derive(zerocopy::FromBytes, zerocopy::IntoBytes)]
+#[derive(zerocopy::FromBytes, zerocopy::IntoBytes, zerocopy::Immutable, zerocopy::KnownLayout)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BwmHeader {
     // Given
-    pub sentinel_chr_index: u64,
     pub chr_with_sentinel_count: u32,
     _padding: u32,
     // Derivatives
@@ -17,17 +17,19 @@ pub struct BwmHeader {
     pub blocks_len: u64,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BwmView<'a, P: Position, B: Block> {
     // From header
-    sentinel_chr_index: P,
     chr_with_sentinel_count: P,
     // From blob
+    sentinel_chr_index: P,
     rank_checkpoints: &'a [P],
     blocks: &'a [B],
 }
 
-trait Block: zerocopy::FromBytes + zerocopy::IntoBytes {
+pub trait Block: zerocopy::FromBytes + zerocopy::IntoBytes + zerocopy::Immutable {
     const BLOCK_LEN: u32; // Length of block
+    const MAX_CHR: u32; // Maximum character that can be indexed by the block
 
     // Build
     fn vectorize<P: Position>(bwt_text: &[u8], rank_pre_counts: &mut Vec<P>) -> Self;
@@ -44,7 +46,6 @@ impl BwmHeader {
     #[inline]
     pub fn new<P: Position, B: Block>(
         text_len: u64,
-        sentinel_chr_index: u64, // Sentinel character index in bwt_text - save for locate
         chr_with_sentinel_count: u32, // chr_count + 1 (sentinel)
     ) -> Self {
         let block_len = B::BLOCK_LEN;
@@ -60,16 +61,25 @@ impl BwmHeader {
         let blocks_len = block_count as u64;
 
         Self {
-            sentinel_chr_index,
             chr_with_sentinel_count,
             _padding: 0,
             rank_checkpoints_len,
             blocks_len,
         }
     }
+    pub fn calculate_body_size<P: Position, B: Block>(
+        &self,
+    ) -> usize {
+        let sentinel_chr_index_size = std::mem::size_of::<P>();
+        let rank_checkpoints_size = self.rank_checkpoints_len as usize * std::mem::size_of::<P>();
+        let blocks_size = self.blocks_len as usize * std::mem::size_of::<B>();
+
+        sentinel_chr_index_size + rank_checkpoints_size + blocks_size
+    }
     pub fn write_to_blob<P: Position, B: Block>(
         &self,
         bwt_text: Vec<u8>, // burrow-wheeler transformed text
+        sentinel_chr_index: u32, // Sentinel character index in bwt_text
         blob: &mut [u8],
     ) {
         let last_offset = {
@@ -81,11 +91,15 @@ impl BwmHeader {
             }
         };
 
-        let rank_checkpoints_size = self.rank_checkpoints_len as usize * std::mem::size_of::<P>();
-        let blocks_size = self.blocks_len as usize * std::mem::size_of::<B>();
+        // Write sentinel_chr_index
+        let sentinel_chr_index_size = std::mem::size_of::<P>();
+        let sentinel_chr_index_blob = &mut blob[..sentinel_chr_index_size];
+        sentinel_chr_index_blob.copy_from_slice(&sentinel_chr_index.as_bytes());
 
+        // Divide blob into rank_checkpoints and blocks
+        let rank_checkpoints_size = self.rank_checkpoints_len as usize * std::mem::size_of::<P>();
         let (rank_checkpoints_blob, blocks_blob) = {
-            let (left, right) = blob.split_at_mut(rank_checkpoints_size);
+            let (left, right) = blob[sentinel_chr_index_size..].split_at_mut(rank_checkpoints_size);
             let left: &mut [P] = zerocopy::FromBytes::mut_from_bytes(left).unwrap();
             let right: &mut [B] = zerocopy::FromBytes::mut_from_bytes(right).unwrap();
             (left, right)
@@ -105,6 +119,39 @@ impl BwmHeader {
         } else {
             let last_block = blocks_blob.last_mut().unwrap();
             last_block.shift_last_offset(last_offset);
+        }
+    }
+}
+
+// ================================================
+// Load
+// ================================================
+impl BwmHeader {
+    pub fn load<'a, P: Position, B: Block>(&self, body_blob: &'a [u8]) -> BwmView<'a, P, B> {
+        let chr_with_sentinel_count = P::from_u32(self.chr_with_sentinel_count);
+
+        // Sentinel chr index
+        let mut body_start_index = 0;
+        let mut body_end_index = std::mem::size_of::<P>();
+        let sentinel_chr_index_blob = &body_blob[body_start_index..body_end_index];
+        let sentinel_chr_index = zerocopy::FromBytes::read_from_bytes(sentinel_chr_index_blob).unwrap();
+
+        // Rank checkpoints
+        body_start_index = body_end_index;
+        body_end_index += self.rank_checkpoints_len as usize * std::mem::size_of::<P>();
+        let rank_checkpoints_blob = &body_blob[body_start_index..body_end_index];
+        let rank_checkpoints: &[P] = zerocopy::FromBytes::ref_from_bytes(rank_checkpoints_blob).unwrap();
+        // Blocks
+        body_start_index = body_end_index;
+        body_end_index += self.blocks_len as usize * std::mem::size_of::<B>();
+        let blocks_blob = &body_blob[body_start_index..body_end_index];
+        let blocks: &[B] = zerocopy::FromBytes::ref_from_bytes(blocks_blob).unwrap();
+
+        BwmView {
+            chr_with_sentinel_count,
+            sentinel_chr_index,
+            rank_checkpoints,
+            blocks,
         }
     }
 }

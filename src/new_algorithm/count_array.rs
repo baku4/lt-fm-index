@@ -4,7 +4,7 @@ use crate::core::Position;
 use super::ChrEncodingTable;
 
 #[repr(C)]
-#[derive(zerocopy::FromBytes, zerocopy::IntoBytes)]
+#[derive(zerocopy::FromBytes, zerocopy::IntoBytes, zerocopy::Immutable, zerocopy::KnownLayout)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 /// A data structure for storing and querying character counts in the FM-index
 pub struct CountArrayHeader {
@@ -24,12 +24,6 @@ pub struct CountArrayView<'a, P: Position> {
     kmer_multiplier: Vec<usize>,
     // Reference
     kmer_count_table: &'a [P],
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum CountArrayBuildError {
-    #[error("Blob buffer is not accurate")]
-    BlobBufferNotAccurate,
 }
 
 // ================================================
@@ -55,21 +49,32 @@ impl CountArrayHeader {
             kmer_count_table_len,
         }
     }
+    pub fn calculate_body_size<P: Position>(
+        &self,
+    ) -> usize {
+        self.calculate_count_array_size::<P>()
+        + self.calculate_kmer_multiplier_size()
+        + self.calculate_kmer_count_table_size::<P>()
+    }
+    fn calculate_count_array_size<P: Position>(&self) -> usize {
+        self.count_array_len as usize * std::mem::size_of::<P>()
+    }
+    fn calculate_kmer_multiplier_size(&self) -> usize {
+        self.kmer_multiplier_len as usize * std::mem::size_of::<usize>()
+    }
+    fn calculate_kmer_count_table_size<P: Position>(&self) -> usize {
+        self.kmer_count_table_len as usize * std::mem::size_of::<P>()
+    }
     pub fn count_and_encode_text<P: Position>(
         &self,
         text: &mut Vec<u8>,
         chr_encoding_table: &ChrEncodingTable,
-        blob_buffer: &mut [u8],
-    ) -> Result<(), CountArrayBuildError> {
-        // 1) 초기화
+        blob: &mut [u8],
+    ) {
+        // 1) Init
         let total_symbol_count = self.count_array_len as usize;
         let count_array_size = total_symbol_count * std::mem::size_of::<P>();
         let kmer_multiplier_size = self.kmer_multiplier_len as usize * std::mem::size_of::<usize>();
-        let kmer_count_table_size = self.kmer_count_table_len as usize * std::mem::size_of::<P>();
-        // 현재 blob의 공간이 정확한지 확인
-        if blob_buffer.len() != count_array_size + kmer_multiplier_size + kmer_count_table_size {
-            return Err(CountArrayBuildError::BlobBufferNotAccurate);
-        }
 
         //  - count array
         let mut count_array = vec![P::ZERO; self.count_array_len as usize];
@@ -88,10 +93,10 @@ impl CountArrayHeader {
         let mut kmer_count_array: &mut [P] = {
             let blob_start_index = count_array_size + kmer_multiplier_size;
             // 0으로 init
-            blob_buffer[blob_start_index..].fill(0);
+            blob[blob_start_index..].fill(0);
 
             zerocopy::FromBytes::mut_from_bytes(
-                &mut blob_buffer[blob_start_index..]
+                &mut blob[blob_start_index..]
             ).unwrap()
         };
         
@@ -114,10 +119,8 @@ impl CountArrayHeader {
         accumulate_count_array(&mut kmer_count_array);
 
         // 3) Write data to blob
-        blob_buffer[..count_array_size].copy_from_slice(count_array.as_bytes());
-        blob_buffer[count_array_size..count_array_size + kmer_multiplier_size].copy_from_slice(kmer_multiplier.as_bytes());
-
-        Ok(())
+        blob[..count_array_size].copy_from_slice(count_array.as_bytes());
+        blob[count_array_size..count_array_size + kmer_multiplier_size].copy_from_slice(kmer_multiplier.as_bytes());
     }
 }
 
@@ -127,6 +130,39 @@ fn accumulate_count_array<P: Position>(count_array: &mut [P]) {
         accumulated_count += *count;
         *count = accumulated_count;
     });
+}
+
+// ================================================
+// Load
+// ================================================
+impl CountArrayHeader {
+    pub fn load<'a, P: Position>(&self, body_blob: &'a [u8]) -> CountArrayView<'a, P>
+    {
+        let mut body_start_index = 0;
+        let mut body_end_index = self.calculate_count_array_size::<P>();
+
+        // Count array
+        let count_array_bytes = &body_blob[body_start_index..body_end_index];
+        let count_array: &[P] = zerocopy::FromBytes::ref_from_bytes(count_array_bytes).unwrap();
+
+        // Kmer multiplier
+        body_start_index = body_end_index;
+        body_end_index += self.calculate_kmer_multiplier_size();
+        let kmer_multiplier_bytes = &body_blob[body_start_index..body_end_index];
+        let kmer_multiplier: &[usize] = zerocopy::FromBytes::ref_from_bytes(kmer_multiplier_bytes).unwrap();
+
+        // Kmer count table
+        body_start_index = body_end_index;
+        body_end_index += self.calculate_kmer_count_table_size::<P>();
+        let kmer_count_table_bytes = &body_blob[body_start_index..body_end_index];
+        let kmer_count_table: &'a [P] = zerocopy::FromBytes::ref_from_bytes(kmer_count_table_bytes).unwrap();
+        
+        CountArrayView {
+            count_array: count_array.to_vec(),
+            kmer_multiplier: kmer_multiplier.to_vec(),
+            kmer_count_table,
+        }
+    }
 }
 
 // ================================================

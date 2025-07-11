@@ -28,9 +28,18 @@ use locate_with_raw_index::compare_locate_vs_locate_from_raw_index;
 //     build_no_text, locate_no_text,
 // };
 
+mod memory_vs_disk_mmap;
+use memory_vs_disk_mmap::{
+    bench_memory_vs_disk_mmap_locate_u32_block2,
+    bench_memory_vs_disk_mmap_locate_u64_block2,
+    bench_memory_vs_disk_mmap_locate_u64_block4,
+};
+
 criterion_group!(
     benches,
-    compare_locate_vs_locate_from_raw_index,
+    bench_memory_vs_disk_mmap_locate_u32_block2,
+    bench_memory_vs_disk_mmap_locate_u64_block2,
+    bench_memory_vs_disk_mmap_locate_u64_block4,
 );
 #[cfg(feature = "fastbwt")]
 criterion_group!(

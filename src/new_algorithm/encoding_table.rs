@@ -1,8 +1,10 @@
+use super::Header;
+
 /// A table mapping characters to their indices in the FM-index
 #[repr(C)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[derive(zerocopy::FromBytes, zerocopy::IntoBytes, zerocopy::Immutable, zerocopy::KnownLayout)]
-pub struct ChrEncodingTable(pub(crate) [u8; 256]);
+pub struct ChrEncodingTable([u8; 256]);
 
 impl ChrEncodingTable {
     #[inline]
@@ -21,7 +23,6 @@ impl ChrEncodingTable {
     pub fn idx_of(&self, chr: u8) -> u8 {
         unsafe { *self.0.get_unchecked(chr as usize) }
     }
-    pub fn write_to_blob(&self, blob: &mut [u8]) {
-        blob.copy_from_slice(&self.0);
-    }
 }
+
+impl Header for ChrEncodingTable {}

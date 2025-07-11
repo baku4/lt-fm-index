@@ -1,3 +1,5 @@
+use super::Header;
+
 const MAGIC_NUMBER_HEADER_1: u8 = b'F'; // Fm
 const MAGIC_NUMBER_HEADER_2: u8 = b'I'; // Index
 const MAGIC_NUMBER_VERSION_1: u8 = b'0'; // Major Version
@@ -7,7 +9,7 @@ const MAGIC_NUMBER_VERSION_2: u8 = b'0'; // Minor Version
 #[repr(C)]
 #[derive(zerocopy::FromBytes, zerocopy::IntoBytes, zerocopy::Immutable, zerocopy::KnownLayout)]
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MagicNumber([u8; 4]);
+pub struct MagicNumber([u8; 8]);
 
 impl MagicNumber {
     pub fn new() -> Self {
@@ -16,6 +18,11 @@ impl MagicNumber {
             MAGIC_NUMBER_HEADER_2,
             MAGIC_NUMBER_VERSION_1,
             MAGIC_NUMBER_VERSION_2,
+            // Padding
+            0,
+            0,
+            0,
+            0,
         ])
     }
 
@@ -38,3 +45,5 @@ impl MagicNumber {
         && self.minor_version() == minor_version
     }
 }
+
+impl Header for MagicNumber {}

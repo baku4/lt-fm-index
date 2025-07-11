@@ -18,12 +18,45 @@ blob = header + body
   - 빌드하면서 Blob에 데이터를 쓰기 가능.
   - 빌드된 데이터를 blob에서 불러와서 view로 만들어줄 수 있음.
 - ChrEncodingTable은 chr -> idx를 담고 있는 가벼운 구조체로, header로 구분되지만, 조건부로 view로도 활용 가능.
+
+- 주의!: zerocopy를 위해서 모든 header와 body의 경계는 8바이트여야함.
+  - Vector가 u128인 경우, 16바이트 경계를 체크해야하기 때문에, BWM의 rank_checkpoints만 16바이트 경계를 체크함.
 */
 
 use crate::Position;
-use zerocopy::{IntoBytes, Ref};
 
-// Components of FM-index   
+trait Header: zerocopy::FromBytes + zerocopy::IntoBytes + zerocopy::Immutable + zerocopy::KnownLayout + Sized{
+    fn aligned_size(&self) -> usize {
+        let raw_size = self.as_bytes().len();
+        let rem = raw_size % 8;
+        if rem == 0 { raw_size } else { raw_size + (8 - rem) }
+    }
+    fn write_to_blob(&self, blob: &mut [u8]) {
+        self.write_to_prefix(blob).unwrap();
+    }
+    fn read_from_blob<'a>(blob: &'a [u8]) -> (Self, &'a [u8]) {
+        let (header, _) = Self::read_from_prefix(blob).unwrap();
+        let remaining_bytes = &blob[header.aligned_size()..];
+        (header, remaining_bytes)
+    }
+}
+
+trait View<'a> {
+    type Header;
+
+    fn aligned_body_size(header: &Self::Header) -> usize;
+    fn load_from_body(
+        header: &Self::Header,
+        body_blob: &'a [u8],
+    ) -> Self;
+}
+
+fn calculate_byte_size_with_padding(size: usize) -> usize {
+    let rem = size % 8;
+    if rem == 0 { size } else { size + (8 - rem) }
+}
+
+// Components of FM-index
 mod magic_number;
 use magic_number::MagicNumber;
 mod encoding_table;
@@ -37,18 +70,14 @@ use bwm::{BwmHeader, BwmView};
 pub use bwm::{Block, blocks};
 
 // Builder
-pub mod builder;
+mod builder;
+pub use builder::{FmIndexBuilder, BuildError};
 
-// Error
-#[derive(Debug, thiserror::Error)]
-pub enum LoadError {
-    /// Error while loading Fm-index headers.
-    #[error("Error while loading Fm-index headers. Not a valid FM-index blob.")]
-    InvalidHeaders,
-    /// Blob size is not accurate.
-    #[error("Invalid blob size. Expected: {0}, Actual: {1}")]
-    InvalidBlobSize(usize, usize),
-}
+// Load from blob
+mod load_from_blob;
+pub use load_from_blob::LoadError;
+// Core functionality
+mod locate;
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct FmIndex<'a, P: Position, B: Block> {
@@ -62,66 +91,4 @@ pub struct FmIndex<'a, P: Position, B: Block> {
     count_array_view: CountArrayView<'a, P>,
     suffix_array_view: SuffixArrayView<'a, P>,
     bwm_view: BwmView<'a, P, B>,
-}
-
-impl<'a, P: Position, B: Block> FmIndex<'a, P, B> {
-    pub fn load(blob: &'a [u8]) -> Result<Self, LoadError> {
-        // Load headers
-        let (magic_number, remaining_bytes) = Ref::<_, MagicNumber>::from_prefix(blob)
-            .map_err(|_| LoadError::InvalidHeaders)?;
-        let (chr_encoding_table, remaining_bytes) = Ref::<_, ChrEncodingTable>::from_prefix(remaining_bytes)
-            .map_err(|_| LoadError::InvalidHeaders)?;
-        let (count_array_header, remaining_bytes) = Ref::<_, CountArrayHeader>::from_prefix(remaining_bytes)
-            .map_err(|_| LoadError::InvalidHeaders)?;
-        let (suffix_array_header, remaining_bytes) = Ref::<_, SuffixArrayHeader>::from_prefix(remaining_bytes)
-            .map_err(|_| LoadError::InvalidHeaders)?;
-        let (bwm_header, body_blob) = Ref::<_, BwmHeader>::from_prefix(remaining_bytes)
-            .map_err(|_| LoadError::InvalidHeaders)?;
-
-        // check body size
-        let actual_body_size = body_blob.len();
-        let expected_body_size = {
-            count_array_header.calculate_body_size::<P>()
-            + suffix_array_header.calculate_body_size::<P>()
-            + bwm_header.calculate_body_size::<P, B>()
-        };
-        if actual_body_size != expected_body_size {
-            let header_size = {
-                magic_number.as_bytes().len()
-                + chr_encoding_table.as_bytes().len()
-                + count_array_header.as_bytes().len()
-                + suffix_array_header.as_bytes().len()
-                + bwm_header.as_bytes().len()
-            };
-            return Err(LoadError::InvalidBlobSize(
-                header_size + expected_body_size,
-                header_size + actual_body_size,
-            ));
-        }
-
-        // Get views
-        //  - Count array
-        let mut body_start_index = 0;
-        let mut body_end_index = count_array_header.calculate_body_size::<P>();
-        let count_array_view = count_array_header.load::<P>(&body_blob[body_start_index..body_end_index]);
-        //  - Suffix array
-        body_start_index = body_end_index;
-        body_end_index += suffix_array_header.calculate_body_size::<P>();
-        let suffix_array_view = suffix_array_header.load::<P>(&body_blob[body_start_index..body_end_index]);
-        //  - BWM
-        body_start_index = body_end_index;
-        body_end_index += bwm_header.calculate_body_size::<P, B>();
-        let bwm_view = bwm_header.load::<P, B>(&body_blob[body_start_index..body_end_index]);
-
-        Ok(Self {
-            magic_number: Ref::read(&magic_number),
-            chr_encoding_table: Ref::read(&chr_encoding_table),
-            count_array_header: Ref::read(&count_array_header),
-            suffix_array_header: Ref::read(&suffix_array_header),
-            bwm_header: Ref::read(&bwm_header),
-            count_array_view,
-            suffix_array_view,
-            bwm_view,
-        })
-    }
 }

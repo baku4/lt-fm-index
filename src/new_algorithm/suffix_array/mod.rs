@@ -1,5 +1,5 @@
 use crate::core::Position;
-use super::{Header, View, calculate_byte_size_with_padding};
+use super::{Aligned, Header, View};
 
 mod burrow_wheeler_transform;
 use burrow_wheeler_transform::get_compressed_suffix_array_and_pidx_while_bwt;
@@ -29,8 +29,8 @@ impl SuffixArrayHeader {
     pub fn suffix_array_raw_size<P: Position>(&self) -> usize {
         self.suffix_array_len as usize * std::mem::size_of::<P>()
     }
-    pub fn suffix_array_aligned_size<P: Position>(&self) -> usize {
-        calculate_byte_size_with_padding(self.suffix_array_raw_size::<P>())
+    pub fn suffix_array_aligned_size<P: Position, A: Aligned>(&self) -> usize {
+        A::aligned_size(self.suffix_array_raw_size::<P>())
     }
 }
 
@@ -76,10 +76,10 @@ impl SuffixArrayHeader {
 impl<'a, P:Position> View<'a> for SuffixArrayView<'a, P> {
     type Header = SuffixArrayHeader;
 
-    fn aligned_body_size(header: &Self::Header) -> usize {
-        header.suffix_array_aligned_size::<P>()
+    fn aligned_body_size<A: Aligned>(header: &Self::Header) -> usize {
+        header.suffix_array_aligned_size::<P, A>()
     }
-    fn load_from_body(header: &Self::Header, body_blob: &'a [u8]) -> Self {
+    fn load_from_body<A: Aligned>(header: &Self::Header, body_blob: &'a [u8]) -> Self {
         let sampling_ratio = P::from_u32(header.sampling_ratio);
         
         let suffix_array: &[P] = zerocopy::FromBytes::ref_from_bytes(
@@ -87,18 +87,6 @@ impl<'a, P:Position> View<'a> for SuffixArrayView<'a, P> {
         ).unwrap();
             
         Self { sampling_ratio, suffix_array }
-    }
-}
-
-impl SuffixArrayHeader {
-    pub fn load_body<'a, P: Position>(&self, body_blob: &'a [u8]) -> SuffixArrayView<'a, P> {
-        let sampling_ratio = P::from_u32(self.sampling_ratio);
-        let suffix_array: &[P] = zerocopy::FromBytes::ref_from_bytes(body_blob).unwrap();
-
-        SuffixArrayView {
-            sampling_ratio,
-            suffix_array,
-        }
     }
 }
 

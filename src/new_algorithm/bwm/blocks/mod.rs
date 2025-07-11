@@ -8,7 +8,7 @@ But the maximum count of the index is restrict to the $2^{v}-1$ ($v$ the vector 
 Currently, [Vector] is implemented for: u32, u64, u128.
 The shorter the vector, the faster the algorithm, but the larger the struct.
 */
-use super::Block;
+use super::{Aligned, Block};
 
 mod vector;
 mod block2;

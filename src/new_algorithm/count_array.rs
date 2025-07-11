@@ -1,7 +1,7 @@
 use zerocopy::IntoBytes;
 
 use crate::core::Position;
-use super::{ChrEncodingTable, Header, View, calculate_byte_size_with_padding};
+use super::{ChrEncodingTable, Aligned, Header, View};
 
 #[repr(C)]
 #[derive(zerocopy::FromBytes, zerocopy::IntoBytes, zerocopy::Immutable, zerocopy::KnownLayout)]
@@ -32,20 +32,20 @@ impl CountArrayHeader {
     fn count_array_raw_size<P: Position>(&self) -> usize {
         self.count_array_len as usize * std::mem::size_of::<P>()
     }
-    fn count_array_aligned_size<P: Position>(&self) -> usize {
-        calculate_byte_size_with_padding(self.count_array_raw_size::<P>())
+    fn count_array_aligned_size<P: Position, A: Aligned>(&self) -> usize {
+        A::aligned_size(self.count_array_raw_size::<P>())
     }
     fn kmer_multiplier_raw_size(&self) -> usize {
         self.kmer_multiplier_len as usize * std::mem::size_of::<usize>()
     }
-    fn kmer_multiplier_aligned_size(&self) -> usize {
-        calculate_byte_size_with_padding(self.kmer_multiplier_raw_size())
+    fn kmer_multiplier_aligned_size<A: Aligned>(&self) -> usize {
+        A::aligned_size(self.kmer_multiplier_raw_size())
     }
     fn kmer_count_table_raw_size<P: Position>(&self) -> usize {
         self.kmer_count_table_len as usize * std::mem::size_of::<P>()
     }
-    fn kmer_count_table_aligned_size<P: Position>(&self) -> usize {
-        calculate_byte_size_with_padding(self.kmer_count_table_raw_size::<P>())
+    fn kmer_count_table_aligned_size<P: Position, A: Aligned>(&self) -> usize {
+        A::aligned_size(self.kmer_count_table_raw_size::<P>())
     }
 }
 
@@ -74,7 +74,7 @@ impl CountArrayHeader {
             kmer_count_table_len,
         }
     }
-    pub fn count_and_encode_text<P: Position>(
+    pub fn count_and_encode_text<P: Position, A: Aligned>(
         &self,
         text: &mut Vec<u8>,
         chr_encoding_table: &ChrEncodingTable,
@@ -97,7 +97,7 @@ impl CountArrayHeader {
         };
         // - kmer count array
         let mut kmer_count_array: &mut [P] = {
-            let blob_start_index = self.count_array_aligned_size::<P>() + self.kmer_multiplier_aligned_size();
+            let blob_start_index = self.count_array_aligned_size::<P, A>() + self.kmer_multiplier_aligned_size::<A>();
             let blob_end_index = blob_start_index + self.kmer_count_table_raw_size::<P>();
             // 0으로 init
             let body = &mut blob[blob_start_index..blob_end_index];
@@ -129,8 +129,8 @@ impl CountArrayHeader {
             ..self.count_array_raw_size::<P>()
         ].copy_from_slice(count_array.as_bytes());
         blob[
-            self.count_array_aligned_size::<P>()
-            ..self.count_array_aligned_size::<P>() + self.kmer_multiplier_raw_size()
+            self.count_array_aligned_size::<P, A>()
+            ..self.count_array_aligned_size::<P, A>() + self.kmer_multiplier_raw_size()
         ].copy_from_slice(kmer_multiplier.as_bytes());
     }
 }
@@ -150,19 +150,19 @@ fn accumulate_count_array<P: Position>(count_array: &mut [P]) {
 impl<'a, P: Position> View<'a> for CountArrayView<'a, P> {
     type Header = CountArrayHeader;
 
-    fn aligned_body_size(header: &Self::Header) -> usize {
-        header.count_array_aligned_size::<P>()
-        + header.kmer_multiplier_aligned_size()
-        + header.kmer_count_table_aligned_size::<P>()
+    fn aligned_body_size<A: Aligned>(header: &Self::Header) -> usize {
+        header.count_array_aligned_size::<P, A>()
+        + header.kmer_multiplier_aligned_size::<A>()
+        + header.kmer_count_table_aligned_size::<P, A>()
     }
 
-    fn load_from_body(
+    fn load_from_body<A: Aligned>(
         header: &Self::Header,
         body_blob: &'a [u8],
     ) -> Self {
         let mut body_start_index = 0;
         let mut body_end_index = header.count_array_raw_size::<P>();
-        let mut next_body_start_index = header.count_array_aligned_size::<P>();
+        let mut next_body_start_index = header.count_array_aligned_size::<P, A>();
 
         // Count array
         let count_array_bytes = &body_blob[body_start_index..body_end_index];
@@ -171,7 +171,7 @@ impl<'a, P: Position> View<'a> for CountArrayView<'a, P> {
         // Kmer multiplier
         body_start_index = next_body_start_index;
         body_end_index = body_start_index + header.kmer_multiplier_raw_size();
-        next_body_start_index = body_start_index + header.kmer_multiplier_aligned_size();
+        next_body_start_index = body_start_index + header.kmer_multiplier_aligned_size::<A>();
         let kmer_multiplier_bytes = &body_blob[body_start_index..body_end_index];
         let kmer_multiplier: &[usize] = zerocopy::FromBytes::ref_from_bytes(kmer_multiplier_bytes).unwrap();
 

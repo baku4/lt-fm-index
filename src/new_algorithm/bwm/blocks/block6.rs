@@ -1,10 +1,14 @@
 use crate::core::Position;
-use super::{Block, Vector};
+use super::{Aligned, Block, Vector};
 
 #[repr(C)]
 #[derive(zerocopy::FromBytes, zerocopy::IntoBytes, zerocopy::Immutable)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Block6<V: Vector>([V; 6]);
+
+impl<V: Vector> Aligned for Block6<V> {
+    const ALIGN_SIZE: usize = V::ALIGN_SIZE;
+}
 
 impl<V: Vector> Block for Block6<V> {
     const BLOCK_LEN: u32 = V::BLOCK_LEN;

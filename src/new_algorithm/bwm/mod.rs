@@ -1,7 +1,5 @@
-use zerocopy::IntoBytes;
-
 use crate::core::Position;
-use super::{Header, View, calculate_byte_size_with_padding};
+use super::{Aligned,Header, View};
 
 pub mod blocks;
 
@@ -27,7 +25,7 @@ pub struct BwmView<'a, P: Position, B: Block> {
     blocks: &'a [B],
 }
 
-pub trait Block: zerocopy::FromBytes + zerocopy::IntoBytes + zerocopy::Immutable {
+pub trait Block: zerocopy::FromBytes + zerocopy::IntoBytes + zerocopy::Immutable + Aligned {
     const BLOCK_LEN: u32; // Length of block
     const MAX_CHR: u32; // Maximum character that can be indexed by the block
 
@@ -43,20 +41,20 @@ impl BwmHeader {
     fn sentinel_chr_index_raw_size<P: Position>(&self) -> usize {
         std::mem::size_of::<P>()
     }
-    fn sentinel_chr_index_aligned_size<P: Position>(&self) -> usize {
-        calculate_byte_size_with_padding(self.sentinel_chr_index_raw_size::<P>())
+    fn sentinel_chr_index_aligned_size<P: Position, A: Aligned>(&self) -> usize {
+        A::aligned_size(self.sentinel_chr_index_raw_size::<P>())
     }
     fn rank_checkpoints_raw_size<P: Position>(&self) -> usize {
         self.rank_checkpoints_len as usize * std::mem::size_of::<P>()
     }
-    fn rank_checkpoints_aligned_size<P: Position>(&self) -> usize {
-        calculate_byte_size_with_padding(self.rank_checkpoints_raw_size::<P>())
+    fn rank_checkpoints_aligned_size<P: Position, A: Aligned>(&self) -> usize {
+        A::aligned_size(self.rank_checkpoints_raw_size::<P>())
     }
     fn blocks_raw_size<B: Block>(&self) -> usize {
         self.blocks_len as usize * std::mem::size_of::<B>()
     }
-    fn blocks_aligned_size<B: Block>(&self) -> usize {
-        calculate_byte_size_with_padding(self.blocks_raw_size::<B>())
+    fn blocks_aligned_size<B: Block, A: Aligned>(&self) -> usize {
+        A::aligned_size(self.blocks_raw_size::<B>())
     }
 }
 
@@ -107,9 +105,9 @@ impl BwmHeader {
         sentinel_chr_index_blob.copy_from_slice(&sentinel_chr_index.as_bytes());
 
         // Divide blob into rank_checkpoints and blocks
-        let sentinel_chr_index_aligned_size = self.sentinel_chr_index_aligned_size::<P>();
+        let sentinel_chr_index_aligned_size = self.sentinel_chr_index_aligned_size::<P, B>();
         let rank_checkpoints_raw_size = self.rank_checkpoints_raw_size::<P>();
-        let rank_checkpoints_aligned_size = self.rank_checkpoints_aligned_size::<P>();
+        let rank_checkpoints_aligned_size = self.rank_checkpoints_aligned_size::<P, B>();
         let blocks_raw_size = self.blocks_raw_size::<B>();
 
         let (rank_checkpoints_blob, blocks_blob) = {
@@ -148,18 +146,18 @@ impl BwmHeader {
 impl<'a, P: Position, B: Block> View<'a> for BwmView<'a, P, B> {
     type Header = BwmHeader;
     
-    fn aligned_body_size(header: &Self::Header) -> usize {
-        header.sentinel_chr_index_aligned_size::<P>()
-        + header.rank_checkpoints_aligned_size::<P>()
-        + header.blocks_aligned_size::<B>()
+    fn aligned_body_size<A: Aligned>(header: &Self::Header) -> usize {
+        header.sentinel_chr_index_aligned_size::<P, A>()
+        + header.rank_checkpoints_aligned_size::<P, A>()
+        + header.blocks_aligned_size::<B, A>()
     }
-    fn load_from_body(header: &Self::Header, body_blob: &'a [u8]) -> Self {
+    fn load_from_body<A: Aligned>(header: &Self::Header, body_blob: &'a [u8]) -> Self {
         let chr_with_sentinel_count = P::from_u32(header.chr_with_sentinel_count);
 
         // Sentinel chr index
         let mut body_start_index = 0;
         let mut body_end_index = header.sentinel_chr_index_raw_size::<P>();
-        let mut next_body_start_index = header.sentinel_chr_index_aligned_size::<P>();
+        let mut next_body_start_index = header.sentinel_chr_index_aligned_size::<P, A>();
         let sentinel_chr_index = zerocopy::FromBytes::read_from_bytes(
             &body_blob[body_start_index..body_end_index]
         ).unwrap();
@@ -167,7 +165,7 @@ impl<'a, P: Position, B: Block> View<'a> for BwmView<'a, P, B> {
         // Rank checkpoints
         body_start_index = next_body_start_index;
         body_end_index = body_start_index + header.rank_checkpoints_raw_size::<P>();
-        next_body_start_index = body_start_index + header.rank_checkpoints_aligned_size::<P>();
+        next_body_start_index = body_start_index + header.rank_checkpoints_aligned_size::<P, A>();
         let rank_checkpoints: &[P] = zerocopy::FromBytes::ref_from_bytes(
             &body_blob[body_start_index..body_end_index]
         ).unwrap();

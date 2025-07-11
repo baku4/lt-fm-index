@@ -23,6 +23,8 @@ pub trait Vector:
     + zerocopy::Immutable
 {
     const BLOCK_LEN: u32;
+    const ALIGN_SIZE: usize;
+
     const ZERO: Self;
     const ONE: Self;
     fn as_u8(self) -> u8;
@@ -31,6 +33,8 @@ pub trait Vector:
 
 impl Vector for u32 {
     const BLOCK_LEN: u32 = 32;
+    const ALIGN_SIZE: usize = 8; // support u64
+
     const ZERO: Self = 0_u32;
     const ONE: Self = 1_u32;
     #[inline(always)]
@@ -44,6 +48,8 @@ impl Vector for u32 {
 }
 impl Vector for u64 {
     const BLOCK_LEN: u32 = 64;
+    const ALIGN_SIZE: usize = 8;
+
     const ZERO: Self = 0_u64;
     const ONE: Self = 1_u64;
     #[inline(always)]
@@ -57,6 +63,8 @@ impl Vector for u64 {
 }
 impl Vector for u128 {
     const BLOCK_LEN: u32 = 128;
+    const ALIGN_SIZE: usize = 16;
+    
     const ZERO: Self = 0_u128;
     const ONE: Self = 1_u128;
     #[inline(always)]

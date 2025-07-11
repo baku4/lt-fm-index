@@ -1,7 +1,5 @@
 use std::marker::PhantomData;
 
-use zerocopy::{IntoBytes, Ref};
-
 use super::{
     // traits
     Position, Block, Header, View,
@@ -34,6 +32,9 @@ pub enum BuildError {
     /// Invalid suffix array sampling ratio
     #[error("Suffix array sampling ratio must be a positive integer")]
     InvalidSuffixArraySamplingRatio,
+    /// Not aligned blob
+    #[error("Blob is needed to be aligned with {0}. The offset is {1}.")]
+    NotAlignedBlob(usize, usize),
 }
 
 impl<P: Position, B: Block> FmIndexBuilder<P, B> {
@@ -90,16 +91,16 @@ impl<P: Position, B: Block> FmIndexBuilder<P, B> {
     }
     // 실제 헤더 사이즈
     fn header_aligned_size(&self) -> usize {
-        self.magic_number.aligned_size()
-        + self.chr_encoding_table.as_bytes().len()
-        + self.count_array_header.as_bytes().len()
-        + self.suffix_array_header.as_bytes().len()
-        + self.bwm_header.as_bytes().len()
+        self.magic_number.aligned_size::<B>()
+        + self.chr_encoding_table.aligned_size::<B>()
+        + self.count_array_header.aligned_size::<B>()
+        + self.suffix_array_header.aligned_size::<B>()
+        + self.bwm_header.aligned_size::<B>()
     }
     fn body_aligned_size(&self) -> usize {
-        CountArrayView::<P>::aligned_body_size(&self.count_array_header)
-        + SuffixArrayView::<P>::aligned_body_size(&self.suffix_array_header) 
-        + BwmView::<P, B>::aligned_body_size(&self.bwm_header)
+        CountArrayView::<P>::aligned_body_size::<B>(&self.count_array_header)
+        + SuffixArrayView::<P>::aligned_body_size::<B>(&self.suffix_array_header) 
+        + BwmView::<P, B>::aligned_body_size::<B>(&self.bwm_header)
     }
 
     pub fn build<'a>(
@@ -107,6 +108,7 @@ impl<P: Position, B: Block> FmIndexBuilder<P, B> {
         mut text: Vec<u8>,
         blob: &'a mut [u8],
     ) -> Result<(), BuildError> {
+        // FIXME: Check alignment
         let blob_size = self.blob_aligned_size();
         let blob_size_actual = blob.len();
         if blob_size != blob_size_actual {
@@ -116,32 +118,32 @@ impl<P: Position, B: Block> FmIndexBuilder<P, B> {
         // 1) Write headers
         let mut header_start_index = 0;
         // Magic number
-        let mut header_end_index = self.magic_number.aligned_size();
+        let mut header_end_index = self.magic_number.aligned_size::<B>();
         self.magic_number.write_to_blob(&mut blob[header_start_index..header_end_index]);
         // Chr encoding table
         header_start_index = header_end_index;
-        header_end_index += self.chr_encoding_table.aligned_size();
+        header_end_index += self.chr_encoding_table.aligned_size::<B>();
         self.chr_encoding_table.write_to_blob(&mut blob[header_start_index..header_end_index]);
         // Count array header
         header_start_index = header_end_index;
-        header_end_index += self.count_array_header.aligned_size();
+        header_end_index += self.count_array_header.aligned_size::<B>();
         self.count_array_header.write_to_blob(&mut blob[header_start_index..header_end_index]);
         // Suffix array header
         header_start_index = header_end_index;
-        header_end_index += self.suffix_array_header.aligned_size();
+        header_end_index += self.suffix_array_header.aligned_size::<B>();
         self.suffix_array_header.write_to_blob(&mut blob[header_start_index..header_end_index]);
         // BWM header
         header_start_index = header_end_index;
-        header_end_index += self.bwm_header.aligned_size();
+        header_end_index += self.bwm_header.aligned_size::<B>();
         self.bwm_header.write_to_blob(&mut blob[header_start_index..header_end_index]);
 
         // 2) Build & write bodies
         let mut body_start_index = header_end_index;
-        let mut body_end_index = body_start_index + CountArrayView::<P>::aligned_body_size(&self.count_array_header);
+        let mut body_end_index = body_start_index + CountArrayView::<P>::aligned_body_size::<B>(&self.count_array_header);
         // Count array
         //  - encode text with encoding table
         //  - during encoding, count the number of each character & kmer
-        self.count_array_header.count_and_encode_text::<P>(
+        self.count_array_header.count_and_encode_text::<P, B>(
             &mut text,
             &self.chr_encoding_table,
             &mut blob[body_start_index..body_end_index],
@@ -150,7 +152,7 @@ impl<P: Position, B: Block> FmIndexBuilder<P, B> {
         //  - burrow-wheeler transform
         //  - get sentinel character index
         body_start_index = body_end_index;
-        body_end_index = body_start_index + SuffixArrayView::<P>::aligned_body_size(&self.suffix_array_header);
+        body_end_index = body_start_index + SuffixArrayView::<P>::aligned_body_size::<B>(&self.suffix_array_header);
 
         let sentinel_chr_index = self.suffix_array_header.write_to_blob_and_get_sentinel_chr_index::<P>(
             &mut text,
@@ -158,7 +160,7 @@ impl<P: Position, B: Block> FmIndexBuilder<P, B> {
         );
         // BWM
         body_start_index = body_end_index;
-        body_end_index = body_start_index + BwmView::<P, B>::aligned_body_size(&self.bwm_header);
+        body_end_index = body_start_index + BwmView::<P, B>::aligned_body_size::<B>(&self.bwm_header);
         self.bwm_header.encode_bwm_body::<P, B>(
             text,
             sentinel_chr_index, 

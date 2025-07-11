@@ -25,18 +25,26 @@ blob = header + body
 
 use crate::Position;
 
-trait Header: zerocopy::FromBytes + zerocopy::IntoBytes + zerocopy::Immutable + zerocopy::KnownLayout + Sized{
-    fn aligned_size(&self) -> usize {
+pub trait Aligned {
+    const ALIGN_SIZE: usize;
+
+    fn aligned_size(raw_size: usize) -> usize {
+        let rem = raw_size % Self::ALIGN_SIZE;
+        if rem == 0 { raw_size } else { raw_size + (Self::ALIGN_SIZE - rem) }
+    }
+}
+
+trait Header: zerocopy::FromBytes + zerocopy::IntoBytes + zerocopy::Immutable + zerocopy::KnownLayout + Sized {
+    fn aligned_size<A: Aligned>(&self) -> usize {
         let raw_size = self.as_bytes().len();
-        let rem = raw_size % 8;
-        if rem == 0 { raw_size } else { raw_size + (8 - rem) }
+        A::aligned_size(raw_size)
     }
     fn write_to_blob(&self, blob: &mut [u8]) {
         self.write_to_prefix(blob).unwrap();
     }
-    fn read_from_blob<'a>(blob: &'a [u8]) -> (Self, &'a [u8]) {
+    fn read_from_blob<'a, A: Aligned>(blob: &'a [u8]) -> (Self, &'a [u8]) {
         let (header, _) = Self::read_from_prefix(blob).unwrap();
-        let remaining_bytes = &blob[header.aligned_size()..];
+        let remaining_bytes = &blob[header.aligned_size::<A>()..];
         (header, remaining_bytes)
     }
 }
@@ -44,16 +52,11 @@ trait Header: zerocopy::FromBytes + zerocopy::IntoBytes + zerocopy::Immutable + 
 trait View<'a> {
     type Header;
 
-    fn aligned_body_size(header: &Self::Header) -> usize;
-    fn load_from_body(
+    fn aligned_body_size<A: Aligned>(header: &Self::Header) -> usize;
+    fn load_from_body<A: Aligned>(
         header: &Self::Header,
         body_blob: &'a [u8],
     ) -> Self;
-}
-
-fn calculate_byte_size_with_padding(size: usize) -> usize {
-    let rem = size % 8;
-    if rem == 0 { size } else { size + (8 - rem) }
 }
 
 // Components of FM-index

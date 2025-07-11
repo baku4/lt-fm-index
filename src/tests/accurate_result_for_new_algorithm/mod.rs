@@ -117,8 +117,8 @@ fn result_is_accurate_for_new_algorithm() {
                         test_type_of!($p, $b, u32);
                         println!("        - Vector: u64");
                         test_type_of!($p, $b, u64);
-                        // println!("        - Vector: u128");
-                        // test_type_of!($p, $b, u128);
+                        println!("        - Vector: u128");
+                        test_type_of!($p, $b, u128);
                     )*
                 };
             }

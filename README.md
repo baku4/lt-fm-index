@@ -9,7 +9,7 @@
 To use this library, add `lt_fm_index` to your `Cargo.toml`:
 ```toml
 [dependencies]
-lt_fm_index = "0.7.0"
+lt_fm_index = "0.7"
 ```
 
 ### Example code

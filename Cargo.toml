@@ -1,6 +1,6 @@
 [package]
 name = "lt-fm-index"
-version = "0.7.0"
+version = "0.7.1"
 authors = ["baku4 <bahkhun@gmail.com>"]
 edition = "2024"
 rust-version = "1.85.1"
@@ -17,7 +17,7 @@ byteorder = "1.5"
 bytemuck = { version = "1.22", features = [ "derive" ] }
 num-traits = "0.2"
 thiserror = "2"
-libdivsufsort-rs = { version = "0.1.4", optional = true }
+libdivsufsort-rs = { version = "0.1.5", optional = true }
 tokio = { version = "1", default-features = false, features=["io-util"], optional = true }
 
 # for BWT with "bio" crate
